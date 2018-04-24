@@ -5,8 +5,7 @@ import sys
 
 from neurality.storage import store
 from neurality.assemblies import load_stimuli
-from neurality.graph import cut_graph
-from neurality.models.graph import get_model_graph
+from neurality.models.graph import get_model_graph, cut_graph
 from neurality.models.implementations import model_mappings, prepare_images, create_model, find_images, load_images
 from neurality.models.outputs import get_model_outputs
 from neurality.models.type import ModelType, get_model_type

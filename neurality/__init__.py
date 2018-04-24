@@ -2,8 +2,8 @@ import logging
 
 from neurality import models
 from neurality.assemblies import load_neural_benchmark
-from neurality.graph import combine_graph
 from neurality.models import model_activations, model_graph
+from neurality.models.graph import combine_graph, cut_graph
 from neurality.plot import plot_layer_correlations, plot_scores, results_dir
 from neurality.storage import get_function_identifier, store
 
@@ -25,6 +25,7 @@ def score_model(model, layers, neural_data=Defaults.neural_data, model_weights=m
 def score_physiology(model, layers, neural_data=Defaults.neural_data, model_weights=models.Defaults.model_weights):
     logger.info('Computing activations')
     activations = model_activations(model=model, model_weights=model_weights, layers=layers, stimulus_set=neural_data)
+    # run by layer so that we can store individual scores
     logger.info('Scoring layers')
     layer_scores = {layer_name: score_physiology_layer(model=model, layer=layer_name, activations=layer_activations,
                                                        neural_data=neural_data)
@@ -43,10 +44,11 @@ def score_physiology_layer(model, layer, activations, neural_data):
 
 
 def score_anatomy(model, region_layers):
-    _model_graph = model_graph(model, layers=list(region_layers.values()))
-    _model_graph = combine_graph(_model_graph, region_layers)
+    graph = model_graph(model, layers=list(region_layers.values()))
+    graph = combine_graph(graph, region_layers)
+    graph = cut_graph(graph, keep_nodes=relevant_regions)
     benchmark = load_neural_benchmark(data_name='ventral_stream', metric_name='edge_ratio')
-    score = benchmark(_model_graph)
+    score = benchmark(graph)
     return AnatomyScore(source_assembly=model, y=score.y)
 
 
