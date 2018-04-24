@@ -1,0 +1,22 @@
+name: neurality
+channels:
+- defaults
+- anaconda
+- pytorch
+dependencies:
+  - python>=3.6
+  - keras
+  - pytorch
+  - torchvision
+  - h5py
+  - networkx
+  - scikit-learn
+  - matplotlib
+  - jupyter
+  - pytest
+  - pip:
+    - git+https://github.com/mschrimpf/mkgu
+    - git+https://github.com/mschrimpf/DenseNet.git
+    - git+https://github.com/rcmalli/keras-squeezenet.git
+    - pillow
+    - llist
