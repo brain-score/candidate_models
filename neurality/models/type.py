@@ -1,9 +1,6 @@
 import logging
 from enum import Enum
 
-import keras
-import torch
-
 logger = logging.getLogger(__name__)
 
 
@@ -13,6 +10,9 @@ class ModelType(Enum):
 
 
 def get_model_type(model):
+    import keras
+    import torch
+
     if isinstance(model, keras.engine.topology.Container):
         return ModelType.KERAS
     elif isinstance(model, torch.nn.Module):
