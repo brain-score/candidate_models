@@ -1,15 +1,17 @@
 import argparse
 import logging
-import os
 import sys
 
-from neurality.storage import store
-from neurality.assemblies import load_stimuli
+import numpy as np
+
+from mkgu.assemblies import NeuroidAssembly
+from neurality.assemblies import load_stimulus_set
 from neurality.models.graph import get_model_graph, cut_graph
 from neurality.models.implementations import model_mappings, prepare_images, create_model, find_images, load_images
 from neurality.models.outputs import get_model_outputs
 from neurality.models.type import ModelType, get_model_type
 from neurality.models.type import ModelType, get_model_type, PYTORCH_SUBMODULE_SEPARATOR
+from neurality.storage import store
 
 _logger = logging.getLogger(__name__)
 
@@ -27,21 +29,41 @@ def model_activations(model, layers, stimulus_set, model_weights=Defaults.model_
                       image_size=Defaults.image_size, pca_components=Defaults.pca_components,
                       batch_size=Defaults.batch_size):
     _logger.info('Loading stimuli')
-    stimuli = load_stimuli(stimulus_set)
-    image_filepaths = stimuli.paths
-    assert all(map(lambda filepath: (filepath, os.path.isfile(filepath)), image_filepaths))
+    stimulus_set = load_stimulus_set(stimulus_set)
+    stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['hash_id']))
 
-    _logger.info('Loading model')
-    model, preprocess_input = create_model(model, model_weights=model_weights)
+    _logger.info('Creating model')
+    model, preprocess_input = create_model(model, model_weights=model_weights, image_size=image_size)
     model_type = get_model_type(model)
     _verify_model_layers(model, layers)
 
     _logger.info('Computing activations')
-    images = load_images(image_filepaths=image_filepaths, preprocess_input=preprocess_input,
+    images = load_images(image_filepaths=stimuli_paths, preprocess_input=preprocess_input,
                          model_type=model_type, image_size=image_size)
-    activations = get_model_outputs(model, images, layers,
-                                    batch_size=batch_size, pca_components=pca_components)
-    return activations
+    layer_activations = get_model_outputs(model, images, layers,
+                                          batch_size=batch_size, pca_components=pca_components)
+
+    _logger.info('Packaging into assembly')
+    activations = np.array(list(layer_activations.values())).transpose([1, 0, 2])  # images x layer x activations
+    assert activations.shape[0] == len(stimulus_set)
+    assert activations.shape[1] == len(layer_activations)
+    layers = np.array(list(layer_activations.keys()))
+    layers = np.repeat(layers[:, np.newaxis], repeats=activations.shape[-1], axis=1)
+
+    activations = np.reshape(activations, [activations.shape[0], np.prod(activations.shape[1:])])
+    layers = np.reshape(layers, [np.prod(activations.shape[1:])])
+
+    model_assembly = NeuroidAssembly(
+        activations,
+        coords={'image_id': stimulus_set['hash_id'],
+                'neuroid_id': list(range(activations.shape[1]))},
+        dims=['image_id', 'neuroid_id']
+    )
+    model_assembly['layer'] = 'neuroid_id', layers
+    for column in stimulus_set.columns:
+        model_assembly[column] = 'image_id', stimulus_set[column]
+    model_assembly = model_assembly.stack(presentation=('image_id',), neuroid=('neuroid_id',))
+    return model_assembly
 
 
 def model_graph(model, layers):
