@@ -4,10 +4,6 @@ import os
 from glob import iglob
 
 import numpy as np
-import torch
-from PIL import Image
-from torch.autograd import Variable
-from torchvision.transforms import transforms
 
 from neurality.models.type import get_model_type, ModelType
 from neurality.storage import cache
@@ -94,6 +90,7 @@ model_mappings = {
 
 @cache()
 def create_model(model_name, model_weights, image_size):
+    import torch
     model, preprocessing = model_mappings[model_name](image_size, weights=model_weights)
     if get_model_type(model) == ModelType.PYTORCH and torch.cuda.is_available():
         model.cuda()
@@ -124,8 +121,11 @@ def find_images(images_directory):
 
 
 def load_images(image_filepaths, model_type, preprocess_input, image_size):
+    import torch
+    from torch.autograd import Variable
     load_image = {ModelType.KERAS: functools.partial(load_image_keras, image_size=image_size),
                   ModelType.PYTORCH: load_image_pytorch}[model_type]
+    logging.getLogger("PIL").setLevel(logging.WARNING)  # PIL in the PyTorch logs way too much
     images = [preprocess_input(load_image(image_filepath)) for image_filepath in image_filepaths]
     concat = {ModelType.KERAS: np.concatenate,
               ModelType.PYTORCH: lambda _images: Variable(torch.cat(_images))}[model_type]
@@ -144,6 +144,7 @@ def load_image_keras(image_filepath, image_size):
 
 
 def load_image_pytorch(image_filepath):
+    from PIL import Image
     with Image.open(image_filepath) as image:
         # work around to https://github.com/python-pillow/Pillow/issues/1144,
         # see https://stackoverflow.com/a/30376272/2225200
@@ -151,6 +152,7 @@ def load_image_pytorch(image_filepath):
 
 
 def torchvision_preprocess_input(image_size, normalize_mean=[0.485, 0.456, 0.406], normalize_std=[0.229, 0.224, 0.225]):
+    from torchvision.transforms import transforms
     return transforms.Compose([
         transforms.Resize(image_size),
         transforms.ToTensor(),
