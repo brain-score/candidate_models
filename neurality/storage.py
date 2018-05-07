@@ -7,8 +7,15 @@ from collections import defaultdict, OrderedDict
 from typing import Union
 
 import numpy as np
+import xarray as xr
 
 from mkgu.assemblies import merge_data_arrays
+
+
+def get_function_identifier(function, call_args):
+    function_identifier = os.path.join(function.__module__ + '.' + function.__name__,
+                                       ','.join('{}={}'.format(key, value) for key, value in call_args.items()))
+    return function_identifier
 
 
 class _Storage(object):
@@ -43,9 +50,7 @@ class _Storage(object):
 
     def get_function_identifier(self, function, call_args):
         call_args = {key: value for key, value in call_args.items() if key not in self.identifier_ignore}
-        function_identifier = os.path.join(function.__module__ + '.' + function.__name__,
-                                           ','.join('{}={}'.format(key, value) for key, value in call_args.items()))
-        return function_identifier
+        return get_function_identifier(function, call_args)
 
     def is_stored(self, function_identifier):
         raise NotImplementedError()
@@ -197,6 +202,8 @@ class _XarrayStorage(_DiskStorage):
             dim_indexes = {dim: slice(None) if dim not in coord_dims else np.where(indexer)[0]
                            for dim in data.dims}
             data = data.isel(**dim_indexes)
+        data = data.sortby([xr.DataArray(list(range(len(coord_value))), [(coord, coord_value)])
+                            for coord, coord_value in coords.items() if is_iterable(coord_value)])
         return data
 
     def _combine_call_args(self, uncomputed_combinations):
@@ -225,6 +232,8 @@ class _MemoryStorage(_Storage):
 def is_iterable(x):
     try:
         iter(x)
+        if isinstance(x, str):
+            return False
         return True
     except TypeError:
         return False
