@@ -14,13 +14,15 @@ seaborn.set()
 def plot(model, layers=None, neural_data=neurality.Defaults.neural_data):
     layers = layers or model_layers[model]
     score = score_physiology(model=model, layers=layers, neural_data=neural_data)
-    for region in np.unique(score.center['region']):
+    regions = np.unique(score.center['region'])
+    for region in regions:
         region_data = score.center.sel(region=region)
         x = region_data['layer'].values
         errs = score.error.sel(region=region)
         pyplot.errorbar(x=x, y=region_data.values, yerr=errs.values)
         ax = pyplot.gca()
         ax.set_xticklabels(x, rotation=90)
+    pyplot.legend(regions)
 
 
 if __name__ == '__main__':
