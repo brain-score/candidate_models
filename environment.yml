@@ -12,6 +12,7 @@ dependencies:
   - networkx
   - scikit-learn
   - matplotlib
+  - seaborn
   - jupyter
   - pytest
   - pip:
