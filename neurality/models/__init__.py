@@ -11,7 +11,7 @@ from neurality.models.implementations import model_mappings, prepare_images, cre
 from neurality.models.outputs import get_model_outputs
 from neurality.models.type import ModelType, get_model_type
 from neurality.models.type import ModelType, get_model_type, PYTORCH_SUBMODULE_SEPARATOR
-from neurality.storage import store
+from neurality.storage import store_xarray
 
 _logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class Defaults(object):
     stimulus_set = 'dicarlo.Majaj2015'
 
 
-@store()
+@store_xarray(identifier_ignore=['batch_size', 'layers'], combine_fields={'layers': 'layer'})
 def model_activations(model, layers, stimulus_set, model_weights=Defaults.model_weights,
                       image_size=Defaults.image_size, pca_components=Defaults.pca_components,
                       batch_size=Defaults.batch_size):

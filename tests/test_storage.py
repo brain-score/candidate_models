@@ -11,7 +11,7 @@ class TestXarrayStore:
     def test_same(self):
         function_called = False
 
-        @store_xarray(storage_directory=tempfile.mkdtemp(), filename_ignore=['x'])
+        @store_xarray(storage_directory=tempfile.mkdtemp(), identifier_ignore=['x'], combine_fields=['x'])
         def func(x, base=1):
             nonlocal function_called
             assert not function_called
@@ -28,7 +28,7 @@ class TestXarrayStore:
         test()
 
     def test_complimentary(self):
-        @store_xarray(storage_directory=tempfile.mkdtemp(), filename_ignore=['x'])
+        @store_xarray(storage_directory=tempfile.mkdtemp(), identifier_ignore=['x'], combine_fields=['x'])
         def func(x, base=1):
             return xr.DataArray(x, coords={'x': x, 'base': ('x', [base])}, dims='x')
 
@@ -36,7 +36,7 @@ class TestXarrayStore:
         np.testing.assert_array_equal(func([2]), 2)
 
     def test_missing_coord(self):
-        @store_xarray(storage_directory=tempfile.mkdtemp(), filename_ignore=['x'])
+        @store_xarray(storage_directory=tempfile.mkdtemp(), identifier_ignore=['x'], combine_fields=['x'])
         def func(x, base=1):
             return xr.DataArray(x, coords={'x': x}, dims='x')
 
@@ -46,7 +46,7 @@ class TestXarrayStore:
     def test_combined(self):
         expected_x = None
 
-        @store_xarray(storage_directory=tempfile.mkdtemp(), filename_ignore=['x'])
+        @store_xarray(storage_directory=tempfile.mkdtemp(), identifier_ignore=['x'], combine_fields=['x'])
         def func(x, base=1):
             assert len(x) == 1 and x[0] == expected_x
             return xr.DataArray(x, coords={'x': x, 'base': ('x', [base])}, dims='x')
