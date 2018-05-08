@@ -203,7 +203,8 @@ class _XarrayStorage(_DiskStorage):
                            for dim in data.dims}
             data = data.isel(**dim_indexes)
         data = data.sortby([xr.DataArray(list(range(len(coord_value))), [(coord, coord_value)])
-                            for coord, coord_value in coords.items() if is_iterable(coord_value)])
+                            for coord, coord_value in coords.items()
+                            if is_iterable(coord_value) and len(coord_value) > 1])
         return data
 
     def _combine_call_args(self, uncomputed_combinations):
