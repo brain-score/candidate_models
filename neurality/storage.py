@@ -202,7 +202,7 @@ class _XarrayStorage(_DiskStorage):
             dim_indexes = {dim: slice(None) if dim not in coord_dims else np.where(indexer)[0]
                            for dim in data.dims}
             data = data.isel(**dim_indexes)
-        data = data.sortby([xr.DataArray(list(range(len(coord_value))), [(coord, coord_value)])
+        data = data.sortby([self._build_sort_array(coord, coord_value, data)
                             for coord, coord_value in coords.items()
                             if is_iterable(coord_value) and len(coord_value) > 1])
         return data
@@ -213,6 +213,12 @@ class _XarrayStorage(_DiskStorage):
             for key, value in combination.items():
                 call_args[key].append(value)
         return call_args
+
+    def _build_sort_array(self, coord, coord_value, data):
+        dims = data[coord].dims
+        assert len(dims) == 1
+        s = xr.DataArray(list(range(len(coord_value))), [(coord, coord_value)])
+        return s.stack(**{dims[0]: [coord]})
 
 
 class _MemoryStorage(_Storage):
