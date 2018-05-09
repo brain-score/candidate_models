@@ -12,7 +12,9 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)-1
 class TestScorePhysiology:
     def test_alexnet(self):
         score = score_physiology(model='alexnet', layers=model_layers['alexnet'], neural_data='dicarlo.Majaj2015')
-        assert score.center == approx(0.58, rel=0.005)
+        assert score.center.sel(region='IT').max() == approx(0.64, rel=0.005)  # was 0.58
+        assert score.center.sel(region='V4', layer='features.2') == approx(0.58, rel=0.005)  # was 0.36
+        assert score.center.sel(region='IT', layer='classifier.6') == approx(0.50, rel=0.005)  # was 0.45
 
     def test_alexnet_conv5(self):
         score = score_physiology(model='alexnet', layers=['features.12'], neural_data='dicarlo.Majaj2015')
