@@ -87,6 +87,71 @@ model_mappings = {
     'nasnet': nasnet
 }
 
+model_layers = {
+    'alexnet':
+        ['features.2', 'features.5', 'features.7', 'features.9', 'features.12',
+         'classifier.2', 'classifier.5', 'classifier.6'],
+    'vgg16':
+        ['block1_pool', 'block2_pool', 'block3_pool', 'block4_pool', 'block5_pool',
+         'fc1', 'fc2'],
+    'densenet':
+        ['activation_1', 'activation_4', 'activation_7', 'activation_10', 'activation_13',
+         'activation_16', 'activation_19', 'activation_22', 'activation_25', 'activation_28',
+         'activation_31', 'activation_34', 'activation_37', 'activation_40', 'activation_43',
+         'activation_46', 'activation_49', 'activation_52', 'activation_55', 'activation_58',
+         'activation_61', 'activation_64', 'activation_67', 'activation_70', 'activation_73',
+         'activation_76', 'activation_79', 'activation_82', 'activation_85', 'activation_88',
+         'activation_91', 'activation_94', 'activation_97', 'activation_100', 'activation_103',
+         'activation_106', 'activation_109', 'activation_112', 'activation_115', 'activation_118',
+         'activation_121'],
+    'squeezenet':
+        ['pool1', 'fire2/concat', 'fire3/concat', 'fire4/concat', 'fire5/concat',
+         'fire6/concat', 'fire7/concat', 'fire8/concat', 'fire9/concat', 'relu_conv10'],
+    'mobilenet':
+        ['conv1_relu', 'conv_dw_1_relu', 'conv_pw_1_relu',
+         'conv_dw_2_relu', 'conv_pw_2_relu',
+         'conv_dw_3_relu', 'conv_pw_3_relu',
+         'conv_dw_4_relu', 'conv_pw_4_relu',
+         'conv_dw_5_relu', 'conv_pw_5_relu',
+         'conv_dw_6_relu', 'conv_pw_6_relu',
+         'conv_dw_7_relu', 'conv_pw_7_relu',
+         'conv_dw_8_relu', 'conv_pw_8_relu',
+         'conv_dw_9_relu', 'conv_pw_9_relu',
+         'conv_dw_10_relu', 'conv_pw_10_relu',
+         'conv_dw_11_relu', 'conv_pw_11_relu',
+         'conv_dw_12_relu', 'conv_pw_12_relu',
+         'conv_dw_13_relu', 'conv_pw_13_relu',
+         'global_average_pooling2d_1', 'act_softmax'],
+    'resnet50':
+        ['activation_1', 'activation_2', 'activation_3', 'activation_4', 'activation_5',
+         'activation_6', 'activation_7', 'activation_8', 'activation_9', 'activation_10',
+         'activation_11', 'activation_12', 'activation_13', 'activation_14', 'activation_15',
+         'activation_16', 'activation_17', 'activation_18', 'activation_19', 'activation_20',
+         'activation_21', 'activation_22', 'activation_23', 'activation_24', 'activation_25',
+         'activation_26', 'activation_27', 'activation_28', 'activation_29', 'activation_30',
+         'activation_31', 'activation_32', 'activation_33', 'activation_34', 'activation_35',
+         'activation_36', 'activation_37', 'activation_38', 'activation_39', 'activation_40',
+         'activation_41', 'activation_42', 'activation_43', 'activation_44', 'activation_45',
+         'activation_46', 'activation_47', 'activation_48', 'activation_49'],
+    'resnet152':
+        ['relu',
+         'layer1.0.relu', 'layer1.1.relu', 'layer1.2.relu',
+         'layer2.0.relu', 'layer2.1.relu', 'layer2.2.relu', 'layer2.3.relu', 'layer2.4.relu',
+         'layer2.5.relu', 'layer2.6.relu', 'layer2.7.relu',
+         'layer3.0.relu', 'layer3.1.relu', 'layer3.2.relu', 'layer3.3.relu', 'layer3.4.relu',
+         'layer3.5.relu', 'layer3.6.relu', 'layer3.7.relu', 'layer3.8.relu', 'layer3.9.relu',
+         'layer3.10.relu', 'layer3.11.relu', 'layer3.12.relu', 'layer3.13.relu', 'layer3.14.relu',
+         'layer3.15.relu', 'layer3.16.relu', 'layer3.17.relu', 'layer3.18.relu', 'layer3.19.relu',
+         'layer3.20.relu', 'layer3.21.relu', 'layer3.22.relu', 'layer3.23.relu', 'layer3.24.relu',
+         'layer3.25.relu', 'layer3.26.relu', 'layer3.27.relu', 'layer3.28.relu', 'layer3.29.relu',
+         'layer3.30.relu', 'layer3.31.relu', 'layer3.32.relu', 'layer3.33.relu', 'layer3.34.relu', 'layer3.35.relu',
+         'layer4.0.relu', 'layer4.1.relu', 'layer4.2.relu',
+         'fc'],
+    'inception_v3':
+        ['mixed0', 'mixed1', 'mixed2', 'mixed3', 'mixed4', 'mixed5',
+         'mixed6', 'mixed7', 'mixed8', 'mixed9', 'mixed10'],
+}
+
 
 @cache()
 def create_model(model_name, model_weights, image_size):
