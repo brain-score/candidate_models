@@ -3,8 +3,10 @@ import logging
 import sys
 
 import numpy as np
+import xarray as xr
 
-from mkgu.assemblies import NeuroidAssembly
+from mkgu.assemblies import NeuroidAssembly, merge_data_arrays
+from mkgu.metrics import subset, get_modified_coords
 from neurality.assemblies import load_stimulus_set
 from neurality.models.graph import get_model_graph, cut_graph
 from neurality.models.implementations import model_mappings, prepare_images, create_model, find_images, load_images
@@ -24,10 +26,51 @@ class Defaults(object):
     stimulus_set = 'dicarlo.Majaj2015'
 
 
+def model_multi_activations(model, layerss, stimulus_set=Defaults.stimulus_set, model_weights=Defaults.model_weights,
+                            image_size=Defaults.image_size, pca_components=Defaults.pca_components,
+                            batch_size=Defaults.batch_size):
+    single_layers = []
+    for layers in layerss:
+        if isinstance(layers, str):
+            single_layers.append(layers)
+        else:
+            for layer in layers:
+                single_layers.append(layer)
+    single_layers = list(set(single_layers))
+    single_layer_activations = model_activations(model, single_layers, stimulus_set, model_weights=model_weights,
+                                                 image_size=image_size, pca_components=pca_components,
+                                                 batch_size=batch_size)
+
+    multi_layer_activations = []
+    for layers in layerss:
+        layers_target = xr.DataArray(np.full(len(layers), np.nan), coords={'layer': layers}, dims=['layer'])
+        layers_target = layers_target.stack(neuroid=['layer'])
+        layers_activations = subset(single_layer_activations, layers_target, dims_must_match=False)
+        # at this point, layers_activations are concatenated across layers
+        # BUT they will be disconnected again later due to layer being an adjacent coordinate.
+        # we set `layer` to the concatenated coords and keep the original `layer` in another coord.
+        noncombined_layers = layers_activations['layer'].dims, layers_activations['layer'].values
+
+        def modify_coord(name, dims, values):
+            # we can't build a list here because xarray won't allow that later on. instead, combine with string join
+            return name, (dims, values if name != 'layer' else np.repeat(",".join(layers), len(values)))
+
+        coords = get_modified_coords(layers_activations, modify_coord)
+        coords['noncombined_layer'] = noncombined_layers
+        layers_activations = NeuroidAssembly(layers_activations.values, coords=coords, dims=layers_activations.dims)
+
+        multi_layer_activations.append(layers_activations)
+    return merge_data_arrays(multi_layer_activations)
+
+
 @store_xarray(identifier_ignore=['batch_size', 'layers'], combine_fields={'layers': 'layer'})
-def model_activations(model, layers, stimulus_set, model_weights=Defaults.model_weights,
+def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_weights=Defaults.model_weights,
                       image_size=Defaults.image_size, pca_components=Defaults.pca_components,
                       batch_size=Defaults.batch_size):
+    for layer in layers:
+        if not isinstance(layer, str):
+            raise ValueError("This method does not allow multi-layer activations. "
+                             "Use model_multi_activations instead.")
     _logger.info('Loading stimuli')
     stimulus_set = load_stimulus_set(stimulus_set)
     stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['hash_id']))
