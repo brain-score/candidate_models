@@ -30,6 +30,12 @@ def vgg16(image_size, weights='imagenet'):
     return model, preprocess_input
 
 
+def vgg19(image_size, weights='imagenet'):
+    from keras.applications.vgg19 import VGG19, preprocess_input
+    model = VGG19(input_shape=(image_size, image_size, 3), weights=weights)
+    return model, preprocess_input
+
+
 def mobilenet(image_size, weights='imagenet'):
     from keras.applications.mobilenet import MobileNet, preprocess_input
     model = MobileNet(input_shape=(image_size, image_size, 3), weights=weights)
@@ -49,6 +55,13 @@ def resnet152(image_size, weights='imagenet'):
     return model, torchvision_preprocess_input(image_size=image_size)
 
 
+def resnet18(image_size, weights='imagenet'):
+    from torchvision.models.resnet import resnet18
+    assert weights in ['imagenet', None]
+    model = resnet18(pretrained=weights == 'imagenet')
+    return model, torchvision_preprocess_input(image_size=image_size)
+
+
 def inception_v3(image_size, weights='imagenet'):
     from keras.applications.inception_v3 import InceptionV3, preprocess_input
     model = InceptionV3(input_shape=(image_size, image_size, 3), weights=weights)
@@ -61,9 +74,21 @@ def inception_resnet_v2(image_size, weights='imagenet'):
     return model, preprocess_input
 
 
-def nasnet(image_size, weights='imagenet'):
-    from keras.applications.nasnet import NASNet, preprocess_input
-    model = NASNet(input_shape=(image_size, image_size, 3), weights=weights)
+def nasnet_large(image_size, weights='imagenet'):
+    from keras.applications.nasnet import NASNetLarge, preprocess_input
+    model = NASNetLarge(input_shape=(image_size, image_size, 3), weights=weights)
+    return model, preprocess_input
+
+
+def nasnet_mobile(image_size, weights='imagenet'):
+    from keras.applications.nasnet import NASNetMobile, preprocess_input
+    model = NASNetMobile(input_shape=(image_size, image_size, 3), weights=weights)
+    return model, preprocess_input
+
+
+def xception(image_size, weights='imagenet'):
+    from keras.applications.xception import Xception, preprocess_input
+    model = Xception(input_shape=(image_size, image_size, 3), weights=weights)
     return model, preprocess_input
 
 
@@ -77,14 +102,18 @@ def alexnet(image_size, weights='imagenet'):
 model_mappings = {
     'alexnet': alexnet,
     'vgg16': vgg16,
+    'vgg19': vgg19,
     'densenet': densenet,
     'squeezenet': squeezenet,
     'mobilenet': mobilenet,
+    'resnet18': resnet18,
     'resnet50': resnet50,
     'resnet152': resnet152,
     'inception_v3': inception_v3,
     'inception_resnet_v2': inception_resnet_v2,
-    'nasnet': nasnet
+    'xception': xception,
+    'nasnet_large': nasnet_large,
+    'nasnet_mobile': nasnet_mobile,
 }
 
 model_layers = {
