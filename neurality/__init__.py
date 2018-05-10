@@ -2,7 +2,8 @@ import logging
 
 from neurality import models
 from neurality.assemblies import load_neural_benchmark, load_stimulus_set
-from neurality.models import model_activations, model_graph
+from neurality.models import model_activations, model_graph, model_multi_activations, \
+    combine_layers_xarray, split_layers_xarray
 from neurality.models.graph import combine_graph, cut_graph
 from neurality.models.implementations import model_layers
 from neurality.storage import store, store_xarray
@@ -14,7 +15,6 @@ class Defaults(object):
     neural_data = 'dicarlo.majaj2015'
 
 
-@store()
 def score_model(model, layers, neural_data=Defaults.neural_data, model_weights=models.Defaults.model_weights):
     physiology_score = score_physiology(model=model, layers=layers, neural_data=neural_data,
                                         model_weights=model_weights)
@@ -22,7 +22,21 @@ def score_model(model, layers, neural_data=Defaults.neural_data, model_weights=m
     return [physiology_score, anatomy_score]
 
 
-@store_xarray(identifier_ignore=['layers'], combine_fields={'layers': 'layer'}, sub_fields=True)
+def _combine_layers(key, value):
+    if key != 'layer':
+        return value
+    return [combine_layers_xarray(layers) if not isinstance(layers, str) else layers for layers in value]
+
+
+def _un_combine_layers(key, value):
+    if key != 'layer':
+        return value
+    return [split_layers_xarray(layers) if ',' in layers else layers for layers in value]
+
+
+@store_xarray(identifier_ignore=['layers'], combine_fields={'layers': 'layer'},
+              map_field_values=_combine_layers, map_field_values_inverse=_un_combine_layers,
+              sub_fields=True)
 def score_physiology(model, layers=None,
                      model_weights=models.Defaults.model_weights, pca_components=models.Defaults.pca_components,
                      neural_data=Defaults.neural_data, metric_name='neural_fit'):
@@ -37,8 +51,8 @@ def score_physiology(model, layers=None,
     """
     layers = layers or model_layers[model]
     logger.info('Computing activations')
-    model_assembly = model_activations(model=model, model_weights=model_weights, layers=layers,
-                                       pca_components=pca_components, stimulus_set=neural_data)
+    model_assembly = model_multi_activations(model=model, model_weights=model_weights, multi_layers=layers,
+                                             pca_components=pca_components, stimulus_set=neural_data)
     logger.info('Loading benchmark')
     benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name)
     logger.info('Scoring activations')

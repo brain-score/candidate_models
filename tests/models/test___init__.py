@@ -26,17 +26,17 @@ class TestModelActivations:
 
 class TestModelMultiActivations:
     def test_single_layer(self):
-        activations = model_multi_activations(model='alexnet', layerss=[['features.12']])
+        activations = model_multi_activations(model='alexnet', multi_layers=[['features.12']])
         assert unique_preserved_order(activations['layer']) == 'features.12'
 
     def test_combine_two(self):
-        activations = model_multi_activations(model='alexnet', layerss=[['features.12', 'classifier.2']])
+        activations = model_multi_activations(model='alexnet', multi_layers=[['features.12', 'classifier.2']])
         assert len(np.unique(activations['layer'])) == 1
         assert unique_preserved_order(activations['layer']) == 'features.12,classifier.2'
 
     def test_combine_two_two(self):
         activations = model_multi_activations(model='alexnet',
-                                              layerss=[['features.2', 'features.5'], ['features.12', 'classifier.2']])
+                                              multi_layers=[['features.2', 'features.5'], ['features.12', 'classifier.2']])
         assert len(np.unique(activations['layer'])) == 2
         np.testing.assert_array_equal(unique_preserved_order(activations['layer']),
                                       ['features.2,features.5', 'features.12,classifier.2'])

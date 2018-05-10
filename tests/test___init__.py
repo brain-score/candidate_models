@@ -1,6 +1,8 @@
 import sys
 
 import logging
+
+import numpy as np
 from pytest import approx
 
 from neurality import score_physiology
@@ -20,3 +22,11 @@ class TestScorePhysiology:
         score = score_physiology(model='alexnet', layers=['features.12'], neural_data='dicarlo.Majaj2015')
         assert score.center.sel(region='IT') == approx(0.62, rel=0.005)
         assert score.center.sel(region='V4') == approx(0.52, rel=0.005)
+
+    def test_alexnet_multilayer(self):
+        score = score_physiology(model='alexnet', layers=[['features.12', 'classifier.2']],
+                                 neural_data='dicarlo.Majaj2015')
+        assert len(np.unique(score.center['layer'])) == 1
+        assert np.unique(score.center['layer']) == 'features.12,classifier.2'
+        assert score.center.sel(region='IT') == approx(0.63, rel=0.005)
+        assert score.center.sel(region='V4') == approx(0.53, rel=0.005)

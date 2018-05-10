@@ -26,11 +26,12 @@ class Defaults(object):
     stimulus_set = 'dicarlo.Majaj2015'
 
 
-def model_multi_activations(model, layerss, stimulus_set=Defaults.stimulus_set, model_weights=Defaults.model_weights,
+def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_set,
+                            model_weights=Defaults.model_weights,
                             image_size=Defaults.image_size, pca_components=Defaults.pca_components,
                             batch_size=Defaults.batch_size):
     single_layers = []
-    for layers in layerss:
+    for layers in multi_layers:
         if isinstance(layers, str):
             single_layers.append(layers)
         else:
@@ -42,10 +43,11 @@ def model_multi_activations(model, layerss, stimulus_set=Defaults.stimulus_set, 
                                                  batch_size=batch_size)
 
     multi_layer_activations = []
-    for layers in layerss:
+    for layers in multi_layers:
         layers_target = xr.DataArray(np.full(len(layers), np.nan), coords={'layer': layers}, dims=['layer'])
         layers_target = layers_target.stack(neuroid=['layer'])
         layers_activations = subset(single_layer_activations, layers_target, dims_must_match=False)
+
         # at this point, layers_activations are concatenated across layers
         # BUT they will be disconnected again later due to layer being an adjacent coordinate.
         # we set `layer` to the concatenated coords and keep the original `layer` in another coord.
@@ -53,7 +55,7 @@ def model_multi_activations(model, layerss, stimulus_set=Defaults.stimulus_set, 
 
         def modify_coord(name, dims, values):
             # we can't build a list here because xarray won't allow that later on. instead, combine with string join
-            return name, (dims, values if name != 'layer' else np.repeat(",".join(layers), len(values)))
+            return name, (dims, values if name != 'layer' else np.repeat(combine_layers_xarray(layers), len(values)))
 
         coords = get_modified_coords(layers_activations, modify_coord)
         coords['noncombined_layer'] = noncombined_layers
@@ -61,6 +63,14 @@ def model_multi_activations(model, layerss, stimulus_set=Defaults.stimulus_set, 
 
         multi_layer_activations.append(layers_activations)
     return merge_data_arrays(multi_layer_activations)
+
+
+def combine_layers_xarray(layers):
+    return ",".join(layers)
+
+
+def split_layers_xarray(layers):
+    return layers.split(",")
 
 
 @store_xarray(identifier_ignore=['batch_size', 'layers'], combine_fields={'layers': 'layer'})

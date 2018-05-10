@@ -102,7 +102,9 @@ class _XarrayStorage(_DiskStorage):
     All fields in _combine_fields are combined into one file and loaded lazily
     """
 
-    def __init__(self, combine_fields: Union[list, dict], sub_fields=False, *args, **kwargs):
+    def __init__(self, combine_fields: Union[list, dict], sub_fields=False,
+                 map_field_values=None, map_field_values_inverse=None,
+                 *args, **kwargs):
         """
         :param combine_fields: fields to consider as primary keys together with the filename
             (i.e. fields not excluded by `identifier_ignore`).
@@ -113,12 +115,18 @@ class _XarrayStorage(_DiskStorage):
             self._combine_fields = {field: field for field in combine_fields}
         else:
             self._combine_fields = combine_fields
+        self._combine_fields_inverse = {value: key for key, value in self._combine_fields.items()}
         self._sub_fields = sub_fields
+        if map_field_values:
+            assert map_field_values_inverse
+        self._map_field_values = map_field_values or (lambda key, value: value)
+        self._map_field_values_inverse = map_field_values_inverse or (lambda key, value: value)
 
     def __call__(self, function):
         def wrapper(*args, **kwargs):
             call_args = self.getcallargs(function, *args, **kwargs)
-            infile_call_args = {self._combine_fields[key]: value for key, value in call_args.items()
+            infile_call_args = {self._combine_fields[key]: self._map_field_values(self._combine_fields[key], value)
+                                for key, value in call_args.items()
                                 if key in self._combine_fields}
             function_identifier = self.get_function_identifier(function, call_args)
             stored_result, reduced_call_args = None, call_args
@@ -135,6 +143,8 @@ class _XarrayStorage(_DiskStorage):
                     # need to run more args
                     non_variable_call_args = {key: value for key, value in call_args.items()
                                               if key not in self._combine_fields}
+                    missing_call_args = {self._combine_fields_inverse[key]: self._map_field_values_inverse(key, value)
+                                         for key, value in missing_call_args.items()}
                     reduced_call_args = {**non_variable_call_args, **missing_call_args}
                     self._logger.debug("Computing missing: {}".format(reduced_call_args))
             if reduced_call_args:
@@ -184,20 +194,20 @@ class _XarrayStorage(_DiskStorage):
         uncomputed_combinations = []
         for combination in combinations:
             combination_result = result
-            combination_result = self.filter_data(combination_result, combination)
-            if len(combination_result) == 0:
+            combination_result = self.filter_data(combination_result, combination, single_value=True)
+            if combination_result.size == 0:
                 uncomputed_combinations.append(combination)
         if len(uncomputed_combinations) == 0:
             return {}
         return self._combine_call_args(uncomputed_combinations)
 
-    def filter_data(self, data, coords):
+    def filter_data(self, data, coords, single_value=False):
         for coord, coord_value in coords.items():
             if not hasattr(data, coord):
                 raise ValueError("Coord not found in data: {}".format(coord))
             # when called with a combination instantiation, coord_value will be a single item; iterable for check
-            indexer = np.array([(val == coord_value) if not is_iterable(coord_value) else (val in coord_value)
-                                for val in data[coord].values])
+            indexer = np.array([(val == coord_value) if single_value or not is_iterable(coord_value)
+                                else (val in coord_value) for val in data[coord].values])
             coord_dims = data[coord].dims
             dim_indexes = {dim: slice(None) if dim not in coord_dims else np.where(indexer)[0]
                            for dim in data.dims}
