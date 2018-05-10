@@ -1,6 +1,4 @@
-import argparse
 import logging
-import sys
 
 import numpy as np
 import xarray as xr
@@ -83,7 +81,7 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_w
                              "Use model_multi_activations instead.")
     _logger.info('Loading stimuli')
     stimulus_set = load_stimulus_set(stimulus_set)
-    stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['hash_id']))
+    stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))
 
     _logger.info('Creating model')
     model, preprocess_input = create_model(model, model_weights=model_weights, image_size=image_size)
@@ -108,7 +106,7 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_w
 
     model_assembly = NeuroidAssembly(
         activations,
-        coords={'image_id': stimulus_set['hash_id'],
+        coords={'image_id': stimulus_set['image_id'],
                 'neuroid_id': list(range(activations.shape[1]))},
         dims=['image_id', 'neuroid_id']
     )
@@ -150,29 +148,3 @@ def _verify_model_layers_keras(model, layer_names):
     nonexisting_layers = set(layer_names) - set(model_layers)
     assert len(nonexisting_layers) == 0, "Layers not found in keras model: {} (model layers: {})".format(
         nonexisting_layers, model_layers)
-
-
-def main():
-    parser = argparse.ArgumentParser('model comparison')
-    parser.add_argument('--model', type=str, required=True, choices=list(model_mappings.keys()))
-    parser.add_argument('--model_weights', type=str, default=Defaults.model_weights)
-    parser.add_argument('--no-model_weights', action='store_const', const=None, dest='model_weights')
-    parser.add_argument('--layers', nargs='+', required=True)
-    parser.add_argument('--pca', type=int, default=Defaults.pca_components,
-                        help='Number of components to reduce the flattened features to')
-    parser.add_argument('--image_size', type=int, default=Defaults.image_size)
-    parser.add_argument('--stimulus_set', type=str, default=Defaults.stimulus_set)
-    parser.add_argument('--batch_size', type=int, default=Defaults.batch_size)
-    parser.add_argument('--log_level', type=str, default='INFO')
-    args = parser.parse_args()
-    log_level = logging.getLevelName(args.log_level)
-    logging.basicConfig(stream=sys.stdout, level=log_level)
-    logging.getLogger("PIL").setLevel(logging.WARNING)
-    _logger.info("Running with args %s", vars(args))
-
-    model_activations(model=args.model, layers=args.layers, image_size=args.image_size,
-                      stimulus_set=args.stimulus_set, pca_components=args.pca, batch_size=args.batch_size)
-
-
-if __name__ == '__main__':
-    main()
