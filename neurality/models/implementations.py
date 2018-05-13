@@ -240,9 +240,14 @@ def load_image_keras(image_filepath, image_size):
 def load_image_pytorch(image_filepath):
     from PIL import Image
     with Image.open(image_filepath) as image:
-        # work around to https://github.com/python-pillow/Pillow/issues/1144,
-        # see https://stackoverflow.com/a/30376272/2225200
-        return image.copy()
+        if image.mode.upper() != 'L':  # not binary
+            # work around to https://github.com/python-pillow/Pillow/issues/1144,
+            # see https://stackoverflow.com/a/30376272/2225200
+            return image.copy()
+        # deal with binary image
+        rgbimg = Image.new("RGB", image.size)
+        rgbimg.paste(image)
+        return rgbimg
 
 
 def torchvision_preprocess_input(image_size, normalize_mean=[0.485, 0.456, 0.406], normalize_std=[0.229, 0.224, 0.225]):
