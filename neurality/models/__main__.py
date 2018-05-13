@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--layers', nargs='+', required=True)
     parser.add_argument('--pca', type=int, default=Defaults.pca_components,
                         help='Number of components to reduce the flattened features to')
+    parser.add_argument('--no-pca', action='store_const', const=None, dest='pca')
     parser.add_argument('--image_size', type=int, default=Defaults.image_size)
     parser.add_argument('--stimulus_set', type=str, default=Defaults.stimulus_set)
     parser.add_argument('--batch_size', type=int, default=Defaults.batch_size)

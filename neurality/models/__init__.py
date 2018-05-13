@@ -42,6 +42,8 @@ def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_
 
     multi_layer_activations = []
     for layers in multi_layers:
+        if isinstance(layers, str):
+            layers = [layers]
         layers_target = xr.DataArray(np.full(len(layers), np.nan), coords={'layer': layers}, dims=['layer'])
         layers_target = layers_target.stack(neuroid=['layer'])
         layers_activations = subset(single_layer_activations, layers_target, dims_must_match=False)
