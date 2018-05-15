@@ -1,4 +1,7 @@
+import itertools
 import logging
+import math
+from collections import OrderedDict
 
 import numpy as np
 import xarray as xr
@@ -21,6 +24,7 @@ class Defaults(object):
     pca_components = 1000
     image_size = 224
     batch_size = 64
+    pca_batch_size = 8192
     stimulus_set = 'dicarlo.Majaj2015'
 
 
@@ -73,31 +77,43 @@ def split_layers_xarray(layers):
     return layers.split(",")
 
 
-@store_xarray(identifier_ignore=['batch_size', 'layers'], combine_fields={'layers': 'layer'})
+@store_xarray(identifier_ignore=['layers', 'batch_size', 'pca_batch_size'], combine_fields={'layers': 'layer'})
 def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_weights=Defaults.model_weights,
                       image_size=Defaults.image_size, pca_components=Defaults.pca_components,
-                      batch_size=Defaults.batch_size):
+                      batch_size=Defaults.batch_size, pca_batch_size=Defaults.pca_batch_size):
     for layer in layers:
         if not isinstance(layer, str):
             raise ValueError("This method does not allow multi-layer activations. "
                              "Use model_multi_activations instead.")
-    _logger.info('Loading stimuli')
-    stimulus_set = load_stimulus_set(stimulus_set)
-    stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))
-
     _logger.info('Creating model')
     model, preprocess_input = create_model(model, model_weights=model_weights, image_size=image_size)
     model_type = get_model_type(model)
     _verify_model_layers(model, layers)
 
+    _logger.info('Loading stimuli')
+    stimulus_set = load_stimulus_set(stimulus_set)
+    stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))
+
     _logger.info('Computing activations')
-    images = load_images(image_filepaths=stimuli_paths, preprocess_input=preprocess_input,
-                         model_type=model_type, image_size=image_size)
-    layer_activations = get_model_outputs(model, images, layers,
-                                          batch_size=batch_size, pca_components=pca_components)
+    num_pca_batches = math.ceil(len(stimuli_paths) / pca_batch_size)
+    activations = [None] * num_pca_batches
+    for pca_batch in range(int(num_pca_batches)):
+        _logger.debug("PCA batch {}/{}".format(pca_batch + 1, num_pca_batches))
+        batch_paths = stimuli_paths[pca_batch * pca_batch_size:(pca_batch + 1) * pca_batch_size]
+        images = load_images(image_filepaths=batch_paths, preprocess_input=preprocess_input,
+                             model_type=model_type, image_size=image_size)
+        layer_activations = get_model_outputs(model, images, layers,
+                                              batch_size=batch_size, pca_components=pca_components)
+        activations[pca_batch] = layer_activations
+
+    layer_activations = OrderedDict(
+        (layer_name, list(itertools.chain(*[batch_activations[layer_name] for batch_activations in activations])))
+        for layer_name in activations[0])
 
     _logger.info('Packaging into assembly')
-    activations = np.array(list(layer_activations.values())).transpose([1, 0, 2])  # images x layer x activations
+    activations = np.array(list(layer_activations.values()))
+    # layer x images x activations -> images x layer x activations
+    activations = activations.transpose([1, 0, 2])
     assert activations.shape[0] == len(stimulus_set)
     assert activations.shape[1] == len(layer_activations)
     layers = np.array(list(layer_activations.keys()))
