@@ -119,36 +119,35 @@ model_mappings = {
 model_layers = {
     'alexnet':
         ['features.2', 'features.5', 'features.7', 'features.9', 'features.12',  # conv-relu-[pool]{1,2,3,4,5}
-         'classifier.2', 'classifier.5', 'classifier.6'],  # fc-[relu]{6,7,8}
+         'classifier.2', 'classifier.5'],  # fc-[relu]{6,7,8}
     'vgg16':
-        ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2', 'predictions'],
+        ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
     'densenet':
         ['max_pooling2d_1'] + ['activation_{}'.format(i + 1) for i in range(121)] +
-        ['global_average_pooling2d_2', 'dense1'],
+        ['global_average_pooling2d_1'],
     'squeezenet':
         ['pool1'] + ['fire{}/concat'.format(i + 1) for i in range(1, 9)] +
-        ['relu_conv10', 'global_average_pooling2d_1', 'loss'],
+        ['relu_conv10', 'global_average_pooling2d_1'],
     'mobilenet':
         ['conv1_relu'] + list(itertools.chain(
             *[['conv_dw_{}_relu'.format(i + 1), 'conv_pw_{}_relu'.format(i + 1)] for i in range(13)])) +
-        ['global_average_pooling2d_1', 'act_softmax'],
+        ['global_average_pooling2d_1'],
     'resnet50':
-        ['activation_{}'.format(i + 1) for i in range(49)] + ['avg_pool', 'fc1000'],
+        ['activation_{}'.format(i + 1) for i in range(49)] + ['avg_pool'],
     'resnet152':
         ['relu'] +
         ['layer1.{}.relu'.format(i) for i in range(3)] +
         ['layer2.{}.relu'.format(i) for i in range(8)] +
         ['layer3.{}.relu'.format(i) for i in range(36)] +
-        ['layer4.{}.relu'.format(i) for i in range(3)] +
-        ['fc'],
+        ['layer4.{}.relu'.format(i) for i in range(3)],
     'inception_v3':
-        ['activation_{}'.format(i + 1) for i in range(10)] + ['mixed{}'.format(i) for i in range(11)] + ['predictions'],
+        ['activation_{}'.format(i + 1) for i in range(10)] + ['mixed{}'.format(i) for i in range(11)],
     'inception_resnet_v2':
-        ['activation_{}'.format(i + 1) for i in range(203)] + ['conv_7b_ac', 'predictions'],
+        ['activation_{}'.format(i + 1) for i in range(203)] + ['conv_7b_ac'],
     'nasnet_large':
-        ['activation_{}'.format(i + 1) for i in range(260)] + ['predictions'],
+        ['activation_{}'.format(i + 1) for i in range(260)],
     'nasnet_mobile':
-        ['activation_{}'.format(i + 1) for i in range(188)] + ['predictions'],
+        ['activation_{}'.format(i + 1) for i in range(188)],
 }
 
 
