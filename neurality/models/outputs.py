@@ -16,7 +16,8 @@ def get_model_outputs(model, x, layer_names, batch_size=None, pca_components=Non
     _logger.info('Computing layer outputs')
     model_type = get_model_type(model)
     compute_layer_outputs = {ModelType.KERAS: compute_layer_outputs_keras,
-                             ModelType.PYTORCH: compute_layer_outputs_pytorch}[model_type]
+                              ModelType.PYTORCH: compute_layer_outputs_pytorch,
+                              ModelType.SLIM: compute_layer_outputs_slim}[model_type]
     if batch_size is None or not (0 < batch_size < len(x)):
         _logger.debug("Computing all outputs at once")
         return compute_layer_outputs(layer_names, model, x,
@@ -36,7 +37,11 @@ def get_model_outputs(model, x, layer_names, batch_size=None, pca_components=Non
                 outputs[layer_name] = np.concatenate((outputs[layer_name], layer_output))
         batch_start = batch_end
 
-    return arrange_layer_outputs(outputs, pca_components=pca_components)
+
+def compute_layer_outputs_slim(layer_names, model, images, arrange_output=lambda x: x):
+    layer_outputs = model.run(images, layer_names)
+    return OrderedDict([(layer_name, arrange_output(layer_output)) for layer_name, layer_output
+                        in layer_outputs.items()])
 
 
 def compute_layer_outputs_keras(layer_names, model, x, arrange_output=lambda x: x):

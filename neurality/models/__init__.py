@@ -127,7 +127,8 @@ def model_graph(model, layers):
 def _verify_model_layers(model, layer_names):
     model_type = get_model_type(model)
     _verify_model = {ModelType.KERAS: _verify_model_layers_keras,
-                     ModelType.PYTORCH: _verify_model_layers_pytorch}[model_type]
+                     ModelType.PYTORCH: _verify_model_layers_pytorch,
+                     ModelType.SLIM: _verify_model_layers_slim}[model_type]
     _verify_model(model, layer_names)
 
 
@@ -149,4 +150,11 @@ def _verify_model_layers_keras(model, layer_names):
     model_layers = [layer.name for layer in model.layers]
     nonexisting_layers = set(layer_names) - set(model_layers)
     assert len(nonexisting_layers) == 0, "Layers not found in keras model: {} (model layers: {})".format(
+        nonexisting_layers, model_layers)
+
+
+def _verify_model_layers_slim(model, layer_names):
+    model_layers = list(model.endpoints.keys())
+    nonexisting_layers = set(layer_names) - set(model_layers)
+    assert len(nonexisting_layers) == 0, "Layers not found in slim model: {} (model layers: {})".format(
         nonexisting_layers, model_layers)
