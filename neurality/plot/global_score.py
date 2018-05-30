@@ -1,3 +1,4 @@
+import functools
 import itertools
 import logging
 import os
@@ -8,6 +9,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot
 from matplotlib.ticker import FuncFormatter
+
+pyplot.rcParams['svg.fonttype'] = 'none'
 
 import neurality
 from mkgu.assemblies import merge_data_arrays
@@ -32,8 +35,8 @@ _model_years = {
     'resnet': 2015,
     'inception_v': 2015,
     'mobilenet': 2017,
-    'densenet': 2016,
-    'squeezenet': 2016,
+    'densenet': 2016,  # aug
+    'squeezenet': 2016,  # feb
     'inception_resnet_v2': 2016,
     'nasnet': 2017,
 }
@@ -44,6 +47,11 @@ ceilings = {
     'IT RDM': .895,
     'IT neural': .817,
     'behavioral': .479,
+}
+ceilings = {
+    'neural: V4-neural_fit': .892,
+    'neural: IT-neural_fit': .817,
+    'i2n': .479
 }
 
 model_years = {}
@@ -75,7 +83,7 @@ def parse_neural_data(models, neural_data=neurality.Defaults.neural_data):
         neural_centers, neural_errors = [], []
         for model in models:
             layers = model_layers[model] if not model.startswith('basenet') \
-                else ['basenet-layer']  # ['basenet-layer_v4', 'basenet-layer_it']
+                else ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait']
             neural_score = score_physiology(model=model, layers=layers, neural_data=neural_data, metric_name=metric)
             neural_score = MeanScore(neural_score.values)  # re-package with SEM
             center, error = neural_score.center.max(dim='layer'), neural_score.error.max(dim='layer')
@@ -103,21 +111,16 @@ def prepare_data(models, neural_data):
                      for model in data['model']]
     data['global'] = np.mean(global_scores, axis=1)
     data = data[data['model'].isin(models)]
-    # rank - yields non-integers when there are multiple winners
-    data['rank:neural:V4'] = data['neural: V4-neural_fit'].rank(ascending=False)
-    data['rank:neural:IT'] = data['neural: IT-neural_fit'].rank(ascending=False)
-    data['rank:behavior'] = data['i2n'].rank(ascending=False)
-    data['rank:neural'] = (data['rank:neural:V4'] + data['rank:neural:IT']) / 2
-    data['rank:neural'] = data['rank:neural'].rank(ascending=True)
-    data['rank'] = (data['rank:neural'] + data['rank:behavior']) / 2
-    data['rank'] = data['rank'].rank(ascending=True)
+    # rank
+    data['rank'] = data['global'].rank(ascending=False)
 
     # latex table
     table = data[[not model.startswith('basenet') for model in data['model']]]
-    table = table[['rank', 'model', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n', 'performance']]
-    table = table.sort_values('rank')
+    table = table[['global', 'model', 'performance', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n']]
+    table = table.sort_values('global', ascending=False)
+    table = table.rename(columns={'global': 'Mean Score'})
     table = table.apply(highlight_max)
-    table.to_latex('data.tex', escape=False)
+    table.to_latex('data.tex', escape=False, index=False)
     return data
 
 
@@ -126,8 +129,9 @@ def highlight_max(data):
     is_max = data == data.max()
     if isinstance(next(iter(data)), str):
         return [x.replace('_', '\\_') if isinstance(x, str) else x for x in data]
-    all_ints = all(x.is_integer() for x in data)
-    data = ["{:.02f}".format(x) if not all_ints else "{:.0f}".format(x) for x in data]  # format comma
+    all_ints = all(isinstance(x, int) or x.is_integer() for x in data)
+    data = ["{:.0f}".format(x) if all_ints else "{:.2f}".format(x) if x > 1 else "{:.03f}".format(x).lstrip('0')
+            for x in data]  # format comma
     return [('\\textbf{' + str(x) + '}') if _is_max else x for x, _is_max in zip(data, is_max)]
 
 
@@ -138,6 +142,18 @@ def basenet_filter(data):
 def plot_all(models, neural_data=neurality.Defaults.neural_data, mode=Mode.YEAR_VS_SCORE,
              fit_method='fit', logx=False):
     data = prepare_data(models, neural_data)
+    highlighted_models = [
+        'nasnet_large',
+        'pnasnet_large',  # good performance
+        'resnet-152_v2', 'densenet-169',  # best overall
+        # 'alexnet',
+        'resnet-50_v2',  # good V4
+        # 'mobilenet_v2_0.75_224',  # best mobilenet
+        # 'basenet6_100_1--380000',  # best basenet
+        # 'mobilenet_v1_1.0.224', 'inception_v2',  # good IT
+        'inception_v4',  # good i2n
+        'vgg-16',  # bad
+    ]
 
     if mode == Mode.YEAR_VS_SCORE:
         x = [model_years[model] for model in models]
@@ -166,6 +182,25 @@ def plot_all(models, neural_data=neurality.Defaults.neural_data, mode=Mode.YEAR_
     basenet_alpha = 0.3
     nonbasenet_alpha = 0.7
 
+    ## best models
+
+    for best in ['global', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n', 'performance']:
+        # best_model = data.loc[data[best].idxmax()]
+        best_models = data.nlargest(3, best)
+        print("## {}".format(best))
+        for i, (_, best_model) in enumerate(best_models.iterrows()):
+            print("Top {} model: {}".format(i + 1, best),
+                  best_model[['model', 'global', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n', 'rank',
+                              'performance']])
+        model = best_models.iloc[0]['model']
+        layers = model_layers[model] if not model.startswith('basenet') \
+            else ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait']
+        neural_score = score_physiology(model=model, layers=layers)
+        max = neural_score.center['layer'][neural_score.center.argmax('layer')]
+        print("V4:", max.sel(region='V4').values)
+        print("IT:", max.sel(region='IT').values)
+        print()
+
     figs = {}
 
     def xtick_formatter(x, pos, pad=True):
@@ -174,11 +209,14 @@ def plot_all(models, neural_data=neurality.Defaults.neural_data, mode=Mode.YEAR_
         formatted as -.4)."""
         val_str = '{:.02f}'.format(x) if pad else '{:.2g}'.format(x)
         if 0 <= np.abs(x) <= 1:
+            if np.abs(x) == 0:
+                return '.0'
             return val_str.replace("0", "", 1)
         else:
             return val_str
 
     major_formatter = FuncFormatter(xtick_formatter)
+    major_formatter_nopad = FuncFormatter(functools.partial(xtick_formatter, pad=False))
 
     def post(ax, formatter=major_formatter):
         # ax.set_ylim([0, .85])
@@ -193,8 +231,8 @@ def plot_all(models, neural_data=neurality.Defaults.neural_data, mode=Mode.YEAR_
     # neural
     regions = ['V4', 'IT']
     metrics = ['neural_fit']  # , 'rdm']
+    fig, ax = pyplot.subplots()
     for region, metric in itertools.product(regions, metrics):
-        fig, ax = pyplot.subplots()
         plot_neural(ax=ax, data=data[basenets], fit_method=fit_method, region=region, metric=metric,
                     color=score_color_mapping['basenet'], scatter_alpha=basenet_alpha)
         plot_neural(ax=ax, data=data[nonbasenets], fit_method=fit_method, region=region, metric=metric,
@@ -213,57 +251,148 @@ def plot_all(models, neural_data=neurality.Defaults.neural_data, mode=Mode.YEAR_
         post(ax)
         figs['behavior-' + metric] = fig
 
+    # neural + behavioral
+    fields = ['neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n']
+    err_fields = ['neural-error: V4-neural_fit', 'neural-error: IT-neural_fit', None]
+    colors = ['V4', 'IT', 'behavior']
+    add_ys = [0, 0, 0]  # [0.15, 0.15, 0.2]
+    fig = pyplot.figure(figsize=(10, 5))
+    axs = []
+    # fig, axs = pyplot.subplots(1, 3, sharex=True, sharey=False, figsize=(10, 5))
+    for i, (field, err_field, add_y, color) in enumerate(zip(fields, err_fields, add_ys, colors)):
+        ax = fig.add_subplot(1, 3, i + 1, sharey=None if i != 1 else axs[0])
+        axs.append(ax)
+        # plot_field(ax=ax, data=data[basenets], field=field, err_field=err_field, label=field,
+        #            color=score_color_mapping['basenet'], scatter_alpha=basenet_alpha, fit_method=None)
+        plot_field(ax=ax, data=data[nonbasenets], field=field, err_field=err_field, label=field,
+                   color=score_color_mapping[color], scatter_alpha=nonbasenet_alpha, fit_method=None)
+        # ceiling
+        ceiling = ceilings[field]
+        ax.plot(ax.get_xlim(), [ceiling, ceiling],
+                linestyle='dashed', linewidth=1., color=score_color_mapping['basenet'])
+        # highlight
+        for highlighted_model in highlighted_models:
+            row = data[data['model'] == highlighted_model]
+            if len(row) == 0:
+                continue
+            row = row.iloc[0]
+            x, y = row['performance'], row[field]
+            highlight(ax, highlighted_model, x, y)
+        ax.set_ylim([ax.get_ylim()[0], ax.get_ylim()[1] + add_y])
+        ax.set_title(color)
+        ax.yaxis.set_major_formatter(major_formatter_nopad)
+        clean_axis(ax)
+        if i == 0:
+            ax.set_ylabel('Brain-Score')
+        if i == 1:
+            for tk in ax.get_yticklabels():
+                tk.set_visible(False)
+        if i == 2:
+            ax.yaxis.tick_right()
+
+        # curve fit
+        x, y = data[nonbasenets]['x'], data[nonbasenets][field]
+        indices = np.argsort(x)
+        x, y = np.array(x)[indices], np.array(y)[indices]
+        z = np.polyfit(x, y, 2)
+        f = np.poly1d(z)
+        y_fit = f(x)
+        # ax.plot(x, y_fit, color=score_color_mapping[color], linewidth=2., linestyle='dashed')
+    ax = fig.add_subplot(111, frameon=False)
+    ax.grid('off')
+    ax.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
+    ax.set_xlabel('Imagenet performance (% top-1)', labelpad=5)
+
+    pyplot.tight_layout()
+    # fig.text(0.5, 0.01, 'Imagenet performance (% top-1)', ha='center')
+    figs['subplots'] = fig
+
     # global
     fig, ax = pyplot.subplots()
     plot_global(ax, data[basenets], fit_method, color=score_color_mapping['basenet'], scatter_alpha=basenet_alpha)
     plot_global(ax, data[nonbasenets], fit_method, scatter_alpha=nonbasenet_alpha)
-    # basenets: linear fit
-    x, y = data[basenets]['x'], data[basenets]['rank']
-    indices = np.argsort(x)
-    x, y = np.array(x)[indices], np.array(y)[indices]
-    z = np.polyfit(x, y, 1)
-    f = np.poly1d(z)
-    x = np.append(x, 80)
-    y_fit = f(x)
-    ax.plot(x, y_fit, color=score_color_mapping['basenet'], linewidth=2., linestyle='dashed')
+    # highlight
+    for highlighted_model in highlighted_models:
+        row = data[data['model'] == highlighted_model]
+        if len(row) == 0:
+            continue
+        row = row.iloc[0]
+        x, y = row['performance'], row['global']
+        highlight(ax, highlighted_model, x, y)
+    post(ax, formatter=None)  # major_formatter_nopad)
+    ax.set_ylabel('Mean BrainScore')
+    figs['global'] = fig
+
+    # rank
+    fig, ax = pyplot.subplots()
+    plot_rank(ax, data[basenets], fit_method, color=score_color_mapping['basenet'], scatter_alpha=basenet_alpha)
+    plot_rank(ax, data[nonbasenets], fit_method, scatter_alpha=nonbasenet_alpha)
+    # highlight
+    for highlighted_model in highlighted_models:
+        row = data[data['model'] == highlighted_model]
+        if len(row) == 0:
+            continue
+        row = row.iloc[0]
+        x, y = row['performance'], row['rank']
+        highlight(ax, highlighted_model, x, y)
     # SOTA: curve fit
-    x, y = data[nonbasenets]['x'], data[nonbasenets]['rank']
+    x, y = data['x'], data['rank']
     indices = np.argsort(x)
     x, y = np.array(x)[indices], np.array(y)[indices]
     z = np.polyfit(x, y, 3)
     f = np.poly1d(z)
-    # for i in reversed(range(int(min(x)))):
-    #     x = np.insert(x, 0, i)
     y_fit = f(x)
-    ax.plot(x, y_fit, color=score_color_mapping['global'], linewidth=2.)
+    # ax.plot(x, y_fit, color=score_color_mapping['basenet'], linewidth=2., linestyle='dashed')
 
-    post(ax, formatter=None)  # major_formatter_nopad)
     ax.invert_yaxis()
-    ax.set_ylabel('Rank')
-    ax.set_ylim(ax.get_ylim()[:1] + (-150,))
+    ax.set_ylabel('$\overline{Rank}$')
     ax.set_yticklabels(['' if x < 0 else '{:.0f}'.format(x) if x != 0 else '1' for x in ax.get_yticks()])
-    figs['global'] = fig
+    post(ax, formatter=None)  # major_formatter_nopad)
+    figs['rank'] = fig
 
     # global-zoom
-    zoom = data[[row['performance'] > 70 for _, row in data.iterrows()]]
+    zoom = data[nonbasenets]
+    zoom = zoom[zoom['performance'] > 70]
     fig, ax = pyplot.subplots()
-    plot_global(ax, zoom, fit_method, marker_size=75)
+    plot_global(ax, zoom, fit_method, marker_size=150, scatter_alpha=0.7)
+    # highlight
+    for highlighted_model in highlighted_models:
+        row = data[nonbasenets][data[nonbasenets]['model'] == highlighted_model]
+        if len(row) == 0:
+            continue
+        row = row.iloc[0]
+        x, y = row['performance'], row['global']
+        highlight(ax, highlighted_model, x, y)
+    ax.set_ylabel('Mean BrainScore')
     post(ax)
     figs['global-zoom'] = fig
 
-    # performance
-    if mode == Mode.YEAR_VS_SCORE:
-        y = data['performance'].values
-        fig, ax = pyplot.subplots()
-        line = _plot_score(x, y, label='performance', fit_method=fit_method, ax=ax)
-        ax.set_xlabel(xlabel)
-        figs.append(fig)
-
-    pyplot.tight_layout()
     return figs
 
 
+def highlight(ax, highlighted_model, x, y):
+    dx, dy = sum(ax.get_xlim()) * 0.02, sum(ax.get_ylim()) * 0.02
+    # ax.arrow(x, y, dx, dy, head_width=0, color='black',
+    #          head_starts_at_zero=True, length_includes_head=True)
+    ax.plot([x, x + dx], [y, y + dy], color='black', linewidth=1.)
+    ax.text(x + dx, y + dy, highlighted_model, fontsize=10)
+
+
+def plot_field(ax, data, field, label, err_field=None, **kwargs):
+    x = data['x']
+    y = data[field]
+    err = None if err_field is None else data[err_field]
+    return _plot_score(x, y, error=err, label=label, ax=ax, fit_kwargs=dict(linestyle='dashed'),
+                       **kwargs)
+
+
 def plot_global(ax, data, fit_method, **kwargs):
+    x = data['x']
+    y = data['global'].values
+    return _plot_score(x, y, label='global', fit_method=fit_method, label_long='BrainRank', ax=ax, **kwargs)
+
+
+def plot_rank(ax, data, fit_method, **kwargs):
     x = data['x']
     y = data['rank'].values
     return _plot_score(x, y, label='global', fit_method=fit_method, label_long='BrainRank', ax=ax, **kwargs)
@@ -314,7 +443,7 @@ def _plot_score(x, y, label, ax, error=None, label_long=None, fit_method='fit',
 
 
 if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)  # logging.DEBUG)
     fit = None
 
     models = get_models()
@@ -326,6 +455,8 @@ if __name__ == '__main__':
     for label, mode in runs.items():
         figs = plot_all(models, mode=mode, fit_method=fit, logx=label not in ['performance'])
         for name, fig in figs.items():
+            savepath = 'results/scores/{}-{}.svg'.format(label, name)
+            fig.savefig(savepath, format='svg')
             savepath = 'results/scores/{}-{}.pdf'.format(label, name)
             fig.savefig(savepath)
             print("Saved to", savepath)
