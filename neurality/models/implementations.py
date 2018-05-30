@@ -469,8 +469,19 @@ def load_images(image_filepaths, model_type, preprocess_input, image_size):
     load_image = {ModelType.KERAS: functools.partial(load_image_keras, image_size=image_size),
                   ModelType.PYTORCH: load_image_pytorch,
                   ModelType.SLIM: functools.partial(load_image_slim, image_size=image_size)}[model_type]
+    if not isinstance(image_filepaths[0], str):  # FIXME: workaround for loading imagenet data in pytorch
+        if model_type == ModelType.KERAS:
+            load_image = lambda x: np.expand_dims(x, axis=0)
+        elif model_type == ModelType.SLIM:
+            load_image = lambda x: x
+        else:
+            def load_image(x):
+                assert x.min() >= 0 and x.max() <= 1
+                return Image.fromarray(np.uint8(x * 255))
+
     logging.getLogger("PIL").setLevel(logging.WARNING)  # PIL in the PyTorch logs way too much
-    images = [preprocess_input(load_image(image_filepath)) for image_filepath in image_filepaths]
+    images = [load_image(image_filepath) for image_filepath in image_filepaths]
+    images = [preprocess_input(image) for image in images]
     concat = {ModelType.KERAS: np.concatenate,
               ModelType.PYTORCH: lambda _images: Variable(torch.cat(_images)),
               ModelType.SLIM: lambda images: np.array(images)}[model_type]
