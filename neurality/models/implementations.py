@@ -8,20 +8,11 @@ from glob import iglob
 
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 from neurality.models.type import get_model_type, ModelType
-from neurality.storage import cache
 
 _logger = logging.getLogger(__name__)
-
-
-def densenet(image_size, weights='imagenet'):
-    """
-    https://arxiv.org/pdf/1608.06993.pdf
-    """
-    from DenseNet import DenseNetImageNet121, preprocess_input
-    model = DenseNetImageNet121(input_shape=(image_size, image_size, 3), weights=weights)
-    return model, preprocess_input
 
 
 def densenet121(image_size, weights='imagenet'):
@@ -89,9 +80,10 @@ def resnet50(image_size, weights='imagenet'):
     return model, preprocess_input
 
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'model-weights')
+MODEL_PATH = '/braintree/data2/active/users/qbilius/models/slim'
 if not os.path.isdir(MODEL_PATH):
-    os.mkdir(MODEL_PATH)
+    _logger.error("\n\n\nUSING LOCAL WEIGHTS\n\n\n")
+    MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'model-weights')
 
 
 class TFSlimModel(object):
@@ -116,6 +108,7 @@ class TFSlimModel(object):
     def __call__(self, image_size, weights='imagenet'):
         import tensorflow as tf
         from nets import nets_factory
+        from preprocessing import inception_preprocessing, vgg_preprocessing
 
         tf.reset_default_graph()
 
@@ -136,11 +129,11 @@ class TFSlimModel(object):
         inp = tf.placeholder(dtype=tf.float32,
                              shape=[self._batch_size, image_size, image_size, 3])
         if self._preprocessing == 'vgg':
-            inp *= 255
-            mn = [123.68, 116.78, 103.94]
-            inp = tf.concat([i - m for i, m in zip(tf.split(inp, 3, axis=3), mn)], axis=3)
+            inp = tf.map_fn(lambda image: vgg_preprocessing.preprocess_image(
+                tf.image.convert_image_dtype(image, dtype=tf.uint8), image_size, image_size), inp)
         else:  # inception
-            inp = 2 * inp - 1
+            inp = tf.map_fn(lambda image: inception_preprocessing.preprocess_image(
+                tf.image.convert_image_dtype(image, dtype=tf.uint8), image_size, image_size), inp)
 
         self.inputs = inp
         with tf.contrib.slim.arg_scope(arg_scope):
@@ -162,14 +155,14 @@ class TFSlimModel(object):
         assert len(fnames) > 0
         self.restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
 
-        return self, lambda x: x
-
-    def run(self, images, layer_names):
-        import tensorflow as tf
-        layer_tensors = OrderedDict((layer, self.endpoints[layer]) for layer in layer_names)
         self.sess = self.sess or tf.Session()
         if not self.restored:
             self.restore()
+
+        return self, lambda x: x
+
+    def run(self, images, layer_names):
+        layer_tensors = OrderedDict((layer, self.endpoints[layer]) for layer in layer_names)
         layer_outputs = self.sess.run(layer_tensors, feed_dict={self.inputs: images})
         return layer_outputs
 
@@ -231,6 +224,9 @@ def xception(image_size, weights='imagenet'):
 
 
 def alexnet(image_size, weights='imagenet'):
+    """
+    https://arxiv.org/abs/1404.5997
+    """
     from torchvision.models.alexnet import alexnet
     assert weights in ['imagenet', None]
     model = alexnet(pretrained=weights == 'imagenet')
@@ -239,24 +235,20 @@ def alexnet(image_size, weights='imagenet'):
 
 model_mappings = {
     'alexnet': alexnet,
-    # 'vgg16': vgg16,
-    # 'vgg19': vgg19,
-    # 'densenet': densenet,
+    'densenet-121': densenet121,
+    'densenet-169': densenet169,
+    'densenet-201': densenet201,
     'squeezenet': squeezenet,
-    # 'mobilenet': mobilenet,
     'resnet18': resnet18,
-    # 'resnet50': resnet50,
-    # 'resnet152': resnet152,
-    # 'inception_v3': inception_v3,
-    # 'inception_resnet_v2': inception_resnet_v2,
     'xception': xception,
-    # 'nasnet_large': nasnet_large,
-    # 'nasnet_mobile': nasnet_mobile,
 }
 slim_models = pd.read_csv(os.path.join(os.path.dirname(__file__), 'models.csv'))
 slim_models = slim_models[slim_models['framework'] == 'slim']
 for model in slim_models['model']:
     model_mappings[model] = TFSlimModel(model)
+
+model_mappings['vgg-16'] = vgg16
+model_mappings['vgg-19'] = vgg19
 
 __vgg_layers = ['pool{}'.format(i + 1) for i in range(5)] + ['fc{}'.format(i + 1) for i in range(5, 7)]
 
@@ -264,10 +256,8 @@ __vgg_layers = ['pool{}'.format(i + 1) for i in range(5)] + ['fc{}'.format(i + 1
 def __resnet50_layers(bottleneck_version):
     return ['conv1'] + \
            ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
-           ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(4)] + \
            ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(6)] + \
-           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
-           ['global_pool']
+           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
 
 
 def __resnet101_layers(bottleneck_version):
@@ -275,8 +265,7 @@ def __resnet101_layers(bottleneck_version):
            ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
            ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(4)] + \
            ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(23)] + \
-           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
-           ['global_pool']
+           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
 
 
 def __resnet152_layers(bottleneck_version):
@@ -284,42 +273,76 @@ def __resnet152_layers(bottleneck_version):
            ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
            ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(8)] + \
            ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(36)] + \
-           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
-           ['global_pool']
+           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
 
 
 _model_layers = {
     'alexnet':
         ['features.2', 'features.5', 'features.7', 'features.9', 'features.12',  # conv-relu-[pool]{1,2,3,4,5}
          'classifier.2', 'classifier.5'],  # fc-[relu]{6,7,8}
-    # 'vgg16':
-    #     ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
-    # 'densenet':
-    #     ['max_pooling2d_1'] + ['activation_{}'.format(i + 1) for i in range(121)] +
-    #     ['global_average_pooling2d_1'],
+    'vgg-16':
+        ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
+    'vgg-19':
+        ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
+    'densenet-121':
+        ['conv1/relu'] +
+        ['pool1'] +
+        ['conv2_block{}_concat'.format(i + 1) for i in range(6)] +
+        ['pool2_pool'] +
+        ['conv3_block{}_concat'.format(i + 1) for i in range(12)] +
+        ['pool3_pool'] +
+        ['conv4_block{}_concat'.format(i + 1) for i in range(24)] +
+        ['pool4_pool'] +
+        ['conv5_block{}_concat'.format(i + 1) for i in range(16)] +
+        ['avg_pool'],
+    'densenet-169':
+        ['conv1/relu'] +
+        ['pool1'] +
+        ['conv2_block{}_concat'.format(i + 1) for i in range(6)] +
+        ['pool2_pool'] +
+        ['conv3_block{}_concat'.format(i + 1) for i in range(12)] +
+        ['pool3_pool'] +
+        ['conv4_block{}_concat'.format(i + 1) for i in range(32)] +
+        ['pool4_pool'] +
+        ['conv5_block{}_concat'.format(i + 1) for i in range(32)] +
+        ['avg_pool'],
+    'densenet-201':
+        ['conv1/relu'] +
+        ['pool1'] +
+        ['conv2_block{}_concat'.format(i + 1) for i in range(6)] +
+        ['pool2_pool'] +
+        ['conv3_block{}_concat'.format(i + 1) for i in range(12)] +
+        ['pool3_pool'] +
+        ['conv4_block{}_concat'.format(i + 1) for i in range(48)] +
+        ['pool4_pool'] +
+        ['conv5_block{}_concat'.format(i + 1) for i in range(32)] +
+        ['avg_pool'],
     'squeezenet':
         ['pool1'] + ['fire{}/concat'.format(i + 1) for i in range(1, 9)] +
         ['relu_conv10', 'global_average_pooling2d_1'],
-    # 'mobilenet':
-    #     ['conv1_relu'] + list(itertools.chain(
-    #         *[['conv_dw_{}_relu'.format(i + 1), 'conv_pw_{}_relu'.format(i + 1)] for i in range(13)])) +
-    #     ['global_average_pooling2d_1'],
-    # 'resnet50':
-    #     ['activation_{}'.format(i + 1) for i in range(49)] + ['avg_pool'],
-    # 'resnet152':
-    #     ['relu'] +
-    #     ['layer1.{}.relu'.format(i) for i in range(3)] +
-    #     ['layer2.{}.relu'.format(i) for i in range(8)] +
-    #     ['layer3.{}.relu'.format(i) for i in range(36)] +
-    #     ['layer4.{}.relu'.format(i) for i in range(3)],
-    # 'inception_v3':
-    #     ['activation_{}'.format(i + 1) for i in range(10)] + ['mixed{}'.format(i) for i in range(11)],
-    # 'inception_resnet_v2':
-    #     ['activation_{}'.format(i + 1) for i in range(203)] + ['conv_7b_ac'],
-    # 'nasnet_large':
-    #     ['activation_{}'.format(i + 1) for i in range(260)],
-    # 'nasnet_mobile':
-    #     ['activation_{}'.format(i + 1) for i in range(188)],
+    'xception':
+        ['block1_conv{}_act'.format(i + 1) for i in range(2)] +
+        ['block2_sepconv2_act'] +
+        ['block3_sepconv{}_act'.format(i + 1) for i in range(2)] +
+        ['block4_sepconv{}_act'.format(i + 1) for i in range(2)] +
+        ['block5_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block6_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block7_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block8_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block9_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block10_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block11_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block12_sepconv{}_act'.format(i + 1) for i in range(3)] +
+        ['block13_sepconv{}_act'.format(i + 1) for i in range(2)] +
+        ['block14_sepconv{}_act'.format(i + 1) for i in range(2)] +
+        ['avg_pool'],
+    'resnet18':
+        ['conv1'] + \
+        ['layer1.0.relu', 'layer1.1.relu'] + \
+        ['layer2.0.relu', 'layer2.0.downsample.0', 'layer2.1.relu'] + \
+        ['layer3.0.relu', 'layer3.0.downsample.0', 'layer3.1.relu'] + \
+        ['layer4.0.relu', 'layer4.0.downsample.0', 'layer4.1.relu'] + \
+        ['avgpool'],
 
     # Slim
     'inception_v1':
@@ -352,21 +375,21 @@ _model_layers = {
         ['Conv2d_1a_3x3', 'MaxPool_3a_3x3', 'MaxPool_5a_3x3',
          'Mixed_5b', 'Mixed_6a', 'Mixed_7a', 'Conv2d_7b_1x1', 'global_pool'],
     'resnet-50_v1':
-        ["resnet_v1_50/{}".format(layer) for layer in __resnet50_layers(1)],
+        ["resnet_v1_50/{}".format(layer) for layer in __resnet50_layers(1)] + ['global_pool'],
     'resnet-50_v2':
-        ["resnet_v2_50/{}".format(layer) for layer in __resnet50_layers(2)],
+        ["resnet_v2_50/{}".format(layer) for layer in __resnet50_layers(2)] + ['global_pool'],
     'resnet-101_v1':
-        ["resnet_v1_101/{}".format(layer) for layer in __resnet101_layers(1)],
+        ["resnet_v1_101/{}".format(layer) for layer in __resnet101_layers(1)] + ['global_pool'],
     'resnet-101_v2':
-        ["resnet_v2_101/{}".format(layer) for layer in __resnet101_layers(2)],
+        ["resnet_v2_101/{}".format(layer) for layer in __resnet101_layers(2)] + ['global_pool'],
     'resnet-152_v1':
-        ["resnet_v1_152/{}".format(layer) for layer in __resnet152_layers(1)],
+        ["resnet_v1_152/{}".format(layer) for layer in __resnet152_layers(1)] + ['global_pool'],
     'resnet-152_v2':
-        ["resnet_v2_152/{}".format(layer) for layer in __resnet152_layers(2)],
-    'vgg-16':
-        ["vgg_16/{}".format(layer) for layer in __vgg_layers],
-    'vgg-19':
-        ["vgg_19/{}".format(layer) for layer in __vgg_layers],
+        ["resnet_v2_152/{}".format(layer) for layer in __resnet152_layers(2)] + ['global_pool'],
+    # 'vgg-16':
+    #     ["vgg_16/{}".format(layer) for layer in __vgg_layers],
+    # 'vgg-19':
+    #     ["vgg_19/{}".format(layer) for layer in __vgg_layers],
     'nasnet_mobile':
         ['Cell_{}'.format(i + 1) for i in range(-1, 3)] + ['Reduction_Cell_0'] +
         ['Cell_{}'.format(i + 1) for i in range(3, 7)] + ['Reduction_Cell_1'] +
@@ -407,7 +430,6 @@ for model, layers in _model_layers.items():
             model_layers[_model] = layers
 
 
-@cache()
 def create_model(model_name, model_weights, image_size):
     import torch
     model, preprocessing = model_mappings[model_name](image_size, weights=model_weights)
