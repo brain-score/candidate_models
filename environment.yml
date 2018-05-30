@@ -12,13 +12,13 @@ dependencies:
   - h5py
   - networkx
   - scikit-learn
+  - scikit-image
   - matplotlib
   - seaborn
   - jupyter
   - pytest
   - pip:
     - git+https://github.com/mschrimpf/mkgu
-    - git+https://github.com/mschrimpf/DenseNet.git
     - git+https://github.com/rcmalli/keras-squeezenet.git
     - pillow
     - llist
