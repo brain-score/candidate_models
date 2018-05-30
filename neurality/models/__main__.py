@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 
-from neurality import model_activations
+from neurality import model_activations, model_layers
 from neurality.models import model_mappings, Defaults
 
 _logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ def main():
     parser.add_argument('--model', type=str, required=True, choices=list(model_mappings.keys()))
     parser.add_argument('--model_weights', type=str, default=Defaults.model_weights)
     parser.add_argument('--no-model_weights', action='store_const', const=None, dest='model_weights')
-    parser.add_argument('--layers', nargs='+', required=True)
+    parser.add_argument('--layers', nargs='+', default=None)
     parser.add_argument('--pca', type=int, default=Defaults.pca_components,
                         help='Number of components to reduce the flattened features to')
     parser.add_argument('--no-pca', action='store_const', const=None, dest='pca')
@@ -22,6 +22,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=Defaults.batch_size)
     parser.add_argument('--log_level', type=str, default='INFO')
     args = parser.parse_args()
+    args.layers = args.layers or model_layers[args.model]
     log_level = logging.getLevelName(args.log_level)
     logging.basicConfig(stream=sys.stdout, level=log_level)
     logging.getLogger("PIL").setLevel(logging.WARNING)
