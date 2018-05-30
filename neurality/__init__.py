@@ -34,12 +34,13 @@ def _un_combine_layers(key, value):
     return [split_layers_xarray(layers) if ',' in layers else layers for layers in value]
 
 
-@store_xarray(identifier_ignore=['layers'], combine_fields={'layers': 'layer'},
+@store_xarray(identifier_ignore=['layers', 'image_size'], combine_fields={'layers': 'layer'},
               map_field_values=_combine_layers, map_field_values_inverse=_un_combine_layers,
               sub_fields=True)
 def score_physiology(model, layers=None,
-                     model_weights=models.Defaults.model_weights, pca_components=models.Defaults.pca_components,
-                     neural_data=Defaults.neural_data, metric_name='neural_fit'):
+                     model_weights=models.Defaults.model_weights,
+                     pca_components=models.Defaults.pca_components, image_size=models.Defaults.image_size,
+                     neural_data=Defaults.neural_data, metric_name=Defaults.metric_name):
     """
     :param str model:
     :param [str]|None layers: layers to score or None to use all layers present in the model activations
@@ -47,12 +48,14 @@ def score_physiology(model, layers=None,
     :param int pca_components:
     :param str neural_data:
     :param str metric_name:
+    :param int image_size:
     :return: PhysiologyScore
     """
     layers = layers or model_layers[model]
     logger.info('Computing activations')
     model_assembly = model_multi_activations(model=model, model_weights=model_weights, multi_layers=layers,
-                                             pca_components=pca_components, stimulus_set=neural_data)
+                                             pca_components=pca_components, image_size=image_size,
+                                             stimulus_set=neural_data)
     logger.info('Loading benchmark')
     benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name)
     logger.info('Scoring activations')
