@@ -150,7 +150,7 @@ class _XarrayStorage(_DiskStorage):
             if reduced_call_args:
                 # run function if some args are uncomputed
                 result = function(**reduced_call_args)
-                if stored_result:
+                if stored_result is not None:
                     result = self.merge_results(stored_result, result)
                 # only save if new results
                 self._logger.debug("Saving to storage: {}".format(function_identifier))
