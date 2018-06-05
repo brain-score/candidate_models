@@ -1,34 +1,29 @@
 import functools
 import logging
+import os
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from mkgu.assemblies import NeuroidAssembly, merge_data_arrays
 from mkgu.metrics import subset, get_modified_coords
-from neurality.assemblies import load_stimulus_set
-from neurality.models.graph import get_model_graph, cut_graph
-from neurality.models.implementations import model_mappings, prepare_images, create_model, find_images, load_images
-from neurality.models.outputs import get_model_outputs
-from neurality.models.type import ModelType, get_model_type
-from neurality.models.type import ModelType, get_model_type, PYTORCH_SUBMODULE_SEPARATOR
+from .implementations import Defaults as DeepModelDefaults
+from .implementations.keras import KerasModel
+from .implementations.pytorch import PytorchModel
+from .implementations.tensorflow_slim import TensorflowSlimModel
 from neurality.storage import store_xarray
 
 _logger = logging.getLogger(__name__)
 
 
 class Defaults(object):
-    model_weights = 'imagenet'
-    pca_components = 1000
-    image_size = 224
-    batch_size = 64
     stimulus_set = 'dicarlo.Majaj2015'
 
 
 def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_set,
-                            model_weights=Defaults.model_weights,
-                            image_size=Defaults.image_size, pca_components=Defaults.pca_components,
-                            batch_size=Defaults.batch_size):
+                            weights=DeepModelDefaults.weights, image_size=DeepModelDefaults.image_size,
+                            pca_components=DeepModelDefaults.pca_components, batch_size=DeepModelDefaults.batch_size):
     single_layers = []
     for layers in multi_layers:
         if isinstance(layers, str):
@@ -37,7 +32,7 @@ def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_
             for layer in layers:
                 single_layers.append(layer)
     single_layers = list(set(single_layers))
-    single_layer_activations = model_activations(model, single_layers, stimulus_set, model_weights=model_weights,
+    single_layer_activations = model_activations(model, single_layers, stimulus_set, weights=weights,
                                                  image_size=image_size, pca_components=pca_components,
                                                  batch_size=batch_size)
 
@@ -74,101 +69,47 @@ def split_layers_xarray(layers):
     return layers.split(",")
 
 
-@store_xarray(identifier_ignore=['layers', 'batch_size', 'pca_batch_size'], combine_fields={'layers': 'layer'})
-def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_weights=Defaults.model_weights,
-                      image_size=Defaults.image_size, pca_components=Defaults.pca_components,
-                      batch_size=Defaults.batch_size):
-    for layer in layers:
-        if not isinstance(layer, str):
-            raise ValueError("This method does not allow multi-layer activations. "
-                             "Use model_multi_activations instead.")
-    _logger.info('Creating model')
-    model, preprocess_input = create_model(model, model_weights=model_weights, image_size=image_size)
-    model_type = get_model_type(model)
-    _verify_model_layers(model, layers)
+def package_stimulus_coords(assembly, stimulus_set):
+    stimulus_paths = [stimulus_set.get_image(image_id) for image_id in stimulus_set['image_id']]
+    assert all(assembly['stimulus_path'] == stimulus_paths)
+    assembly['stimulus_path'] = stimulus_set['image_id'].values
+    assembly = assembly.rename({'stimulus_path': 'image_id'})
+    for column in stimulus_set.columns:
+        assembly[column] = 'image_id', stimulus_set[column].values
+    assembly = assembly.stack(presentation=('image_id',))
+    return assembly
 
+
+@store_xarray(identifier_ignore=['layers', 'batch_size', 'pca_batch_size'], combine_fields={'layers': 'layer'})
+def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, weights=DeepModelDefaults.weights,
+                      image_size=DeepModelDefaults.image_size, pca_components=DeepModelDefaults.pca_components,
+                      batch_size=DeepModelDefaults.batch_size):
+    from neurality import load_stimulus_set
     _logger.info('Loading stimuli')
     stimulus_set = load_stimulus_set(stimulus_set)
     stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))
 
+    _logger.info('Creating model')
+    model = models[model](weights=weights, batch_size=batch_size, image_size=image_size)
+    _logger.debug(model)
+
     _logger.info('Computing activations')
-    images = load_images(image_filepaths=stimuli_paths, preprocess_input=preprocess_input,
-                         model_type=model_type, image_size=image_size)
-    preprocess_hack = functools.partial(load_images, model_type=model_type, preprocess_input=preprocess_input,
-                                        image_size=image_size)
-    layer_activations = get_model_outputs(model, images, layers, preprocess_hack=preprocess_hack,
-                                          batch_size=batch_size, pca_components=pca_components)
-
-    wrong_size_layers = [key for key, values in layer_activations.items()
-                         if pca_components is not None and values[0].size != pca_components]
-    for layer in wrong_size_layers:
-        _logger.warning("Padding layer {} with zeros since its activations are too small".format(layer))
-        layer_activations[layer] = [np.pad(a, (0, pca_components - a.size), 'constant', constant_values=(0,))
-                                    for a in layer_activations[layer]]
-
-    _logger.info('Packaging into assembly')
-    activations = list(layer_activations.values())
-    activations = np.array(activations)
-    _logger.info('Activations shape: {}'.format(activations.shape))
-    # layer x images x activations -> images x layer x activations
-    activations = activations.transpose([1, 0, 2])
-    assert activations.shape[0] == len(stimulus_set)
-    assert activations.shape[1] == len(layer_activations)
-    layers = np.array(list(layer_activations.keys()))
-    layers = np.repeat(layers[:, np.newaxis], repeats=activations.shape[-1], axis=1)
-
-    activations = np.reshape(activations, [activations.shape[0], np.prod(activations.shape[1:])])
-    layers = np.reshape(layers, [np.prod(activations.shape[1:])])
-
-    model_assembly = NeuroidAssembly(
-        activations,
-        coords={'image_id': stimulus_set['image_id'],
-                'neuroid_id': list(range(activations.shape[1]))},
-        dims=['image_id', 'neuroid_id']
-    )
-    model_assembly['layer'] = 'neuroid_id', layers
-    for column in stimulus_set.columns:
-        model_assembly[column] = 'image_id', stimulus_set[column]
-    model_assembly = model_assembly.stack(presentation=('image_id',), neuroid=('neuroid_id',))
-    return model_assembly
+    assembly = model.get_activations(stimuli_paths=stimuli_paths, layers=layers, pca_components=pca_components)
+    assembly = package_stimulus_coords(assembly, stimulus_set)
+    return assembly
 
 
-def model_graph(model, layers):
-    graph = get_model_graph(model)
-    return cut_graph(graph, keep_nodes=layers, fill_in=True)
+models = {
+    'alexnet': functools.partial(PytorchModel, model_name='alexnet'),
+    'resnet-101_v2': functools.partial(TensorflowSlimModel, model_name='resnet-101_v2'),
+}
 
-
-def _verify_model_layers(model, layer_names):
-    model_type = get_model_type(model)
-    _verify_model = {ModelType.KERAS: _verify_model_layers_keras,
-                     ModelType.PYTORCH: _verify_model_layers_pytorch,
-                     ModelType.SLIM: _verify_model_layers_slim}[model_type]
-    _verify_model(model, layer_names)
-
-
-def _verify_model_layers_pytorch(model, layer_names):
-    def collect_pytorch_layer_names(module, parent_module_parts):
-        result = []
-        for submodule_name, submodule in module._modules.items():
-            if not hasattr(submodule, '_modules') or len(submodule._modules) == 0:
-                result.append(PYTORCH_SUBMODULE_SEPARATOR.join(parent_module_parts + [submodule_name]))
-            else:
-                result += collect_pytorch_layer_names(submodule, parent_module_parts + [submodule_name])
-        return result
-
-    nonexisting_layers = set(layer_names) - set(collect_pytorch_layer_names(model, []))
-    assert len(nonexisting_layers) == 0, "Layers not found in PyTorch model: %s" % str(nonexisting_layers)
-
-
-def _verify_model_layers_keras(model, layer_names):
-    model_layers = [layer.name for layer in model.layers]
-    nonexisting_layers = set(layer_names) - set(model_layers)
-    assert len(nonexisting_layers) == 0, "Layers not found in keras model: {} (model layers: {})".format(
-        nonexisting_layers, model_layers)
-
-
-def _verify_model_layers_slim(model, layer_names):
-    model_layers = list(model.endpoints.keys())
-    nonexisting_layers = set(layer_names) - set(model_layers)
-    assert len(nonexisting_layers) == 0, "Layers not found in slim model: {} (model layers: {})".format(
-        nonexisting_layers, model_layers)
+models_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), 'implementations', 'models.csv'),
+                          keep_default_na=False)
+for _, row in models_meta.iterrows():
+    framework = row['framework']
+    if not framework:  # basenet
+        continue
+    framework = {'keras': KerasModel, 'pytorch': PytorchModel, 'slim': TensorflowSlimModel}[framework]
+    model = row['model']
+    models[model] = functools.partial(framework, model_name=model)
