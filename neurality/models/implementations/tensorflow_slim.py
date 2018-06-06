@@ -79,10 +79,6 @@ class TensorflowSlimModel(DeepModel):
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
         restorer.restore(self._sess, restore_path)
 
-    def _load_images(self, image_filepaths):
-        images = [self._load_image(image_filepath) for image_filepath in image_filepaths]
-        return np.array(images)
-
     def _load_image(self, image_filepath):
         image = skimage.io.imread(image_filepath)
         return image

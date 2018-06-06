@@ -52,18 +52,24 @@ class DeepModel(object):
 
     def get_activations(self, stimuli_paths, layers,
                         pca_components=Defaults.pca_components):
+        # PCA
         get_image_activations = functools.partial(self._get_image_activations, layers=layers,
-                                                  batch_size=self._batch_size, image_size=self._image_size,
-                                                  min_components=pca_components)
-        reduce_dimensionality = self._initialize_dimensionality_reduction(pca_components, get_image_activations)
-        inputs = TransformGenerator(stimuli_paths, self._load_images)
+                                                  batch_size=self._batch_size, min_components=pca_components)
+
+        def get_image_activations_preprocessed(inputs, *args, **kwargs):
+            inputs = TransformGenerator(inputs, functools.partial(self._preprocess_images, image_size=self._image_size))
+            return get_image_activations(inputs, *args, **kwargs)
+
+        reduce_dimensionality = self._initialize_dimensionality_reduction(pca_components,
+                                                                          get_image_activations_preprocessed)
+        # actual stimuli
+        inputs = TransformGenerator(stimuli_paths, functools.partial(self._load_images, image_size=self._image_size))
         layer_activations = get_image_activations(inputs, reduce_dimensionality=reduce_dimensionality)
 
         self._logger.info('Packaging into assembly')
         return self._package(layer_activations, stimuli_paths)
 
-    def _get_image_activations(self, inputs, layers, batch_size, image_size, min_components, reduce_dimensionality):
-        inputs = TransformGenerator(inputs, functools.partial(self._preprocess_images, image_size=image_size))
+    def _get_image_activations(self, inputs, layers, batch_size, min_components, reduce_dimensionality):
         layer_activations = self._get_activations_batched(inputs, layers, batch_size=batch_size,
                                                           reduce_dimensionality=reduce_dimensionality)
         self._pad_layers(layer_activations, min_components)
@@ -178,7 +184,12 @@ class DeepModel(object):
     def _get_activations(self, images, layer_names):
         raise NotImplementedError()
 
-    def _load_images(self, image_filepaths):
+    def _load_images(self, image_filepaths, image_size):
+        images = [self._load_image(image_filepath) for image_filepath in image_filepaths]
+        images = self._preprocess_images(images, image_size=image_size)
+        return images
+
+    def _load_image(self, image_filepath):
         raise NotImplementedError()
 
     def _preprocess_images(self, images, image_size):

@@ -24,10 +24,6 @@ class KerasModel(DeepModel):
         self._model = constructor(input_shape=(image_size, image_size, 3), weights=weights)
         self._preprocess_input = preprocessing
 
-    def _load_images(self, image_filepaths):
-        images = [self._load_image(image_filepath) for image_filepath in image_filepaths]
-        return np.array(images)
-
     def _load_image(self, image_filepath):
         img = image.load_img(image_filepath)
         x = image.img_to_array(img)

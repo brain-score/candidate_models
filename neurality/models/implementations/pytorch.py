@@ -26,10 +26,6 @@ class PytorchModel(DeepModel):
         if torch.cuda.is_available():
             self._model.cuda()
 
-    def _load_images(self, image_filepaths):
-        images = [self._load_image(image_filepath) for image_filepath in image_filepaths]
-        return np.stack(images)
-
     def _load_image(self, image_filepath):
         with Image.open(image_filepath) as image:
             if image.mode.upper() != 'L':  # not binary
