@@ -1,9 +1,9 @@
 import logging
 
+from mkgu.metrics import CartesianProduct, CrossValidation
 from neurality import models
 from neurality.assemblies import load_neural_benchmark, load_stimulus_set
-from neurality.models import model_activations, model_graph, model_multi_activations, \
-    combine_layers_xarray, split_layers_xarray
+from neurality.models import model_activations, model_multi_activations, combine_layers_xarray, split_layers_xarray
 from neurality.models.graph import combine_graph, cut_graph
 from neurality.models.implementations import Defaults as DeepModelDefaults
 from neurality.models.implementations import model_layers
@@ -13,12 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 class Defaults(object):
-    neural_data = 'dicarlo.majaj2015'
+    neural_data = 'dicarlo.Majaj2015'
+    metric_name = 'neural_fit'
 
 
-def score_model(model, layers, neural_data=Defaults.neural_data, model_weights=models.Defaults.model_weights):
-    physiology_score = score_physiology(model=model, layers=layers, neural_data=neural_data,
-                                        model_weights=model_weights)
+def score_model(model, layers, weights=DeepModelDefaults.weights,
+                pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
+                neural_data=Defaults.neural_data, metric_name=Defaults.metric_name):
+    physiology_score = score_physiology(model=model, layers=layers, weights=weights,
+                                        pca_components=pca_components, image_size=image_size,
+                                        neural_data=neural_data, metric_name=metric_name)
     anatomy_score = score_anatomy(model, physiology_score.mapping)
     return [physiology_score, anatomy_score]
 
@@ -58,10 +62,12 @@ def score_physiology(model, layers=None,
                                              pca_components=pca_components, image_size=image_size,
                                              stimulus_set=neural_data)
     logger.info('Loading benchmark')
-    benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name)
+    benchmark = load_neural_benchmark(
+        assembly_name=neural_data, metric_name=metric_name, metric_kwargs=dict(transformations=[
+            CartesianProduct(dividing_coord_names_source=['layer'], dividing_coord_names_target=['region']),
+            CrossValidation()]))
     logger.info('Scoring activations')
-    score = benchmark(model_assembly, metric_kwargs=dict(similarity_kwargs=dict(
-        additional_adjacent_coords=['region', 'layer'])))
+    score = benchmark(model_assembly)
     return score
 
 
