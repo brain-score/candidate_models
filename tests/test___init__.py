@@ -1,14 +1,8 @@
-import sys
-
-import logging
-
 import numpy as np
 from pytest import approx
 
 from neurality import score_physiology
 from neurality.models.implementations import model_layers
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)-15s %(levelname)s:%(name)s:%(message)s')
 
 
 class TestScorePhysiology:
