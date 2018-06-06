@@ -99,17 +99,18 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, weights
     return assembly
 
 
-models = {
-    'alexnet': functools.partial(PytorchModel, model_name='alexnet'),
-    'resnet-101_v2': functools.partial(TensorflowSlimModel, model_name='resnet-101_v2'),
-}
+def load_model_definitions():
+    models = {}
+    models_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), 'implementations', 'models.csv'),
+                              keep_default_na=False)
+    for _, row in models_meta.iterrows():
+        framework = row['framework']
+        if not framework:  # basenet
+            continue
+        framework = {'keras': KerasModel, 'pytorch': PytorchModel, 'slim': TensorflowSlimModel}[framework]
+        model = row['model']
+        models[model] = functools.partial(framework, model_name=model)
+    return models
 
-models_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), 'implementations', 'models.csv'),
-                          keep_default_na=False)
-for _, row in models_meta.iterrows():
-    framework = row['framework']
-    if not framework:  # basenet
-        continue
-    framework = {'keras': KerasModel, 'pytorch': PytorchModel, 'slim': TensorflowSlimModel}[framework]
-    model = row['model']
-    models[model] = functools.partial(framework, model_name=model)
+
+models = load_model_definitions()
