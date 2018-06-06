@@ -2,6 +2,7 @@ import logging
 from collections import OrderedDict
 
 import numpy as np
+from PIL import Image
 from keras import backend as K
 from keras.applications.densenet import DenseNet121, DenseNet169, DenseNet201, preprocess_input as preprocess_densenet
 from keras.applications.imagenet_utils import preprocess_input as preprocess_generic
@@ -36,10 +37,12 @@ class KerasModel(DeepModel):
         images = [self._preprocess_image(image, image_size) for image in images]
         return np.array(images)
 
-    def _preprocess_image(self, image, image_size):
-        image = rescale(image, image_size)  # TODO
-        image = self._preprocess_input(image)
-        return image
+    def _preprocess_image(self, img, image_size):
+        img = Image.fromarray(img.astype(np.uint8))
+        img = img.resize((image_size, image_size))
+        img = image.img_to_array(img)
+        img = self._preprocess_input(img)
+        return img
 
     def _get_activations(self, images, layer_names):
         input_tensor = self._model.input
