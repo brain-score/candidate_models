@@ -54,6 +54,9 @@ class KerasModel(DeepModel):
         return OrderedDict([(layer_name, layer_output) for layer_name, layer_output
                             in zip([layer.name for layer in layers], layer_outputs)])
 
+    def __repr__(self):
+        return repr(self._model)
+
 
 model_constructors_preprocessing = {
     'xception': (Xception, preprocess_xception),

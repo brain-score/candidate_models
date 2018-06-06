@@ -74,7 +74,7 @@ class PytorchModel(DeepModel):
         return layer_results
 
     def __repr__(self):
-        return self._model
+        return repr(self._model)
 
 
 def torchvision_preprocess_input(image_size, normalize_mean=[0.485, 0.456, 0.406], normalize_std=[0.229, 0.224, 0.225]):
