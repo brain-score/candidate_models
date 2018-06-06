@@ -17,6 +17,7 @@ dependencies:
   - seaborn
   - jupyter
   - pytest
+  - pytest-mock
   - pip:
     - git+https://github.com/mschrimpf/mkgu
     - git+https://github.com/rcmalli/keras-squeezenet.git

@@ -5,6 +5,7 @@ from neurality.assemblies import load_neural_benchmark, load_stimulus_set
 from neurality.models import model_activations, model_graph, model_multi_activations, \
     combine_layers_xarray, split_layers_xarray
 from neurality.models.graph import combine_graph, cut_graph
+from neurality.models.implementations import Defaults as DeepModelDefaults
 from neurality.models.implementations import model_layers
 from neurality.storage import store, store_xarray
 
@@ -38,13 +39,13 @@ def _un_combine_layers(key, value):
               map_field_values=_combine_layers, map_field_values_inverse=_un_combine_layers,
               sub_fields=True)
 def score_physiology(model, layers=None,
-                     model_weights=models.Defaults.model_weights,
-                     pca_components=models.Defaults.pca_components, image_size=models.Defaults.image_size,
+                     weights=DeepModelDefaults.weights,
+                     pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
                      neural_data=Defaults.neural_data, metric_name=Defaults.metric_name):
     """
     :param str model:
     :param [str]|None layers: layers to score or None to use all layers present in the model activations
-    :param str model_weights:
+    :param str weights:
     :param int pca_components:
     :param str neural_data:
     :param str metric_name:
@@ -53,7 +54,7 @@ def score_physiology(model, layers=None,
     """
     layers = layers or model_layers[model]
     logger.info('Computing activations')
-    model_assembly = model_multi_activations(model=model, model_weights=model_weights, multi_layers=layers,
+    model_assembly = model_multi_activations(model=model, weights=weights, multi_layers=layers,
                                              pca_components=pca_components, image_size=image_size,
                                              stimulus_set=neural_data)
     logger.info('Loading benchmark')
