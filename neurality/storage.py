@@ -10,6 +10,7 @@ import numpy as np
 import xarray as xr
 
 from mkgu.assemblies import merge_data_arrays
+from mkgu.utils import fullname
 
 
 def get_function_identifier(function, call_args):
@@ -26,7 +27,7 @@ class _Storage(object):
             Useful when the results do not depend on certain parameters.
         """
         self.identifier_ignore = identifier_ignore
-        self._logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self._logger = logging.getLogger(fullname(self))
 
     def __call__(self, function):
         def wrapper(*args, **kwargs):

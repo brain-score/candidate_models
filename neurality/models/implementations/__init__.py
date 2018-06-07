@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 
 from mkgu.assemblies import NeuroidAssembly
+from mkgu.utils import fullname
 
 
 class Defaults(object):
@@ -48,7 +49,7 @@ class DeepModel(object):
         # we keep the same method signature for the caller to simplify things.
         self._image_size = image_size
         self._batch_size = batch_size
-        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger = logging.getLogger(fullname(self))
 
     def get_activations(self, stimuli_paths, layers,
                         pca_components=Defaults.pca_components):
