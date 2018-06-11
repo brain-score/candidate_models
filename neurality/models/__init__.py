@@ -90,13 +90,17 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, weights
     stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))
 
     _logger.info('Creating model')
-    model = models[model](weights=weights, batch_size=batch_size, image_size=image_size)
+    model = create_model(model=model, weights=weights, batch_size=batch_size, image_size=image_size)
     _logger.debug(str(model))
 
     _logger.info('Computing activations')
     assembly = model.get_activations(stimuli_paths=stimuli_paths, layers=layers, pca_components=pca_components)
     assembly = package_stimulus_coords(assembly, stimulus_set)
     return assembly
+
+
+def create_model(model, *args, **kwargs):
+    return models[model](*args, **kwargs)
 
 
 def load_model_definitions():
