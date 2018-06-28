@@ -1,5 +1,7 @@
 import logging
+import os
 
+import caching
 from caching import store_xarray
 from neurality import models
 from neurality.assemblies import load_neural_benchmark, load_stimulus_set
@@ -9,6 +11,7 @@ from neurality.models.implementations import Defaults as DeepModelDefaults
 from neurality.models.implementations import model_layers
 
 logger = logging.getLogger(__name__)
+caching.store.configure_storagedir(os.path.join(os.path.dirname(__file__), '..', 'output'))
 
 
 class Defaults(object):
