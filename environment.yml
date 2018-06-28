@@ -1,4 +1,4 @@
-name: neurality
+name: brain-score-models
 channels:
 - defaults
 - anaconda
@@ -23,3 +23,4 @@ dependencies:
     - git+https://github.com/rcmalli/keras-squeezenet.git
     - pillow
     - llist
+    - git+https://github.com/mschrimpf/caching

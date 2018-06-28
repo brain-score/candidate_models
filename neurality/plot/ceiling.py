@@ -7,11 +7,11 @@ import scipy
 from matplotlib import pyplot
 from scipy.optimize import OptimizeWarning
 
+from caching import store, cache
 from mkgu import benchmarks
 from mkgu.assemblies import merge_data_arrays
 from mkgu.benchmarks import metrics
 from mkgu.metrics.ceiling import ceilings
-from neurality.storage import store, cache
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
