@@ -1,6 +1,6 @@
 import numpy as np
 
-from neurality.models.implementations import DeepModel
+from candidate_models.models.implementations import DeepModel
 
 
 def mock_images(num_images):

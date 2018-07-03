@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from mkgu.assemblies import NeuroidAssembly
-from neurality.models.implementations.tensorflow_slim import TensorflowSlimModel
+from candidate_models.models.implementations.tensorflow_slim import TensorflowSlimModel
 from tests.models import mock_imagenet
 from tests.models.implementations import get_grayscale_image, get_rgb_image
 

@@ -5,7 +5,7 @@ import sys
 import numpy as np
 from matplotlib import pyplot
 
-from neurality.plot import score_color_mapping, clean_axis
+from candidate_models.plot import score_color_mapping, clean_axis
 
 
 def plot(model, marker_size=2, scatter_alpha=0.7):

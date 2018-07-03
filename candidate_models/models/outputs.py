@@ -12,7 +12,7 @@ from pathos.pools import ThreadPool as Pool
 import numpy as np
 from sklearn.decomposition import PCA
 
-from neurality.models.type import get_model_type, ModelType, PYTORCH_SUBMODULE_SEPARATOR
+from candidate_models.models.type import get_model_type, ModelType, PYTORCH_SUBMODULE_SEPARATOR
 
 _logger = logging.getLogger(__name__)
 

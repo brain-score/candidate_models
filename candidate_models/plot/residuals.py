@@ -6,7 +6,7 @@ from mkgu.assemblies import walk_coords, DataAssembly
 from mkgu.benchmarks import DicarloMajaj2015
 from mkgu.metrics.ceiling import SplitNoCeiling
 from mkgu.metrics.neural_fit import NeuralFit
-from neurality import Defaults, model_layers, model_multi_activations
+from candidate_models import Defaults, model_layers, model_multi_activations
 
 _logger = logging.getLogger(__name__)
 

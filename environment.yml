@@ -1,4 +1,4 @@
-name: brain-score-models
+name: candidate-models
 channels:
 - defaults
 - anaconda
@@ -19,7 +19,7 @@ dependencies:
   - pytest
   - pytest-mock
   - pip:
-    - git+https://github.com/mschrimpf/mkgu
+    - git+https://github.com/dicarlolab/brain-score
     - git+https://github.com/rcmalli/keras-squeezenet.git
     - pillow
     - llist

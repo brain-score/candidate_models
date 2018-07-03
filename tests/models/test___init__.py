@@ -1,8 +1,8 @@
 import numpy as np
 
-from neurality.models import model_activations
-from neurality.models import model_multi_activations
-from neurality.models.implementations import model_layers
+from candidate_models.models import model_activations
+from candidate_models.models import model_multi_activations
+from candidate_models.models.implementations import model_layers
 from tests.models import patch_imagenet
 
 

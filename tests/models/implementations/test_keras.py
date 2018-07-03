@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from neurality.models.implementations.keras import KerasModel
+from candidate_models.models.implementations.keras import KerasModel
 
 
 class TestLoadImageKeras:

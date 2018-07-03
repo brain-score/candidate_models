@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from torchvision.models.alexnet import alexnet
 from torchvision.transforms import transforms
 
-from neurality.models.implementations import DeepModel, Defaults
+from candidate_models.models.implementations import DeepModel, Defaults
 
 _logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)

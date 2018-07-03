@@ -1,6 +1,6 @@
 import os
 
-from neurality.models.implementations.pytorch import PytorchModel
+from candidate_models.models.implementations.pytorch import PytorchModel
 
 
 class TestLoadImage:

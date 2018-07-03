@@ -6,10 +6,10 @@ import sys
 import numpy as np
 import pandas as pd
 
-from neurality import score_model, Defaults
-from neurality.models import models
-from neurality.models.implementations import Defaults as DeepModelDefaults
-from neurality.models.implementations import model_layers
+from candidate_models import score_model, Defaults
+from candidate_models.models import models
+from candidate_models.models.implementations import Defaults as DeepModelDefaults
+from candidate_models.models.implementations import model_layers
 
 logger = logging.getLogger(__name__)
 

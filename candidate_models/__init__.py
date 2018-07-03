@@ -3,12 +3,12 @@ import os
 
 import caching
 from caching import store_xarray
-from neurality import models
-from neurality.assemblies import load_neural_benchmark, load_stimulus_set
-from neurality.models import model_activations, model_multi_activations, combine_layers_xarray, split_layers_xarray
-from neurality.models.graph import combine_graph, cut_graph
-from neurality.models.implementations import Defaults as DeepModelDefaults
-from neurality.models.implementations import model_layers
+from candidate_models import models
+from candidate_models.assemblies import load_neural_benchmark, load_stimulus_set
+from candidate_models.models import model_activations, model_multi_activations, combine_layers_xarray, split_layers_xarray
+from candidate_models.models.graph import combine_graph, cut_graph
+from candidate_models.models.implementations import Defaults as DeepModelDefaults
+from candidate_models.models.implementations import model_layers
 
 logger = logging.getLogger(__name__)
 caching.store.configure_storagedir(os.path.join(os.path.dirname(__file__), '..', 'output'))

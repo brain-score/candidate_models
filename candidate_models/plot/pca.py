@@ -6,8 +6,8 @@ import seaborn
 from matplotlib import pyplot
 
 from mkgu.assemblies import merge_data_arrays
-from neurality import models, score_physiology
-from neurality.plot import shaded_errorbar
+from candidate_models import models, score_physiology
+from candidate_models.plot import shaded_errorbar
 
 seaborn.set()
 

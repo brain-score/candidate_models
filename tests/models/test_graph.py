@@ -3,8 +3,8 @@ from collections import OrderedDict
 
 import numpy as np
 
-from neurality import cut_graph, model_graph, combine_graph
-from neurality.models.implementations import vgg16
+from candidate_models import cut_graph, model_graph, combine_graph
+from candidate_models.models.implementations import vgg16
 
 
 class TestGraphComparison:

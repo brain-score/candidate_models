@@ -11,7 +11,7 @@ import tensorflow as tf
 from nets import nets_factory
 from preprocessing import inception_preprocessing, vgg_preprocessing
 
-from neurality.models.implementations import DeepModel, Defaults
+from candidate_models.models.implementations import DeepModel, Defaults
 
 _logger = logging.getLogger(__name__)
 

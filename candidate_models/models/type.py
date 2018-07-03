@@ -14,7 +14,7 @@ class ModelType(Enum):
 def get_model_type(model):
     import keras
     import torch
-    from neurality.models.implementations import TFSlimModel
+    from candidate_models.models.implementations import TFSlimModel
 
     if isinstance(model, keras.engine.topology.Container):
         return ModelType.KERAS

@@ -2,7 +2,7 @@ import mkgu
 from mkgu.benchmarks import build as build_benchmark
 from mkgu.stimuli import StimulusSet
 
-from neurality.storage import cache
+from candidate_models.storage import cache
 from mkgu.benchmarks import load as load_benchmark
 
 

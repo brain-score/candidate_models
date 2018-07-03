@@ -7,12 +7,12 @@ from collections import defaultdict
 import numpy as np
 from matplotlib import pyplot
 
-import neurality
-from neurality import score_physiology, model_layers
-from neurality.plot import shaded_errorbar, score_color_mapping, get_models, clean_axis
+import candidate_models
+from candidate_models import score_physiology, model_layers
+from candidate_models.plot import shaded_errorbar, score_color_mapping, get_models, clean_axis
 
 
-def plot(model, layers=None, neural_data=neurality.Defaults.neural_data, ax=None):
+def plot(model, layers=None, neural_data=candidate_models.Defaults.neural_data, ax=None):
     if ax is None:
         fig, ax = pyplot.subplots()
     layers = layers or model_layers[model]
@@ -32,7 +32,7 @@ def plot(model, layers=None, neural_data=neurality.Defaults.neural_data, ax=None
     pyplot.tight_layout()
 
 
-def plot_average_layer_ordering(models, neural_data=neurality.Defaults.neural_data, ax=None):
+def plot_average_layer_ordering(models, neural_data=candidate_models.Defaults.neural_data, ax=None):
     region_model_rellayer_scores = defaultdict(dict)
 
     # save relative scores of each layer in each model

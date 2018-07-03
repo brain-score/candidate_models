@@ -2,7 +2,7 @@ import logging
 
 import networkx as nx
 
-from neurality.models.type import get_model_type, ModelType
+from candidate_models.models.type import get_model_type, ModelType
 
 _logger = logging.getLogger(__name__)
 

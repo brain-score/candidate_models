@@ -85,7 +85,7 @@ def package_stimulus_coords(assembly, stimulus_set):
 def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, weights=DeepModelDefaults.weights,
                       image_size=DeepModelDefaults.image_size, pca_components=DeepModelDefaults.pca_components,
                       batch_size=DeepModelDefaults.batch_size):
-    from neurality import load_stimulus_set
+    from candidate_models import load_stimulus_set
     _logger.info('Loading stimuli')
     stimulus_set = load_stimulus_set(stimulus_set)
     stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))

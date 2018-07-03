@@ -12,7 +12,7 @@ from keras.applications.xception import Xception, preprocess_input as preprocess
 from keras.preprocessing import image
 from keras_squeezenet import SqueezeNet
 
-from neurality.models.implementations import DeepModel
+from candidate_models.models.implementations import DeepModel
 
 _logger = logging.getLogger(__name__)
 

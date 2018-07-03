@@ -2,9 +2,9 @@ import argparse
 import logging
 import sys
 
-from neurality import model_activations, model_layers
-from neurality.models import models, Defaults
-from neurality.models.implementations import Defaults as DeepModelDefaults
+from candidate_models import model_activations, model_layers
+from candidate_models.models import models, Defaults
+from candidate_models.models.implementations import Defaults as DeepModelDefaults
 
 _logger = logging.getLogger(__name__)
 

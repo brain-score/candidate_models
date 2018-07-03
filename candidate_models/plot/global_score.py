@@ -12,11 +12,11 @@ from matplotlib.ticker import FuncFormatter
 
 pyplot.rcParams['svg.fonttype'] = 'none'
 
-import neurality
+import candidate_models
 from mkgu.assemblies import merge_data_arrays
 from mkgu.metrics import MeanScore
-from neurality import score_physiology, model_layers
-from neurality.plot import score_color_mapping, get_models, clean_axis
+from candidate_models import score_physiology, model_layers
+from candidate_models.plot import score_color_mapping, get_models, clean_axis
 
 model_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), '..', 'models', 'models.csv'))
 model_performance = {row['model']: row['top1'] for _, row in model_meta.iterrows()}
@@ -70,7 +70,7 @@ class Mode(Enum):
     PARAMS_VS_SCORE = 6
 
 
-def parse_neural_data(models, neural_data=neurality.Defaults.neural_data):
+def parse_neural_data(models, neural_data=candidate_models.Defaults.neural_data):
     savepath = os.path.join(os.path.dirname(__file__), 'neural.csv')
     if os.path.isfile(savepath):
         return pd.read_csv(savepath)
@@ -138,7 +138,7 @@ def basenet_filter(data):
     return [row['model'].startswith('basenet') for _, row in data.iterrows()]
 
 
-def plot_all(models, neural_data=neurality.Defaults.neural_data, mode=Mode.YEAR_VS_SCORE,
+def plot_all(models, neural_data=candidate_models.Defaults.neural_data, mode=Mode.YEAR_VS_SCORE,
              fit_method='fit', logx=False):
     data = prepare_data(models, neural_data)
     highlighted_models = [

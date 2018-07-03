@@ -1,8 +1,8 @@
 import numpy as np
 from pytest import approx
 
-from neurality import score_physiology
-from neurality.models.implementations import model_layers
+from candidate_models import score_physiology
+from candidate_models.models.implementations import model_layers
 
 
 class TestScorePhysiology:
