@@ -16,7 +16,7 @@ def plot_model_pcas(model, layer, model_weights=models.Defaults.model_weights, s
                     pcas=(25, 50, 100, 200, 500, 1000, 1500, 2000, 4000)):
     centers, errs = [], []
     for pca in pcas:
-        score = score_physiology(model=model, model_weights=model_weights, layers=[layer], pca_components=pca,
+        score = score_physiology(model=model, weights=model_weights, layers=[layer], pca_components=pca,
                                  neural_data=stimulus_set)
         center, err = score.center, score.error
         center, err = center.expand_dims('pca'), err.expand_dims('pca')
