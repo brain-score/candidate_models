@@ -5,7 +5,7 @@ import matplotlib
 import seaborn
 from matplotlib import pyplot
 
-from mkgu.assemblies import merge_data_arrays
+from brainscore.assemblies import merge_data_arrays
 from candidate_models import models, score_physiology
 from candidate_models.plot import shaded_errorbar
 

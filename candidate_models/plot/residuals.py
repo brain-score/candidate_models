@@ -2,10 +2,10 @@ import logging
 import sys
 
 from caching import store_xarray
-from mkgu.assemblies import walk_coords, DataAssembly
-from mkgu.benchmarks import DicarloMajaj2015
-from mkgu.metrics.ceiling import SplitNoCeiling
-from mkgu.metrics.neural_fit import NeuralFit
+from brainscore.assemblies import walk_coords, DataAssembly
+from brainscore.benchmarks import DicarloMajaj2015
+from brainscore.metrics.ceiling import SplitNoCeiling
+from brainscore.metrics.neural_fit import NeuralFit
 from candidate_models import Defaults, model_layers, model_multi_activations
 
 _logger = logging.getLogger(__name__)

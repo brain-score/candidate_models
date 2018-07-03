@@ -7,9 +7,9 @@ import pandas as pd
 import xarray as xr
 
 from caching import store_xarray
-from mkgu.assemblies import NeuroidAssembly, merge_data_arrays
-from mkgu.metrics.transformations import subset
-from mkgu.metrics.utils import get_modified_coords
+from brainscore.assemblies import NeuroidAssembly, merge_data_arrays
+from brainscore.metrics.transformations import subset
+from brainscore.metrics.utils import get_modified_coords
 from .implementations import Defaults as DeepModelDefaults
 from .implementations.keras import KerasModel
 from .implementations.pytorch import PytorchModel

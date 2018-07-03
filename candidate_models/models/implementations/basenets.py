@@ -5,8 +5,8 @@ import pickle
 import numpy as np
 import pandas as pd
 
-import mkgu
-from mkgu.assemblies import NeuroidAssembly, walk_coords, array_is_element
+import brainscore
+from brainscore.assemblies import NeuroidAssembly, walk_coords, array_is_element
 
 
 def package(features_path='/braintree/data2/active/users/qbilius/computed/hvm/ait'):
@@ -20,7 +20,7 @@ def package(features_path='/braintree/data2/active/users/qbilius/computed/hvm/ai
     meta = meta[meta['var'] == 6]
     meta_ids = meta['id'].values.tolist()
 
-    hvm = mkgu.get_assembly('dicarlo.Majaj2015') \
+    hvm = brainscore.get_assembly('dicarlo.Majaj2015') \
         .sel(variation=6) \
         .multi_groupby(['category_name', 'object_name', 'image_id']) \
         .mean(dim="presentation") \

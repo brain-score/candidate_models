@@ -13,8 +13,8 @@ from matplotlib.ticker import FuncFormatter
 pyplot.rcParams['svg.fonttype'] = 'none'
 
 import candidate_models
-from mkgu.assemblies import merge_data_arrays
-from mkgu.metrics import MeanScore
+from brainscore.assemblies import merge_data_arrays
+from brainscore.metrics import MeanScore
 from candidate_models import score_physiology, model_layers
 from candidate_models.plot import score_color_mapping, get_models, clean_axis
 

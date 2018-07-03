@@ -8,8 +8,8 @@ import h5py
 import numpy as np
 from sklearn.decomposition import PCA
 
-from mkgu.assemblies import NeuroidAssembly
-from mkgu.utils import fullname
+from brainscore.assemblies import NeuroidAssembly
+from brainscore.utils import fullname
 
 
 class Defaults(object):

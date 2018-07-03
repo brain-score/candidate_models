@@ -8,10 +8,10 @@ from matplotlib import pyplot
 from scipy.optimize import OptimizeWarning
 
 from caching import store, cache
-from mkgu import benchmarks
-from mkgu.assemblies import merge_data_arrays
-from mkgu.benchmarks import metrics
-from mkgu.metrics.ceiling import ceilings
+from brainscore import benchmarks
+from brainscore.assemblies import merge_data_arrays
+from brainscore.benchmarks import metrics
+from brainscore.metrics.ceiling import ceilings
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
