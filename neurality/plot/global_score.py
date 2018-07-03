@@ -27,7 +27,6 @@ model_nonlins = {row['model']: row['nonlins'] for _, row in model_meta.iterrows(
 model_flops = {row['model']: row['flops'] for _, row in model_meta.iterrows()}
 model_params = {row['model']: row['num_params'] for _, row in model_meta.iterrows()}
 model_behavior = {row['model']: row['behav_r'] for _, row in model_meta.iterrows()}
-model_behavior['squeezenet'] = model_behavior['alexnet']  # FIXME: remove mock data
 
 _model_years = {
     'alexnet': 2012,
