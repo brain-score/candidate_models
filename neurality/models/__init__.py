@@ -6,13 +6,14 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from caching import store_xarray
 from mkgu.assemblies import NeuroidAssembly, merge_data_arrays
-from mkgu.metrics import subset, get_modified_coords
+from mkgu.metrics.transformations import subset
+from mkgu.metrics.utils import get_modified_coords
 from .implementations import Defaults as DeepModelDefaults
 from .implementations.keras import KerasModel
 from .implementations.pytorch import PytorchModel
 from .implementations.tensorflow_slim import TensorflowSlimModel
-from neurality.storage import store_xarray
 
 _logger = logging.getLogger(__name__)
 
@@ -105,8 +106,6 @@ def create_model(model, *args, **kwargs):
 
 def load_model_definitions():
     models = {}
-    models_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), 'implementations', 'models.csv'),
-                              keep_default_na=False)
     for _, row in models_meta.iterrows():
         framework = row['framework']
         if not framework:  # basenet
@@ -117,4 +116,10 @@ def load_model_definitions():
     return models
 
 
+def load_model_meta():
+    return pd.read_csv(os.path.join(os.path.dirname(__file__), 'implementations', 'models.csv'),
+                       keep_default_na=False)
+
+
+models_meta = load_model_meta()
 models = load_model_definitions()
