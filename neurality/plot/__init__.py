@@ -4,6 +4,7 @@ import re
 
 import numpy as np
 import seaborn
+from matplotlib import pyplot
 
 seaborn.set()
 seaborn.set_context("poster")
@@ -20,7 +21,8 @@ score_color_mapping = {
 }
 
 
-def shaded_errorbar(x, y, error, ax, alpha=0.4, **kwargs):
+def shaded_errorbar(x, y, error, ax=None, alpha=0.4, **kwargs):
+    ax = ax or pyplot.gca()
     line = ax.plot(x, y, **kwargs)
     ax.fill_between(x, y - error, y + error, alpha=alpha, **kwargs)
     return line
