@@ -5,7 +5,8 @@ import caching
 from caching import store_xarray
 from candidate_models import models
 from candidate_models.assemblies import load_neural_benchmark, load_stimulus_set
-from candidate_models.models import model_activations, model_multi_activations, combine_layers_xarray, split_layers_xarray
+from candidate_models.models import model_activations, model_multi_activations, combine_layers_xarray, \
+    split_layers_xarray
 from candidate_models.models.graph import combine_graph, cut_graph
 from candidate_models.models.implementations import Defaults as DeepModelDefaults
 from candidate_models.models.implementations import model_layers
@@ -46,7 +47,7 @@ def score_physiology(model, layers=None,
                      weights=DeepModelDefaults.weights,
                      pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
                      neural_data=Defaults.neural_data, target_splits=Defaults.target_splits,
-                     metric_name=Defaults.metric_name):
+                     metric_name=Defaults.metric_name, return_unceiled=False):
     """
     :param str model:
     :param [str]|None layers: layers to score or None to use all layers present in the model activations
@@ -60,10 +61,13 @@ def score_physiology(model, layers=None,
     # this method is just a wrapper function around _score_physiology
     # so that we can properly handle default values for `layers`.
     layers = layers or model_layers[model]
-    return _score_physiology(model=model, layers=layers, weights=weights,
-                             pca_components=pca_components, image_size=image_size,
-                             neural_data=neural_data, target_splits=target_splits,
-                             metric_name=metric_name)
+    ceiled_score, unceiled_score = _score_physiology(model=model, layers=layers, weights=weights,
+                                                     pca_components=pca_components, image_size=image_size,
+                                                     neural_data=neural_data, target_splits=target_splits,
+                                                     metric_name=metric_name)
+    if return_unceiled:
+        return ceiled_score, unceiled_score
+    return ceiled_score
 
 
 @store_xarray(identifier_ignore=['layers', 'image_size', 'metric_kwargs'], combine_fields={'layers': 'layer'},
@@ -82,8 +86,8 @@ def _score_physiology(model, layers,
     logger.info('Loading benchmark')
     benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name, target_splits=target_splits)
     logger.info('Scoring activations')
-    score = benchmark(model_assembly, source_splits=['layer'])
-    return score
+    ceiled_score, unceiled_score = benchmark(model_assembly, source_splits=['layer'], return_unceiled=True)
+    return ceiled_score, unceiled_score
 
 
 def score_anatomy(model, region_layers):
