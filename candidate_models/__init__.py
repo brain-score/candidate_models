@@ -1,6 +1,8 @@
 import logging
 import os
 
+from brainscore.metrics import Score
+
 import caching
 from caching import store_xarray
 from candidate_models import models
@@ -61,10 +63,11 @@ def score_physiology(model, layers=None,
     # this method is just a wrapper function around _score_physiology
     # so that we can properly handle default values for `layers`.
     layers = layers or model_layers[model]
-    ceiled_score, unceiled_score = _score_physiology(model=model, layers=layers, weights=weights,
-                                                     pca_components=pca_components, image_size=image_size,
-                                                     neural_data=neural_data, target_splits=target_splits,
-                                                     metric_name=metric_name)
+    composite_score = _score_physiology(model=model, layers=layers, weights=weights,
+                                        pca_components=pca_components, image_size=image_size,
+                                        neural_data=neural_data, target_splits=target_splits,
+                                        metric_name=metric_name)
+    ceiled_score, unceiled_score = composite_score.sel(ceiled=True), composite_score.sel(ceiled=False)
     if return_unceiled:
         return ceiled_score, unceiled_score
     return ceiled_score
@@ -86,8 +89,13 @@ def _score_physiology(model, layers,
     logger.info('Loading benchmark')
     benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name, target_splits=target_splits)
     logger.info('Scoring activations')
-    ceiled_score, unceiled_score = benchmark(model_assembly, source_splits=['layer'], return_unceiled=True)
-    return ceiled_score, unceiled_score
+    ceiled_score, unceiled_score = benchmark(model_assembly, transformation_kwargs=dict(
+        cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_unceiled=True)
+    ceiled_score, unceiled_score = ceiled_score.expand_dims('ceiled'), unceiled_score.expand_dims('ceiled')
+    ceiled_score['ceiled'] = [False]
+    unceiled_score['ceiled'] = [True]
+    composite_score = Score.merge(ceiled_score, unceiled_score)
+    return composite_score
 
 
 def score_anatomy(model, region_layers):
