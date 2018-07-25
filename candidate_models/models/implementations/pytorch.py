@@ -1,11 +1,13 @@
 import logging
-from PIL import Image
 from collections import OrderedDict
 
 import numpy as np
 import torch
+from PIL import Image
 from torch.autograd import Variable
 from torchvision.models.alexnet import alexnet
+from torchvision.models.resnet import resnet18
+from torchvision.models.squeezenet import squeezenet1_0, squeezenet1_1
 from torchvision.transforms import transforms
 
 from candidate_models.models.implementations import DeepModel, Defaults
@@ -53,6 +55,7 @@ class PytorchModel(DeepModel):
         def walk_pytorch_module(module, layer_name):
             for part in layer_name.split(SUBMODULE_SEPARATOR):
                 module = module._modules.get(part)
+                assert module is not None, "No submodule found for layer {}, at part {}".format(layer_name, part)
             return module
 
         def store_layer_output(layer_name, output):
@@ -84,4 +87,7 @@ def torchvision_preprocess_input(image_size, normalize_mean=[0.485, 0.456, 0.406
 
 model_constructors = {
     'alexnet': alexnet,  # https://arxiv.org/abs/1404.5997
+    'squeezenet1_0': squeezenet1_0,  # https://arxiv.org/abs/1602.07360
+    'squeezenet1_1': squeezenet1_1,  # https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1
+    'resnet-18': resnet18,  # https://arxiv.org/abs/1512.03385
 }

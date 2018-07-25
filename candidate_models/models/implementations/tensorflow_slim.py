@@ -35,7 +35,6 @@ class TensorflowSlimModel(DeepModel):
         if model_name.startswith('mobilenet_v2') or model_name.startswith('mobilenet_v1'):
             arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0., is_training=False)
             kwargs = {'depth_multiplier': _model_properties['depth_multiplier']}
-            call = 'mobilenet_v2' if model_name.startswith('mobilenet_v2') else 'mobilenet_v1'
         tf.reset_default_graph()
         model = nets_factory.networks_map[call]
         self.inputs = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size, image_size, 3])

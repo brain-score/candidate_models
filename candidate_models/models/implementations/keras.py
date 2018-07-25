@@ -56,9 +56,9 @@ class KerasModel(DeepModel):
 
 model_constructors_preprocessing = {
     'xception': (Xception, preprocess_xception),
-    'densenet121': (DenseNet121, preprocess_densenet),  # https://arxiv.org/pdf/1608.06993.pdf
-    'densenet169': (DenseNet169, preprocess_densenet),
-    'densenet201': (DenseNet201, preprocess_densenet),
+    'densenet-121': (DenseNet121, preprocess_densenet),  # https://arxiv.org/pdf/1608.06993.pdf
+    'densenet-169': (DenseNet169, preprocess_densenet),
+    'densenet-201': (DenseNet201, preprocess_densenet),
     'squeezenet': (SqueezeNet, preprocess_generic),
     'vgg-16': (VGG16, preprocess_vgg16),
     'vgg-19': (VGG19, preprocess_vgg19),
