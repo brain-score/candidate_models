@@ -19,7 +19,7 @@ _logger = logging.getLogger(__name__)
 
 
 class Defaults(object):
-    stimulus_set = 'dicarlo.Majaj2015'
+    stimulus_set = 'dicarlo.hvm'
 
 
 def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_set,
