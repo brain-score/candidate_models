@@ -104,11 +104,14 @@ class DeepModel(object):
         imagenet_images = self._get_imagenet_val(pca_components)
         imagenet_activations = get_image_activations(imagenet_images, reduce_dimensionality=flatten)
         pca = self._change_layer_activations(imagenet_activations,
-                                             lambda activations: PCA(n_components=pca_components).fit(activations)
-                                             if 0 < pca_components < np.prod(activations.shape[1:]) else activations)
+                                             lambda activations: PCA(n_components=pca_components).fit(activations))
 
         def reduce_dimensionality(layer_name, layer_activations):
             layer_activations = flatten(layer_name, layer_activations)
+            if layer_activations.shape[1] < pca_components:
+                self._logger.warning("layer {} activations are smaller than pca components: {}".format(
+                    layer_name, layer_activations.shape))
+                return layer_activations
             return pca[layer_name].transform(layer_activations)
 
         return reduce_dimensionality
@@ -165,8 +168,9 @@ class DeepModel(object):
         for layer in too_small_layers:
             self._logger.warning("Padding layer {} with zeros since its activations are too small ({})".format(
                 layer, layer_activations[layer].shape))
-            layer_activations[layer] = [np.pad(a, (0, num_components - a.size), 'constant', constant_values=(0,))
-                                        for a in layer_activations[layer]]
+            layer_activations[layer] = np.array([
+                np.pad(a, (0, num_components - a.size), 'constant', constant_values=(0,))
+                for a in layer_activations[layer]])
 
     def _pad(self, batch_images, batch_size):
         if len(batch_images) % batch_size == 0:
@@ -231,6 +235,16 @@ _model_layers = {
         ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
     'vgg-19':
         ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
+    'squeezenet1_0':
+        ['features.' + layer for layer in
+         ['2']  # max pool
+         + ['{}.expand3x3_activation'.format(i) for i in [3, 4, 5, 7, 8, 9, 10, 12]]  # fire outputs (ignoring pools)
+         ],
+    'squeezenet1_1':
+        ['features.' + layer for layer in
+         ['2']  # max pool
+         + ['{}.expand3x3_activation'.format(i) for i in [3, 4, 6, 7, 9, 10, 11, 12]]  # fire outputs (ignoring pools)
+         ],
     'densenet-121':
         ['conv1/relu'] +
         ['pool1'] +
@@ -264,9 +278,6 @@ _model_layers = {
         ['pool4_pool'] +
         ['conv5_block{}_concat'.format(i + 1) for i in range(32)] +
         ['avg_pool'],
-    'squeezenet':
-        ['pool1'] + ['fire{}/concat'.format(i + 1) for i in range(1, 9)] +
-        ['relu_conv10', 'global_average_pooling2d_1'],
     'xception':
         ['block1_conv{}_act'.format(i + 1) for i in range(2)] +
         ['block2_sepconv2_act'] +
@@ -283,7 +294,7 @@ _model_layers = {
         ['block13_sepconv{}_act'.format(i + 1) for i in range(2)] +
         ['block14_sepconv{}_act'.format(i + 1) for i in range(2)] +
         ['avg_pool'],
-    'resnet18':
+    'resnet-18':
         ['conv1'] + \
         ['layer1.0.relu', 'layer1.1.relu'] + \
         ['layer2.0.relu', 'layer2.0.downsample.0', 'layer2.1.relu'] + \
@@ -363,6 +374,10 @@ _model_layers = {
      'mobilenet_v2_0.35_96'):
         ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool'],
 }
+"""
+the last layer in each of the model's layer lists is supposed to always be the last feature layer, 
+i.e. the last layer before readout.
+"""
 
 model_layers = {}
 for model, layers in _model_layers.items():
