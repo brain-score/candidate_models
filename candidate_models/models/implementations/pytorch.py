@@ -22,11 +22,12 @@ class PytorchModel(DeepModel):
     def __init__(self, model_name, weights=Defaults.weights,
                  batch_size=Defaults.batch_size, image_size=Defaults.image_size):
         super().__init__(batch_size=batch_size, image_size=image_size)
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self._logger.debug(f"Using device {self._device}")
         constructor = model_constructors[model_name]
         assert weights in ['imagenet', None]
         self._model = constructor(pretrained=weights == 'imagenet')
-        if torch.cuda.is_available():
-            self._model.cuda()
+        self._model = self._model.to(self._device)
 
     def _load_image(self, image_filepath):
         with Image.open(image_filepath) as image:
@@ -41,7 +42,8 @@ class PytorchModel(DeepModel):
 
     def _preprocess_images(self, images, image_size):
         images = [self._preprocess_image(image, image_size) for image in images]
-        return np.concatenate(images)
+        images = np.concatenate(images)
+        return images
 
     def _preprocess_image(self, image, image_size):
         if isinstance(image, np.ndarray):
@@ -50,6 +52,10 @@ class PytorchModel(DeepModel):
         return image
 
     def _get_activations(self, images, layer_names):
+        images = [torch.from_numpy(image) for image in images]
+        images = Variable(torch.stack(images))
+        images = images.to(self._device)
+
         layer_results = OrderedDict()
 
         def walk_pytorch_module(module, layer_name):
@@ -59,16 +65,14 @@ class PytorchModel(DeepModel):
             return module
 
         def store_layer_output(layer_name, output):
-            layer_results[layer_name] = output.data.numpy()
+            layer_results[layer_name] = output.cpu().data.numpy()
 
         for layer_name in layer_names:
             layer = walk_pytorch_module(self._model, layer_name)
             layer.register_forward_hook(
                 lambda _layer, _input, output, name=layer_name: store_layer_output(name, output))
-        images = [torch.from_numpy(image) for image in images]
-        images = Variable(torch.stack(images))
-        if torch.cuda.is_available():
-            images.cuda()
+
+        self._model.eval()
         self._model(images)
         return layer_results
 
