@@ -82,12 +82,12 @@ def _score_physiology(model, layers,
                       neural_data=Defaults.neural_data, target_splits=Defaults.target_splits,
                       metric_name=Defaults.metric_name):
     layers = layers or model_layers[model]
+    logger.info('Loading benchmark')
+    benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name, target_splits=target_splits)
     logger.info('Computing activations')
     model_assembly = model_multi_activations(model=model, weights=weights, multi_layers=layers,
                                              pca_components=pca_components, image_size=image_size,
-                                             stimulus_set=neural_data)
-    logger.info('Loading benchmark')
-    benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name, target_splits=target_splits)
+                                             stimulus_set=benchmark.stimulus_set_name)
     logger.info('Scoring activations')
     ceiled_score, unceiled_score = benchmark(model_assembly, transformation_kwargs=dict(
         cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_unceiled=True)
