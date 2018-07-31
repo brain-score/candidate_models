@@ -30,8 +30,8 @@ def shaded_errorbar(x, y, error, ax=None, alpha=0.4, **kwargs):
 
 def get_models():
     models = [file for file in glob.glob(os.path.join(os.path.dirname(__file__), '..', '..',
-                                                      'output', 'neurality.score_physiology', '*'))]
-    models = [re.match('.*/model=(.*),model_weights.*', file) for file in models]
+                                                      'output', 'candidate_models._score_physiology', '*'))]
+    models = [re.match('.*/model=(.*),weights.*', file) for file in models]
     models = [match.group(1) for match in models if match]
     models = np.unique(models)
     potentially_broken_models = ['resnet-50_v1', 'resnet-101_v1', 'resnet-152_v1']
