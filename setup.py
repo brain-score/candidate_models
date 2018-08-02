@@ -7,7 +7,7 @@ with open('README.md') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "brain-score",
+    "brain-score",  # (see dependency_links for error handling)
     "keras",
     "tensorflow>=1.4",
     "pytorch",
@@ -31,6 +31,8 @@ test_requirements = [
 ]
 
 dependency_links = [
+    # if you get an error here (due to the repository being private,
+    # install it by hand: pip install https://github.com/dicarlolab/brain-score.git
     "https://github.com/dicarlolab/brain-score/master/tarball",
     "https://github.com/mschrimpf/caching/master/tarball",
     "https://github.com/rcmalli/keras-squeezenet/master/tarball",
