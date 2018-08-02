@@ -64,3 +64,12 @@ class TestModels:
         assert isinstance(activations, NeuroidAssembly)
         assert len(activations['stimulus_path']) == 1
         assert len(activations['neuroid_id']) == 10
+
+
+class TestGraph:
+    def test_resnet101(self):
+        model = TensorflowSlimModel('resnet-101_v2')
+        graph = model.graph()
+        assert 146 == len(graph.nodes)
+        assert 101 == len([node_name for node_name, node in graph.nodes.items()
+                         if 'conv' in node['object'].name.lower() or 'logits' in node['object'].name.lower()])

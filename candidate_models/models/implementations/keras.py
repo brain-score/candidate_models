@@ -1,6 +1,7 @@
 import logging
 from collections import OrderedDict
 
+import networkx as nx
 import numpy as np
 from PIL import Image
 from keras import backend as K
@@ -52,6 +53,14 @@ class KerasModel(DeepModel):
 
     def __repr__(self):
         return repr(self._model)
+
+    def graph(self):
+        g = nx.DiGraph()
+        for layer in self._model.layers:
+            g.add_node(layer.name, object=layer, type=type(layer))
+            for outbound_node in layer._outbound_nodes:
+                g.add_edge(layer.name, outbound_node.outbound_layer.name)
+        return g
 
 
 model_constructors_preprocessing = {

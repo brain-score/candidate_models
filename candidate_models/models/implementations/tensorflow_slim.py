@@ -3,6 +3,7 @@ import logging
 import os
 from collections import OrderedDict
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import skimage.io
@@ -43,7 +44,7 @@ class TensorflowSlimModel(DeepModel):
         self.inputs = tf.map_fn(lambda image: preprocess_image(tf.image.convert_image_dtype(image, dtype=tf.uint8),
                                                                image_size, image_size), self.inputs)
         with tf.contrib.slim.arg_scope(arg_scope):
-            logits, self.endpoints = model(self.inputs,
+            self._logits, self.endpoints = model(self.inputs,
                                            num_classes=1001 - int(_model_properties['labels_offset']),
                                            is_training=False,
                                            **kwargs)
@@ -99,3 +100,10 @@ class TensorflowSlimModel(DeepModel):
         layer_tensors = OrderedDict((layer, self.endpoints[layer]) for layer in layer_names)
         layer_outputs = self._sess.run(layer_tensors, feed_dict={self.inputs: images})
         return layer_outputs
+
+    def graph(self):
+        g = nx.DiGraph()
+        for name, layer in self.endpoints.items():
+            g.add_node(name, object=layer, type=type(layer))
+        g.add_node("logits", object=self._logits, type=type(self._logits))
+        return g

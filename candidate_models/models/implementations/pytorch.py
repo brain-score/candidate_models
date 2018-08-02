@@ -1,6 +1,7 @@
 import logging
 from collections import OrderedDict
 
+import networkx as nx
 import numpy as np
 import torch
 from PIL import Image
@@ -78,6 +79,26 @@ class PytorchModel(DeepModel):
 
     def __repr__(self):
         return repr(self._model)
+
+    def layers(self):
+        return self._layers(self._model)
+
+    @classmethod
+    def _layers(cls, module, name_prefix=None):
+        if not module._modules:
+            module_name = name_prefix + SUBMODULE_SEPARATOR + module.__class__.__name__
+            yield module_name, module
+            return
+        for submodule_name, submodule in module._modules.items():
+            submodule_prefix = (name_prefix + SUBMODULE_SEPARATOR + submodule_name) if name_prefix is not None \
+                else submodule_name
+            yield from cls._layers(submodule, name_prefix=submodule_prefix)
+
+    def graph(self):
+        g = nx.DiGraph()
+        for layer_name, layer in self.layers():
+            g.add_node(layer_name, object=layer, type=type(layer))
+        return g
 
 
 def torchvision_preprocess_input(image_size, normalize_mean=[0.485, 0.456, 0.406], normalize_std=[0.229, 0.224, 0.225]):
