@@ -1,5 +1,6 @@
 import functools
 import itertools
+import json
 import logging
 import os
 import sys
@@ -7,18 +8,19 @@ from enum import Enum
 
 import numpy as np
 import pandas as pd
+import scipy.stats
 from matplotlib import pyplot
 from matplotlib.ticker import FuncFormatter
+from pybtex.database.input import bibtex
 
 pyplot.rcParams['svg.fonttype'] = 'none'
 
 import candidate_models
 from brainscore.assemblies import merge_data_arrays
-from brainscore.metrics import MeanScore
 from candidate_models import score_physiology, model_layers
 from candidate_models.plot import score_color_mapping, get_models, clean_axis
 
-model_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), '..', 'models', 'models.csv'))
+model_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'models.csv'))
 model_performance = {row['model']: row['top1'] for _, row in model_meta.iterrows()}
 model_performance['alexnet'] = 1 - 0.4233
 model_performance['squeezenet'] = 0.575
@@ -27,6 +29,9 @@ model_nonlins = {row['model']: row['nonlins'] for _, row in model_meta.iterrows(
 model_flops = {row['model']: row['flops'] for _, row in model_meta.iterrows()}
 model_params = {row['model']: row['num_params'] for _, row in model_meta.iterrows()}
 model_behavior = {row['model']: row['behav_r'] for _, row in model_meta.iterrows()}
+
+UGLY_RUN_TEMPORAL_FLAG = False
+UGLY_RDM_FLAG = False
 
 _model_years = {
     'alexnet': 2012,
@@ -75,52 +80,135 @@ def parse_neural_data(models, neural_data=candidate_models.Defaults.neural_data)
     if os.path.isfile(savepath):
         return pd.read_csv(savepath)
 
-    regions = ['V4', 'IT']
-    metrics = ['neural_fit']  # , 'rdm']
+    time_bins = [(90, 110), (190, 210)] if UGLY_RUN_TEMPORAL_FLAG else [None]
+    regions = [b'V4', b'IT'] if UGLY_RUN_TEMPORAL_FLAG else ['V4', 'IT']
+    metrics = ['rdm'] if UGLY_RDM_FLAG else ['neural_fit']
     data = {'model': models}
-    for region, metric in itertools.product(regions, metrics):
+    for time_bin, region, metric in itertools.product(time_bins, regions, metrics):
         neural_centers, neural_errors = [], []
         for model in models:
             layers = model_layers[model] if not model.startswith('basenet') \
                 else ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait']
             neural_score = score_physiology(model=model, layers=layers, neural_data=neural_data, metric_name=metric)
-            neural_score = MeanScore(neural_score.values)  # re-package with SEM
-            center, error = neural_score.center.max(dim='layer'), neural_score.error.max(dim='layer')
+            # TODO: this just takes the maximum error but not necessarily the one corresponding to the maximum score
+            agg = neural_score.aggregation.max(dim='layer')
+            center, error = agg.sel(aggregation='center'), agg.sel(aggregation='error')
             center, error = center.expand_dims('model'), error.expand_dims('model')
             center['model'], error['model'] = [model], [model]
             neural_centers.append(center)
             neural_errors.append(error)
         neural_centers, neural_errors = merge_data_arrays(neural_centers), merge_data_arrays(neural_errors)
-        data['neural: {}-{}'.format(region, metric)] = neural_centers.sel(region=region).values
-        data['neural-error: {}-{}'.format(region, metric)] = neural_errors.sel(region=region).values
+        selectors = {'time_bin': time_bin, 'region': region} if UGLY_RUN_TEMPORAL_FLAG else {'region': region}
+        data['neural: {}-{}-{}'.format(time_bin, region, metric)] = neural_centers.sel(**selectors).values
+        data['neural-error: {}-{}-{}'.format(time_bin, region, metric)] = neural_errors.sel(**selectors).values
 
     data = pd.DataFrame(data=data)
-    data['neural-mean'] = (data['neural: V4-neural_fit'] + data['neural: IT-neural_fit']) / 2
+    # data['neural-mean'] = (data['neural: V4-neural_fit'] + data['neural: IT-neural_fit']) / 2
     data.to_csv(savepath)
     return data
 
 
 def prepare_data(models, neural_data):
+    # scores
     data = parse_neural_data(models, neural_data)
-    data['i2n'] = [model_behavior[model] if model in model_behavior else np.nan for model in data['model']]
+    data['i2n'] = [model_behavior[model] if model in model_behavior else np.nan for model in data['model'] if
+                   model != 'cornet']
     data['performance'] = [100 * model_performance[model] for model in data['model']]
 
-    global_scores = [[data['neural-mean'][data['model'] == model].values[0],
-                      data['i2n'][data['model'] == model].values[0]]
-                     for model in data['model']]
+    global_scores = [[  # data['neural-mean'][data['model'] == model].values[0],
+        data['i2n'][data['model'] == model].values[0]]
+        for model in data['model']]
     data['global'] = np.mean(global_scores, axis=1)
     data = data[data['model'].isin(models)]
     # rank
     data['rank'] = data['global'].rank(ascending=False)
+    # meta
+    data = data.merge(model_meta[['model', 'link', 'bibtex']], on='model')
 
-    # latex table
+    # compute_correlations(data)
+    # compute_benchmark_correlations(data)
+
+    _create_fixture(data)
+
+    _create_latex_table(data)
+    return data
+
+
+def _create_fixture(data):
+    data = data.dropna()
+    fields = {'brain_score': 'global', 'name': 'model', 'imagenet_top1': 'performance',
+              'v4': 'neural: None-V4-neural_fit', 'it': 'neural: None-IT-neural_fit', 'behavior': 'i2n',
+              'paper_link': 'link', 'paper_identifier': 'identifier'}
+
+    def parse_bib(bibtex_str):
+        bib_parser = bibtex.Parser()
+        entry = bib_parser.parse_string(bibtex_str).entries
+        assert len(entry) == 1
+        entry = entry.values()[0]
+        return entry
+
+    bibs = data['bibtex'].apply(parse_bib)
+    data['authors'] = bibs.apply(lambda entry: " ".join(entry.persons["author"][0].last()) + " et al.")
+    data['year'] = bibs.apply(lambda entry: entry.fields['year'])
+    data['identifier'] = data[['authors', 'year']].apply(lambda authors_year: ", ".join(authors_year), axis=1)
+    data_rows = [
+        {"model": "benchmarks.CandidateModel",
+         "fields": {field_key: row[field] for field_key, field in fields.items()}}
+        for _, row in data.iterrows()]
+    with open('fixture.json', 'w') as f:
+        json.dump(data_rows, f)
+
+
+def _create_latex_table(data):
     table = data[[not model.startswith('basenet') for model in data['model']]]
-    table = table[['global', 'model', 'performance', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n']]
+    table = table[['global', 'model', 'performance'] +
+                  (['neural: (90, 110)-b\'V4\'-neural_fit', 'neural: (90, 110)-b\'IT\'-neural_fit',
+                    'neural: (190, 210)-b\'V4\'-neural_fit', 'neural: (190, 210)-b\'IT\'-neural_fit']
+                   if UGLY_RUN_TEMPORAL_FLAG else ['neural: None-V4-neural_fit', 'neural: None-IT-neural_fit']) +
+                  ['i2n']]
     table = table.sort_values('global', ascending=False)
     table = table.rename(columns={'global': 'Mean Score'})
     table = table.apply(highlight_max)
     table.to_latex('data.tex', escape=False, index=False)
-    return data
+
+
+def compute_correlations(data):
+    data = data[~np.isnan(data['performance']) & ~np.isnan(data['global'])]
+    below70 = data[data['performance'] < 70]
+    above70 = data[data['performance'] >= 70]
+    above725 = data[data['performance'] >= 72.5]
+
+    def corr(d):
+        c, p = scipy.stats.pearsonr(d['performance'], d['global'])
+        return c, p
+
+    below70_corr, below70_p = corr(below70)
+    above70_corr, above70_p = corr(above70)
+    above725_corr, above725_p = corr(above725)
+    print(f"<70% top-1: {below70_corr} (p={below70_p})")
+    print(f">=70% top-1: {above70_corr} (p={above70_p})")
+    print(f">=72.5% top-1: {above725_corr} (p={above725_p})")
+
+
+def compute_benchmark_correlations(data):
+    data = data[~np.isnan(data['neural: None-V4-neural_fit']) & ~np.isnan(data['neural: None-IT-neural_fit'])
+                & ~np.isnan(data['i2n'])]
+    not_mobilenets = [not row['model'].startswith('mobilenet') for _, row in data.iterrows()]
+    data = data[not_mobilenets]
+    v4 = data['neural: None-V4-neural_fit']
+    it = data['neural: None-IT-neural_fit']
+    behavior = data['i2n']
+
+    def corr(a, b):
+        c, p = scipy.stats.pearsonr(a, b)
+        return c, p
+
+    v4_b_corr, v4_b_p = corr(v4, behavior)
+    it_b_corr, it_b_p = corr(it, behavior)
+    v4_it_corr, v4_it_p = corr(v4, it)
+    print(f"v4, behavior: {v4_b_corr} (p={v4_b_p})")
+    print(f"it, behavior: {it_b_corr} (p={it_b_p})")
+    print(f"v4, it: {v4_it_corr} (p={v4_it_p})")
 
 
 def highlight_max(data):
@@ -181,24 +269,23 @@ def plot_all(models, neural_data=candidate_models.Defaults.neural_data, mode=Mod
     basenet_alpha = 0.3
     nonbasenet_alpha = 0.7
 
-    ## best models
-
-    for best in ['global', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n', 'performance']:
-        # best_model = data.loc[data[best].idxmax()]
-        best_models = data.nlargest(3, best)
-        print("## {}".format(best))
-        for i, (_, best_model) in enumerate(best_models.iterrows()):
-            print("Top {} model: {}".format(i + 1, best),
-                  best_model[['model', 'global', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n', 'rank',
-                              'performance']])
-        model = best_models.iloc[0]['model']
-        layers = model_layers[model] if not model.startswith('basenet') \
-            else ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait']
-        neural_score = score_physiology(model=model, layers=layers)
-        max = neural_score.center['layer'][neural_score.center.argmax('layer')]
-        print("V4:", max.sel(region='V4').values)
-        print("IT:", max.sel(region='IT').values)
-        print()
+    # ## best models
+    # for best in ['global', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n', 'performance']:
+    #     # best_model = data.loc[data[best].idxmax()]
+    #     best_models = data.nlargest(3, best)
+    #     print("## {}".format(best))
+    #     for i, (_, best_model) in enumerate(best_models.iterrows()):
+    #         print("Top {} model: {}".format(i + 1, best),
+    #               best_model[['model', 'global', 'neural: V4-neural_fit', 'neural: IT-neural_fit', 'i2n', 'rank',
+    #                           'performance']])
+    #     model = best_models.iloc[0]['model']
+    #     layers = model_layers[model] if not model.startswith('basenet') \
+    #         else ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait']
+    #     neural_score = score_physiology(model=model, layers=layers)
+    #     max = neural_score.center['layer'][neural_score.center.argmax('layer')]
+    #     print("V4:", max.sel(region='V4').values)
+    #     print("IT:", max.sel(region='IT').values)
+    #     print()
 
     figs = {}
 
@@ -228,17 +315,22 @@ def plot_all(models, neural_data=candidate_models.Defaults.neural_data, mode=Mod
             ax.set_xscale('log')
 
     # neural
-    regions = ['V4', 'IT']
-    metrics = ['neural_fit']  # , 'rdm']
-    fig, ax = pyplot.subplots()
-    for region, metric in itertools.product(regions, metrics):
-        plot_neural(ax=ax, data=data[basenets], fit_method=fit_method, region=region, metric=metric,
-                    color=score_color_mapping['basenet'], scatter_alpha=basenet_alpha)
-        plot_neural(ax=ax, data=data[nonbasenets], fit_method=fit_method, region=region, metric=metric,
-                    scatter_alpha=nonbasenet_alpha)
-        ax.set_ylabel('neural: ' + metric)
-        post(ax)
-        figs['neural-' + region + '-' + metric] = fig
+    time_bins = [(90, 110), (190, 210)] if UGLY_RUN_TEMPORAL_FLAG else [None]
+    regions = [b'V4', b'IT'] if UGLY_RUN_TEMPORAL_FLAG else ['V4', 'IT']
+    metrics = ['rdm'] if UGLY_RDM_FLAG else ['neural_fit']
+    for time_bin in time_bins:
+        fig, ax = pyplot.subplots()
+        for region, metric in itertools.product(regions, metrics):
+            # plot_neural(ax=ax, data=data[basenets], fit_method=fit_method,
+            #             time_bin=time_bin, region=region, metric=metric,
+            #             color=score_color_mapping['basenet'], scatter_alpha=basenet_alpha)
+            plot_neural(ax=ax, data=data[nonbasenets], fit_method=fit_method,
+                        time_bin=time_bin, region=region, metric=metric,
+                        scatter_alpha=nonbasenet_alpha)
+            ax.set_ylabel('neural: ' + metric)
+            post(ax)
+        figs['neural-{}'.format(time_bin)] = fig
+    return figs
 
     # behavior
     for metric in ['i2n']:
@@ -404,9 +496,10 @@ def plot_behavior(ax, data, fit_method, metric, **kwargs):
                        **kwargs)
 
 
-def plot_neural(ax, data, fit_method, region, metric, **kwargs):
+def plot_neural(ax, data, fit_method, time_bin, region, metric, **kwargs):
     x = data['x']
-    y, error = data['neural: {}-{}'.format(region, metric)], data['neural-error: {}-{}'.format(region, metric)]
+    y = data['neural: {}-{}-{}'.format(time_bin, region, metric)]
+    error = data['neural-error: {}-{}-{}'.format(time_bin, region, metric)]
     return _plot_score(x, y, error=error, label=region, label_long='neural: {}-{}'.format(region, metric), ax=ax,
                        fit_method=fit_method, fit_kwargs=dict(linestyle='dashed'), **kwargs)
 
@@ -415,7 +508,7 @@ def _plot_score(x, y, label, ax, error=None, label_long=None, fit_method='fit',
                 fit_kwargs=None, color=None, marker_size=20, scatter_alpha=0.3):
     label_long = label_long or label
     fit_kwargs = fit_kwargs or {}
-    color = color or score_color_mapping[label]
+    color = color or score_color_mapping[label.decode() if UGLY_RUN_TEMPORAL_FLAG else label]
     ax.scatter(x, y, label=label_long, color=color, alpha=scatter_alpha, s=marker_size)
     ax.errorbar(x, y, error, label=label_long, color=color, alpha=scatter_alpha,
                 elinewidth=1, linestyle='None')
@@ -442,17 +535,20 @@ def _plot_score(x, y, label, ax, error=None, label_long=None, fit_method='fit',
 
 
 if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)  # logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     fit = None
 
     models = get_models()
-    missing_models = set(model_behavior.keys()) - set(models)
-    print("Missing models:", missing_models)
+    all_models = list(model_behavior.keys())
+    all_models = [model for model in all_models if not model.startswith('basenet')]
+    missing_models = set(all_models) - set(models)
+    print("Missing models:", " ".join(missing_models))
 
     runs = {'performance': Mode.PERFORMANCE_VS_SCORE, 'depth': Mode.DEPTH_VS_SCORE, 'nonlins': Mode.NONLINS_VS_SCORE,
             'flops': Mode.FLOPS_VS_SCORE, 'numparams': Mode.PARAMS_VS_SCORE}
     for label, mode in runs.items():
-        figs = plot_all(models, mode=mode, fit_method=fit, logx=label not in ['performance'])
+        figs = plot_all(models, mode=mode, fit_method=fit, logx=label not in ['performance'],
+                        neural_data='dicarlo.Majaj2015.earlylate' if UGLY_RUN_TEMPORAL_FLAG else 'dicarlo.Majaj2015')
         for name, fig in figs.items():
             savepath = 'results/scores/{}-{}.svg'.format(label, name)
             fig.savefig(savepath, format='svg')
