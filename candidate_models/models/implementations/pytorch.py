@@ -25,10 +25,13 @@ class PytorchModel(DeepModel):
         super().__init__(batch_size=batch_size, image_size=image_size)
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._logger.debug(f"Using device {self._device}")
+        self._model = self._create_model(model_name, weights)
+        self._model = self._model.to(self._device)
+
+    def _create_model(self, model_name, weights):
         constructor = model_constructors[model_name]
         assert weights in ['imagenet', None]
-        self._model = constructor(pretrained=weights == 'imagenet')
-        self._model = self._model.to(self._device)
+        return constructor(pretrained=weights == 'imagenet')
 
     def _load_image(self, image_filepath):
         with Image.open(image_filepath) as image:
@@ -58,24 +61,35 @@ class PytorchModel(DeepModel):
         images = images.to(self._device)
 
         layer_results = OrderedDict()
-
-        def walk_pytorch_module(module, layer_name):
-            for part in layer_name.split(SUBMODULE_SEPARATOR):
-                module = module._modules.get(part)
-                assert module is not None, "No submodule found for layer {}, at part {}".format(layer_name, part)
-            return module
-
-        def store_layer_output(layer_name, output):
-            layer_results[layer_name] = output.cpu().data.numpy()
+        hooks = []
 
         for layer_name in layer_names:
-            layer = walk_pytorch_module(self._model, layer_name)
-            layer.register_forward_hook(
-                lambda _layer, _input, output, name=layer_name: store_layer_output(name, output))
+            layer = self.get_layer(layer_name)
+            hook = self.register_hook(layer, layer_name, target_dict=layer_results)
+            hooks.append(hook)
 
         self._model.eval()
         self._model(images)
+        for hook in hooks:
+            hook.remove()
         return layer_results
+
+    def get_layer(self, layer_name):
+        module = self._model
+        for part in layer_name.split(SUBMODULE_SEPARATOR):
+            module = module._modules.get(part)
+            assert module is not None, "No submodule found for layer {}, at part {}".format(layer_name, part)
+        return module
+
+    def store_layer_output(self, layer_results, layer_name, output):
+        layer_results[layer_name] = output.cpu().data.numpy()
+
+    def register_hook(self, layer, layer_name, target_dict):
+        def hook_function(_layer, _input, output, name=layer_name):
+            self.store_layer_output(target_dict, name, output)
+
+        hook = layer.register_forward_hook(hook_function)
+        return hook
 
     def __repr__(self):
         return repr(self._model)
