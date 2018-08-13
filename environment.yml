@@ -5,7 +5,7 @@ channels:
 - pytorch
 dependencies:
   - python>=3.6
-  - keras
+  - keras=2.2.0
   - tensorflow>=1.4
   - pytorch
   - torchvision
