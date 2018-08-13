@@ -24,3 +24,5 @@ dependencies:
     - pillow
     - llist
     - git+https://github.com/mschrimpf/caching
+    - pybtex
+    - pyyaml
