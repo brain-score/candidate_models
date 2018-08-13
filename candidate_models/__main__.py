@@ -13,7 +13,7 @@ from candidate_models.models.implementations import model_layers
 
 logger = logging.getLogger(__name__)
 
-model_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'models.csv'))
+model_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'implementations', 'models.csv'))
 
 
 def main():
