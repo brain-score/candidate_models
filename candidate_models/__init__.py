@@ -19,7 +19,7 @@ caching.store.configure_storagedir(os.path.join(os.path.dirname(__file__), '..',
 
 class Defaults(object):
     neural_data = 'dicarlo.Majaj2015'
-    metric_name = 'neural_fit'
+    metric_name = 'pls_fit'
     target_splits = ('region',)
 
 

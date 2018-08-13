@@ -59,7 +59,9 @@ def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_
         layers_activations = NeuroidAssembly(layers_activations.values, coords=coords, dims=layers_activations.dims)
 
         multi_layer_activations.append(layers_activations)
-    return merge_data_arrays(multi_layer_activations)
+    multi_layer_activations = merge_data_arrays(multi_layer_activations)
+    multi_layer_activations.name = model
+    return multi_layer_activations
 
 
 def combine_layers_xarray(layers):
