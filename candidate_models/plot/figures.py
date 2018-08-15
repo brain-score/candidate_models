@@ -195,10 +195,10 @@ class IndividualPlot(Plot):
     def get_xye(self, data):
         raise NotImplementedError()
 
-    def _plot(self, x, y, ax, error=None):
-        ax.scatter(x, y)
+    def _plot(self, x, y, ax, error=None, alpha=0.5, **kwargs):
+        ax.scatter(x, y, alpha=alpha, **kwargs)
         if error is not None:
-            ax.errorbar(x, y, error, elinewidth=1, linestyle='None')
+            ax.errorbar(x, y, error, elinewidth=1, linestyle='None', alpha=alpha, **kwargs)
 
 
 class V4Plot(IndividualPlot):
@@ -209,6 +209,9 @@ class V4Plot(IndividualPlot):
     def get_xye(self, data):
         return data['performance'], data['V4'], data['V4-error']
 
+    def _plot(self, *args, **kwargs):
+        super(V4Plot, self)._plot(*args, **kwargs, color='#00cc66')
+
 
 class ITPlot(IndividualPlot):
     def apply(self, data, ax):
@@ -218,6 +221,9 @@ class ITPlot(IndividualPlot):
 
     def get_xye(self, data):
         return data['performance'], data['IT'], data['IT-error']
+
+    def _plot(self, *args, **kwargs):
+        super(ITPlot, self)._plot(*args, **kwargs, color='#ff3232')
 
 
 class BehaviorPlot(IndividualPlot):
@@ -233,6 +239,9 @@ class BehaviorPlot(IndividualPlot):
 
     def get_xye(self, data):
         return data['performance'], data['behavior'], None
+
+    def _plot(self, *args, **kwargs):
+        super(BehaviorPlot, self)._plot(*args, **kwargs, color='#bb9000')
 
 
 class IndividualPlots(object):
