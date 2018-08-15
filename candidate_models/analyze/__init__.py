@@ -2,33 +2,18 @@ import glob
 import itertools
 import os
 import re
+from collections import defaultdict
 from glob import glob
 
 import numpy as np
 import pandas as pd
 import seaborn
-from collections import defaultdict
-
-from brainscore.utils import fullname
 from matplotlib import pyplot
 
 import candidate_models
+from brainscore.utils import fullname
 from caching import cache
 from candidate_models import score_physiology
-
-seaborn.set()
-seaborn.set_context("poster")
-seaborn.set_style("whitegrid")
-
-score_color_mapping = {
-    'basenet': 'gray',
-    'V4': '#00cc66',
-    'IT': '#ff3232',
-    'neural': '#000099',
-    'behavior': '#bb9000',
-    'performance': '#444444',
-    'global': '#780ece'
-}
 
 
 def shaded_errorbar(x, y, error, ax=None, alpha=0.4, **kwargs):
@@ -129,7 +114,8 @@ class DataCollector(object):
         # method 2: mean(mean(v4, it), behavior)
         neural_scores = [[row['V4'], row['IT']] for _, row in data.iterrows()]
         neural_scores = np.mean(neural_scores, axis=1)
-        global_scores = [[neural_score, row['behavior']] for (_, row), neural_score in zip(data.iterrows(), neural_scores)]
+        global_scores = [[neural_score, row['behavior']] for (_, row), neural_score in
+                         zip(data.iterrows(), neural_scores)]
         return np.mean(global_scores, axis=1)
 
     def __repr__(self):

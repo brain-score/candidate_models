@@ -13,14 +13,20 @@ seaborn.set_style("whitegrid")
 
 
 class Plot(object):
+    def __init__(self, highlighted_models=()):
+        self._highlighted_models = highlighted_models
+
     def __call__(self, ax=None):
         data = self.collect_results()
         ax_given = ax is not None
         if not ax_given:
             fig, ax = self._create_fig()
-            fig.tight_layout()
         self.apply(data, ax=ax)
-        return fig if not ax_given else None
+        self.highlight_models(ax, data)
+        if not ax_given:
+            fig.tight_layout()
+            return fig
+        return None
 
     def _create_fig(self):
         return pyplot.subplots(figsize=(10, 5))
@@ -28,14 +34,32 @@ class Plot(object):
     def apply(self, data, ax):
         raise NotImplementedError()
 
+    def get_xye(self, data):
+        raise NotImplementedError()
+
     def collect_results(self):
         data = DataCollector()()
         return data
 
+    def highlight_models(self, ax, data):
+        for highlighted_model in self._highlighted_models:
+            row = data[data['model'] == highlighted_model]
+            if len(row) == 0:
+                continue
+            row = row.iloc[0]
+            x, y, error = self.get_xye(row)
+            self._highlight(ax, highlighted_model, x, y)
+
+    def _highlight(self, ax, label, x, y):
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        dx, dy = (xlim[1] - xlim[0]) * 0.02, (ylim[1] - ylim[0]) * 0.02
+        ax.plot([x, x + dx], [y, y + dy], color='black', linewidth=1.)
+        ax.text(x + dx, y + dy, label, fontsize=10)
+
 
 class BrainScorePlot(Plot):
-    def __init__(self):
-        super(BrainScorePlot, self).__init__()
+    def __init__(self, highlighted_models=()):
+        super(BrainScorePlot, self).__init__(highlighted_models=highlighted_models)
         self._nonbasenet_color = '#780ece'
         self._basenet_color = 'gray'
 
@@ -45,9 +69,12 @@ class BrainScorePlot(Plot):
     def _create_fig(self):
         return pyplot.subplots(figsize=(10, 8))
 
+    def get_xye(self, data):
+        return data['performance'], data['brain-score'], None
+
     def apply(self, data, ax):
-        x = data['performance'].values
-        y = data['brain-score'].values
+        x, y, error = self.get_xye(data)
+        x, y = x.values, y.values
         color = [self._nonbasenet_color if not is_basenet(model) else self._basenet_color
                  for model in data['model']]
         alpha = [self._nonbasenet_alpha if not is_basenet(model) else self._basenet_alpha
@@ -56,7 +83,7 @@ class BrainScorePlot(Plot):
         ax.set_xlabel('Imagenet performance (% top-1)')
         ax.set_ylabel('Brain-Score')
 
-    def plot(self, x, y, ax, error=None, label=None, color=None, marker_size=20, alpha: Union[float, list] = 0.3):
+    def plot(self, x, y, ax, error=None, label=None, color=None, marker_size=50, alpha: Union[float, list] = 0.3):
         def _plot(_x, _y, _error, plot_alpha):
             # if alpha is a list, provide a way to plot every point separately
             ax.scatter(_x, _y, label=label, color=color, alpha=plot_alpha, s=marker_size)
@@ -82,17 +109,8 @@ class BrainScoreZoomPlot(BrainScorePlot):
 
 
 class IndividualPlot(Plot):
-    def __init__(self, ceiling):
-        self._highlighted_models = [
-            'pnasnet_large',  # good performance
-            'resnet-152_v2', 'densenet-169',  # best overall
-            'alexnet',
-            'resnet-50_v2',  # good V4
-            'mobilenet_v2_0.75_224',  # best mobilenet
-            'mobilenet_v1_1.0.224',  # good IT
-            'inception_v4',  # good i2n
-            'vgg-16',  # bad
-        ]
+    def __init__(self, ceiling, highlighted_models=()):
+        super(IndividualPlot, self).__init__(highlighted_models=highlighted_models)
         self._ceiling = ceiling
 
     def collect_results(self):
@@ -110,33 +128,16 @@ class IndividualPlot(Plot):
     def _despine(self, ax):
         seaborn.despine(ax=ax, top=True, right=True)
 
-    def get_xye(self, data):
-        raise NotImplementedError()
-
     def _plot(self, x, y, ax, error=None, alpha=0.5, s=20, **kwargs):
         ax.scatter(x, y, alpha=alpha, s=s, **kwargs)
         if error is not None:
             ax.errorbar(x, y, error, elinewidth=1, linestyle='None', alpha=alpha, **kwargs)
         ax.plot(ax.get_xlim(), [self._ceiling, self._ceiling], linestyle='dashed', linewidth=1., color='gray')
 
-    def highlight_models(self, ax, data):
-        for highlighted_model in self._highlighted_models:
-            row = data[data['model'] == highlighted_model]
-            if len(row) == 0:
-                continue
-            row = row.iloc[0]
-            x, y, error = self.get_xye(row)
-            self._highlight(ax, highlighted_model, x, y)
-
-    def _highlight(self, ax, label, x, y):
-        dx, dy = sum(ax.get_xlim()) * 0.02, sum(ax.get_ylim()) * 0.02
-        ax.plot([x, x + dx], [y, y + dy], color='black', linewidth=1.)
-        ax.text(x + dx, y + dy, label, fontsize=10)
-
 
 class V4Plot(IndividualPlot):
-    def __init__(self):
-        super(V4Plot, self).__init__(ceiling=.892)
+    def __init__(self, highlighted_models=()):
+        super(V4Plot, self).__init__(ceiling=.892, highlighted_models=highlighted_models)
 
     def apply(self, data, ax):
         super(V4Plot, self).apply(data, ax)
@@ -151,8 +152,8 @@ class V4Plot(IndividualPlot):
 
 
 class ITPlot(IndividualPlot):
-    def __init__(self):
-        super(ITPlot, self).__init__(ceiling=.817)
+    def __init__(self, highlighted_models=()):
+        super(ITPlot, self).__init__(ceiling=.817, highlighted_models=highlighted_models)
 
     def apply(self, data, ax):
         super(ITPlot, self).apply(data, ax)
@@ -168,8 +169,8 @@ class ITPlot(IndividualPlot):
 
 
 class BehaviorPlot(IndividualPlot):
-    def __init__(self):
-        super(BehaviorPlot, self).__init__(ceiling=.479)
+    def __init__(self, highlighted_models=()):
+        super(BehaviorPlot, self).__init__(ceiling=.479, highlighted_models=highlighted_models)
 
     def apply(self, data, ax):
         super(BehaviorPlot, self).apply(data, ax)
@@ -190,6 +191,9 @@ class BehaviorPlot(IndividualPlot):
 
 
 class IndividualPlots(object):
+    def __init__(self, highlighted_models=()):
+        self._highlighted_models = highlighted_models
+
     def __call__(self):
         fig = pyplot.figure(figsize=(10, 3))
         self.apply(fig)
@@ -197,7 +201,11 @@ class IndividualPlots(object):
         return fig
 
     def apply(self, fig):
-        plotters = [V4Plot(), ITPlot(), BehaviorPlot()]
+        plotters = [
+            V4Plot(highlighted_models=self._highlighted_models),
+            ITPlot(highlighted_models=self._highlighted_models),
+            BehaviorPlot(highlighted_models=self._highlighted_models)
+        ]
         axes = []
         for i, plotter in enumerate(plotters):
             ax = fig.add_subplot(1, 3, i + 1, sharey=None if i != 1 else axes[0])
@@ -217,10 +225,21 @@ class PaperFigures(object):
         self._save_formats = ['svg', 'pdf']
 
     def __call__(self):
+        highlighted_models = [
+            'pnasnet_large',  # good performance
+            'resnet-152_v2', 'densenet-169',  # best overall
+            'alexnet',
+            'resnet-50_v2',  # good V4
+            'mobilenet_v2_0.75_224',  # best mobilenet
+            'mobilenet_v1_1.0.224',  # good IT
+            'inception_v4',  # good i2n
+            'vgg-16',  # bad
+        ]
+
         figs = {
-            'brain-score': BrainScorePlot(),
-            'brain-score-zoom': BrainScoreZoomPlot(),
-            'individual': IndividualPlots(),
+            'brain-score': BrainScorePlot(highlighted_models=highlighted_models),
+            'brain-score-zoom': BrainScoreZoomPlot(highlighted_models=highlighted_models),
+            'individual': IndividualPlots(highlighted_models=highlighted_models),
         }
         for name, fig_maker in figs.items():
             fig = fig_maker()
