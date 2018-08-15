@@ -18,7 +18,7 @@ pyplot.rcParams['svg.fonttype'] = 'none'
 import candidate_models
 from brainscore.assemblies import merge_data_arrays
 from candidate_models import score_physiology, model_layers
-from candidate_models.plot import score_color_mapping, get_models, clean_axis
+from candidate_models.analyze import score_color_mapping, get_models, clean_axis
 
 model_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'models.csv'))
 model_performance = {row['model']: row['top1'] for _, row in model_meta.iterrows()}

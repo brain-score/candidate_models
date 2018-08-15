@@ -9,7 +9,7 @@ from matplotlib import pyplot
 
 import candidate_models
 from candidate_models import score_physiology, model_layers
-from candidate_models.plot import shaded_errorbar, score_color_mapping, get_models, clean_axis
+from candidate_models.analyze import shaded_errorbar, score_color_mapping, get_models, clean_axis
 
 
 def plot(model, layers=None, neural_data=candidate_models.Defaults.neural_data, ax=None):
