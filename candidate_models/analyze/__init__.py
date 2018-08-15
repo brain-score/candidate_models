@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import seaborn
 from collections import defaultdict
+
+from brainscore.utils import fullname
 from matplotlib import pyplot
 
 import candidate_models
@@ -127,8 +129,11 @@ class DataCollector(object):
         # method 2: mean(mean(v4, it), behavior)
         neural_scores = [[row['V4'], row['IT']] for _, row in data.iterrows()]
         neural_scores = np.mean(neural_scores, axis=1)
-        global_scores = [[neural_score, row['i2n']] for (_, row), neural_score in zip(data.iterrows(), neural_scores)]
+        global_scores = [[neural_score, row['behavior']] for (_, row), neural_score in zip(data.iterrows(), neural_scores)]
         return np.mean(global_scores, axis=1)
+
+    def __repr__(self):
+        return fullname(self)
 
 
 def is_basenet(model_name):
