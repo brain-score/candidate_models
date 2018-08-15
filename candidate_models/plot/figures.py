@@ -173,6 +173,9 @@ class BrainScoreZoomPlot(BrainScorePlot):
 
 
 class IndividualPlot(Plot):
+    def __init__(self, ceiling):
+        self._ceiling = ceiling
+
     def collect_results(self):
         data = super().collect_results()
         data = data[data.apply(lambda row: not is_basenet(row['model']), axis=1)]
@@ -199,11 +202,16 @@ class IndividualPlot(Plot):
         ax.scatter(x, y, alpha=alpha, **kwargs)
         if error is not None:
             ax.errorbar(x, y, error, elinewidth=1, linestyle='None', alpha=alpha, **kwargs)
+        ax.plot(ax.get_xlim(), [self._ceiling, self._ceiling], linestyle='dashed', linewidth=1., color='gray')
 
 
 class V4Plot(IndividualPlot):
+    def __init__(self):
+        super(V4Plot, self).__init__(ceiling=.892)
+
     def apply(self, data, ax):
         super(V4Plot, self).apply(data, ax)
+        ax.set_title('V4')
         ax.set_ylabel('Neural Predictivity')
 
     def get_xye(self, data):
@@ -214,8 +222,12 @@ class V4Plot(IndividualPlot):
 
 
 class ITPlot(IndividualPlot):
+    def __init__(self):
+        super(ITPlot, self).__init__(ceiling=.817)
+
     def apply(self, data, ax):
         super(ITPlot, self).apply(data, ax)
+        ax.set_title('IT')
         for tk in ax.get_yticklabels():
             tk.set_visible(False)
 
@@ -227,8 +239,12 @@ class ITPlot(IndividualPlot):
 
 
 class BehaviorPlot(IndividualPlot):
+    def __init__(self):
+        super(BehaviorPlot, self).__init__(ceiling=.479)
+
     def apply(self, data, ax):
         super(BehaviorPlot, self).apply(data, ax)
+        ax.set_title('Behavior')
         ax.yaxis.tick_right()
         ax.set_ylabel('Behavioral Predictivity', rotation=270, labelpad=15)
         ax.yaxis.set_label_position("right")
