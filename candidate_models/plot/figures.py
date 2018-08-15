@@ -174,6 +174,16 @@ class BrainScoreZoomPlot(BrainScorePlot):
 
 class IndividualPlot(Plot):
     def __init__(self, ceiling):
+        self._highlighted_models = [
+            'pnasnet_large',  # good performance
+            'resnet-152_v2', 'densenet-169',  # best overall
+            'alexnet',
+            'resnet-50_v2',  # good V4
+            'mobilenet_v2_0.75_224',  # best mobilenet
+            'mobilenet_v1_1.0.224',  # good IT
+            'inception_v4',  # good i2n
+            'vgg-16',  # bad
+        ]
         self._ceiling = ceiling
 
     def collect_results(self):
@@ -184,6 +194,7 @@ class IndividualPlot(Plot):
     def apply(self, data, ax):
         x, y, error = self.get_xye(data)
         self._plot(x=x, y=y, error=error, ax=ax)
+        self.highlight_models(ax, data)
 
         # TODO: ceiling
         # ax.plot(ax.get_xlim(), [ceiling, ceiling],
@@ -198,11 +209,25 @@ class IndividualPlot(Plot):
     def get_xye(self, data):
         raise NotImplementedError()
 
-    def _plot(self, x, y, ax, error=None, alpha=0.5, **kwargs):
-        ax.scatter(x, y, alpha=alpha, **kwargs)
+    def _plot(self, x, y, ax, error=None, alpha=0.5, s=20, **kwargs):
+        ax.scatter(x, y, alpha=alpha, s=s, **kwargs)
         if error is not None:
             ax.errorbar(x, y, error, elinewidth=1, linestyle='None', alpha=alpha, **kwargs)
         ax.plot(ax.get_xlim(), [self._ceiling, self._ceiling], linestyle='dashed', linewidth=1., color='gray')
+
+    def highlight_models(self, ax, data):
+        for highlighted_model in self._highlighted_models:
+            row = data[data['model'] == highlighted_model]
+            if len(row) == 0:
+                continue
+            row = row.iloc[0]
+            x, y, error = self.get_xye(row)
+            self._highlight(ax, highlighted_model, x, y)
+
+    def _highlight(self, ax, label, x, y):
+        dx, dy = sum(ax.get_xlim()) * 0.02, sum(ax.get_ylim()) * 0.02
+        ax.plot([x, x + dx], [y, y + dy], color='black', linewidth=1.)
+        ax.text(x + dx, y + dy, label, fontsize=10)
 
 
 class V4Plot(IndividualPlot):
