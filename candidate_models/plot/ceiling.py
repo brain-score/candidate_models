@@ -23,7 +23,7 @@ default_size = .5
 
 
 def plot(sizes=upto50, size_label='train_size',
-         data='dicarlo.Majaj2015', metric='neural_fit', ceiling='splitrep'):
+         data='dicarlo.Majaj2015', metric='pls_fit', ceiling='splitrep'):
     # compute
     ceilings = []
     for size in sizes:
