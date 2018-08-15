@@ -195,11 +195,6 @@ class IndividualPlot(Plot):
         x, y, error = self.get_xye(data)
         self._plot(x=x, y=y, error=error, ax=ax)
         self.highlight_models(ax, data)
-
-        # TODO: ceiling
-        # ax.plot(ax.get_xlim(), [ceiling, ceiling],
-        #         linestyle='dashed', linewidth=1., color=score_color_mapping['basenet'])
-
         ax.grid(b=True, which='major', linewidth=0.5)
         self._despine(ax)
 
