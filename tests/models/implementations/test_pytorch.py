@@ -1,16 +1,19 @@
 import os
 
+import numpy as np
+import pytest
+
 from candidate_models.models.implementations.pytorch import PytorchModel
 
 
 class TestLoadImage:
-    def test_rgb(self):
-        img = PytorchModel._load_image(None, os.path.join(os.path.dirname(__file__), 'rgb.jpg'))
-        assert img.mode == 'RGB'
+    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg']
 
-    def test_grayscale(self):
-        img = PytorchModel._load_image(None, os.path.join(os.path.dirname(__file__), 'grayscale.png'))
+    @pytest.mark.parametrize('filename', images)
+    def test_image(self, filename):
+        img = PytorchModel._load_image(None, os.path.join(os.path.dirname(__file__), filename))
         assert img.mode == 'RGB'
+        assert np.asarray(img).sum() > 0
 
 
 class TestGraph:

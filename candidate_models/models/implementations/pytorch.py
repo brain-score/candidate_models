@@ -40,9 +40,9 @@ class PytorchModel(DeepModel):
                 # see https://stackoverflow.com/a/30376272/2225200
                 return image.copy()
             else:  # make sure potential binary images are in RGB
-                image = Image.new("RGB", image.size)
-                image.paste(image)
-                return image
+                rgb_image = Image.new("RGB", image.size)
+                rgb_image.paste(image)
+                return rgb_image
 
     def _preprocess_images(self, images, image_size):
         images = [self._preprocess_image(image, image_size) for image in images]

@@ -1,23 +1,19 @@
 import os
 
 import numpy as np
-
+import pytest
 from brainscore.assemblies import NeuroidAssembly
 from candidate_models.models.implementations.tensorflow_slim import TensorflowSlimModel
 from tests.models import mock_imagenet
-from tests.models.implementations import get_grayscale_image, get_rgb_image
 
 
 class TestLoadPreprocessImage:
-    def test_rgb(self):
-        img = TensorflowSlimModel._load_image(
-            None, get_rgb_image())
-        img = TensorflowSlimModel._preprocess_image(None, img, image_size=224)
-        np.testing.assert_array_equal(img.shape, [224, 224, 3])
+    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg']
 
-    def test_grayscale(self):
-        img = TensorflowSlimModel._load_image(
-            None, get_grayscale_image())
+    @pytest.mark.parametrize('filename', images)
+    def test_rgb(self, filename):
+        filepath = os.path.join(os.path.dirname(__file__), filename)
+        img = TensorflowSlimModel._load_image(None, filepath)
         img = TensorflowSlimModel._preprocess_image(None, img, image_size=224)
         np.testing.assert_array_equal(img.shape, [224, 224, 3])
 
