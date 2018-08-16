@@ -1,10 +1,8 @@
 import logging
 import os
 
-from brainscore.metrics import Score
-
 import caching
-from caching import store_xarray
+from brainscore import benchmarks
 from candidate_models import models
 from candidate_models.assemblies import load_neural_benchmark, load_stimulus_set
 from candidate_models.models import model_activations, model_multi_activations, combine_layers_xarray, \
@@ -25,12 +23,11 @@ class Defaults(object):
 
 def score_model(model, layers, weights=DeepModelDefaults.weights,
                 pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                neural_data=Defaults.neural_data, metric_name=Defaults.metric_name):
+                neural_data=Defaults.neural_data):
     physiology_score = score_physiology(model=model, layers=layers, weights=weights,
                                         pca_components=pca_components, image_size=image_size,
-                                        neural_data=neural_data, metric_name=metric_name)
-    anatomy_score = score_anatomy(model, physiology_score.mapping)
-    return [physiology_score, anatomy_score]
+                                        neural_data=neural_data)
+    return physiology_score
 
 
 def _combine_layers(key, value):
@@ -48,42 +45,21 @@ def _un_combine_layers(key, value):
 def score_physiology(model, layers=None,
                      weights=DeepModelDefaults.weights,
                      pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                     neural_data=Defaults.neural_data, target_splits=Defaults.target_splits,
-                     metric_name=Defaults.metric_name, return_unceiled=False):
+                     neural_data=Defaults.neural_data, return_unceiled=False):
     """
     :param str model:
     :param [str]|None layers: layers to score or None to use all layers present in the model activations
     :param str weights:
     :param int pca_components:
     :param str neural_data:
-    :param str metric_name:
     :param int image_size:
     :return: PhysiologyScore
     """
     # this method is just a wrapper function around _score_physiology
     # so that we can properly handle default values for `layers`.
     layers = layers or model_layers[model]
-    composite_score = _score_physiology(model=model, layers=layers, weights=weights,
-                                        pca_components=pca_components, image_size=image_size,
-                                        neural_data=neural_data, target_splits=target_splits,
-                                        metric_name=metric_name)
-    ceiled_score, unceiled_score = composite_score.sel(ceiled=True), composite_score.sel(ceiled=False)
-    if return_unceiled:
-        return ceiled_score, unceiled_score
-    return ceiled_score
-
-
-@store_xarray(identifier_ignore=['layers', 'image_size', 'metric_kwargs'], combine_fields={'layers': 'layer'},
-              map_field_values=_combine_layers, map_field_values_inverse=_un_combine_layers,
-              sub_fields=True)
-def _score_physiology(model, layers,
-                      weights=DeepModelDefaults.weights,
-                      pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                      neural_data=Defaults.neural_data, target_splits=Defaults.target_splits,
-                      metric_name=Defaults.metric_name):
-    layers = layers or model_layers[model]
     logger.info('Loading benchmark')
-    benchmark = load_neural_benchmark(assembly_name=neural_data, metric_name=metric_name, target_splits=target_splits)
+    benchmark = benchmarks.load(neural_data)
     logger.info('Computing activations')
     model_assembly = model_multi_activations(model=model, weights=weights, multi_layers=layers,
                                              pca_components=pca_components, image_size=image_size,
@@ -91,11 +67,9 @@ def _score_physiology(model, layers,
     logger.info('Scoring activations')
     ceiled_score, unceiled_score = benchmark(model_assembly, transformation_kwargs=dict(
         cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_unceiled=True)
-    ceiled_score, unceiled_score = ceiled_score.expand_dims('ceiled'), unceiled_score.expand_dims('ceiled')
-    ceiled_score['ceiled'] = [False]
-    unceiled_score['ceiled'] = [True]
-    composite_score = Score.merge(ceiled_score, unceiled_score)
-    return composite_score
+    if return_unceiled:
+        return ceiled_score, unceiled_score
+    return ceiled_score
 
 
 def score_anatomy(model, region_layers):

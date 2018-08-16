@@ -87,7 +87,7 @@ class DataCollector(object):
         metrics = ['neural_fit']
         data = defaultdict(list)
         for model, metric in itertools.product(models, metrics):
-            neural_score = score_physiology(model=model, neural_data=neural_data, metric_name=metric)
+            neural_score = score_physiology(model=model, neural_data=neural_data)
             neural_score = neural_score.aggregation
             aggregation_dims = ['aggregation', 'region']  # TODO: make generic to account for time
             assert all(dim in neural_score.dims for dim in aggregation_dims)

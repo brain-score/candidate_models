@@ -39,13 +39,14 @@ def main():
     args.layers = args.layers or (model_layers[args.model] if not args.model.startswith('basenet')
                                   else ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'])
     logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level))
+    logging.getLogger("peewee").setLevel(logging.WARNING)
     logger.info("Running with args %s", vars(args))
 
     logger.info('Scoring model')
     score = score_model(args.model, layers=args.layers, weights=args.model_weights,
                         pca_components=args.pca, image_size=args.image_size,
-                        neural_data=args.neural_data, metric_name=args.metric)
-    print(score.center)
+                        neural_data=args.neural_data)
+    print(score.aggregation)
 
 
 main()
