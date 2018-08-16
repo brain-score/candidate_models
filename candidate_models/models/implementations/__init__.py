@@ -373,9 +373,9 @@ _model_layers = {
      'mobilenet_v2_0.35_224', 'mobilenet_v2_0.35_192', 'mobilenet_v2_0.35_160', 'mobilenet_v2_0.35_128',
      'mobilenet_v2_0.35_96'):
         ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool'],
-    'cornet_r2': ['bn1', 'bn2'] +
-                 ['blocks.{}.conv{}'.format(block, conv) for conv in range(1, 3 + 1) for block in range(3)] +
-                 ['avgpool'],
+    'cornet_r2': [f'blocks.{block}.last_relu-t{timestep}'
+                  for block, timesteps in [(0, (0, 1)), (1, (0, 1, 2, 3)), (2, (0, 1))] for timestep in timesteps] +
+                 ['avgpool-t0'],
 }
 """
 the last layer in each of the model's layer lists is supposed to always be the last feature layer, 
