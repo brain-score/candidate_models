@@ -54,7 +54,10 @@ class Plot(object):
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         dx, dy = (xlim[1] - xlim[0]) * 0.02, (ylim[1] - ylim[0]) * 0.02
         ax.plot([x, x + dx], [y, y + dy], color='black', linewidth=1.)
-        ax.text(x + dx, y + dy, label, fontsize=10)
+        self._text(ax, x + dx, y + dy, label, fontsize=10)
+
+    def _text(self, ax, x, y, label, **kwargs):
+        ax.text(x, y, label, **kwargs)
 
 
 class BrainScorePlot(Plot):
@@ -132,7 +135,28 @@ class IndividualPlot(Plot):
         ax.scatter(x, y, alpha=alpha, s=s, **kwargs)
         if error is not None:
             ax.errorbar(x, y, error, elinewidth=1, linestyle='None', alpha=alpha, **kwargs)
-        ax.plot(ax.get_xlim(), [self._ceiling, self._ceiling], linestyle='dashed', linewidth=1., color='gray')
+        if self._ceiling:
+            ax.plot(ax.get_xlim(), [self._ceiling, self._ceiling], linestyle='dashed', linewidth=1., color='gray')
+
+    def _text(self, ax, x, y, label, **kwargs):
+        kwargs = {**kwargs, **dict(fontsize=5)}
+        super(IndividualPlot, self)._text(ax=ax, x=x, y=y, label=label, **kwargs)
+
+
+class V1Plot(IndividualPlot):
+    def __init__(self, highlighted_models=()):
+        super(V1Plot, self).__init__(ceiling=None, highlighted_models=highlighted_models)
+
+    def apply(self, data, ax):
+        super(V1Plot, self).apply(data, ax)
+        ax.set_title('V1')
+        ax.set_ylabel('Neural Predictivity')
+
+    def get_xye(self, data):
+        return data['performance'], data['V1'], data['V1-error']
+
+    def _plot(self, *args, **kwargs):
+        super(V1Plot, self)._plot(*args, **kwargs, color='#81b7e2')
 
 
 class V4Plot(IndividualPlot):
@@ -142,7 +166,8 @@ class V4Plot(IndividualPlot):
     def apply(self, data, ax):
         super(V4Plot, self).apply(data, ax)
         ax.set_title('V4')
-        ax.set_ylabel('Neural Predictivity')
+        for tk in ax.get_yticklabels():
+            tk.set_visible(False)
 
     def get_xye(self, data):
         return data['performance'], data['V4'], data['V4-error']
@@ -202,13 +227,14 @@ class IndividualPlots(object):
 
     def apply(self, fig):
         plotters = [
+            V1Plot(highlighted_models=self._highlighted_models),
             V4Plot(highlighted_models=self._highlighted_models),
             ITPlot(highlighted_models=self._highlighted_models),
             BehaviorPlot(highlighted_models=self._highlighted_models)
         ]
         axes = []
         for i, plotter in enumerate(plotters):
-            ax = fig.add_subplot(1, 3, i + 1, sharey=None if i != 1 else axes[0])
+            ax = fig.add_subplot(1, len(plotters), i + 1, sharey=None if i in [0, 3] else axes[0])
             axes.append(ax)
             plotter(ax=ax)
 

@@ -1,5 +1,4 @@
 import glob
-import itertools
 import os
 import re
 from collections import defaultdict
@@ -10,7 +9,6 @@ import pandas as pd
 import seaborn
 from matplotlib import pyplot
 
-import candidate_models
 from brainscore.utils import fullname
 from caching import cache
 from candidate_models import score_physiology
@@ -23,17 +21,6 @@ def shaded_errorbar(x, y, error, ax=None, alpha=0.4, **kwargs):
     return line
 
 
-def get_models():
-    models = [file for file in glob.glob(os.path.join(os.path.dirname(__file__), '..', '..',
-                                                      'output', 'candidate_models._score_physiology', '*'))]
-    models = [re.match('.*/model=(.*),weights.*', file) for file in models]
-    models = [match.group(1) for match in models if match]
-    models = np.unique(models)
-    potentially_broken_models = ['resnet-50_v1', 'resnet-101_v1', 'resnet-152_v1']
-    models = [model for model in models if model not in potentially_broken_models]
-    return models
-
-
 def clean_axis(ax):
     ax.grid(b=True, which='major', linewidth=0.5)
     seaborn.despine(right=True)
@@ -41,11 +28,11 @@ def clean_axis(ax):
 
 class DataCollector(object):
     @cache()
-    def __call__(self, neural_data=candidate_models.Defaults.neural_data):
+    def __call__(self):
         models = self.get_models()
 
         # neural scores
-        data = self.parse_neural_data(models, neural_data)
+        data = self.parse_neural_scores(models)
         # merge with behavior, performance and meta
         meta_filepath = os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'models.csv')
         model_meta = pd.read_csv(meta_filepath)
@@ -60,8 +47,8 @@ class DataCollector(object):
 
     def get_models(self):
         models = [file for file in glob(os.path.join(os.path.dirname(__file__), '..', '..',
-                                                     'output', 'candidate_models._score_physiology', '*'))]
-        models = [re.match('.*/model=(.*),weights.*', file) for file in models]
+                                                     'output', 'brainscore.benchmarks.ToliasCadena2017._call', '*'))]
+        models = [re.match('.*/identifier=(.*)\.pkl', file) for file in models]
         models = [match.group(1) for match in models if match]
         models = np.unique(models)
 
@@ -69,7 +56,8 @@ class DataCollector(object):
         all_models_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'models.csv')
         all_models = pd.read_csv(all_models_path)['model'].values
         missing_models = set(all_models) - set(models)
-        print("Missing models:", " ".join(missing_models))
+        print("Missing basenets:", " ".join([model for model in missing_models if model.startswith('basenet')]))
+        print("Missing non-basenets:", " ".join([model for model in missing_models if not model.startswith('basenet')]))
 
         # remove models without metadata / broken models
         nometa_models = [model for model in models if model not in all_models]
@@ -79,31 +67,58 @@ class DataCollector(object):
         models = [model for model in models if model not in potentially_broken_models]
         return models
 
-    def parse_neural_data(self, models, neural_data=candidate_models.Defaults.neural_data):
+    class ScoreParser(object):
+        def __init__(self, benchmark):
+            self._benchmark = benchmark
+
+        def __call__(self, models):
+            data = defaultdict(list)
+            for model in models:
+                data['model'].append(model)
+                data['benchmark'].append(self._benchmark)
+                score = score_physiology(model=model, benchmark=self._benchmark)
+                score = score.aggregation
+                # TODO: this just takes the maximum error but not necessarily the one corresponding to the maximum score
+                score = score.max('layer')
+                self._parse_score(score, data)
+
+            return pd.DataFrame(data)
+
+        def _parse_score(self, model, target):
+            raise NotImplementedError()
+
+    class DicarloMajaj2015Parser(ScoreParser):
+        def __init__(self):
+            super(DataCollector.DicarloMajaj2015Parser, self).__init__('dicarlo.Majaj2015')
+
+        def _parse_score(self, score, target):
+            for region in np.unique(score['region']):
+                region_score = score.sel(region=region)
+                target[region].append(region_score.sel(aggregation='center').values)
+                target[f"{region}-error"] = region_score.sel(aggregation='error').values
+
+    class ToliasCadena2017Parser(ScoreParser):
+        def __init__(self):
+            super(DataCollector.ToliasCadena2017Parser, self).__init__('tolias.Cadena2017')
+
+        def _parse_score(self, score, target):
+            target['V1'].append(score.sel(aggregation='center').values)
+            target["V1-error"] = score.sel(aggregation='error').values
+
+    def parse_neural_scores(self, models):
         savepath = os.path.join(os.path.dirname(__file__), 'neural.csv')
         if os.path.isfile(savepath):
             return pd.read_csv(savepath)
 
-        metrics = ['neural_fit']
-        data = defaultdict(list)
-        for model, metric in itertools.product(models, metrics):
-            neural_score = score_physiology(model=model, neural_data=neural_data)
-            neural_score = neural_score.aggregation
-            aggregation_dims = ['aggregation', 'region']  # TODO: make generic to account for time
-            assert all(dim in neural_score.dims for dim in aggregation_dims)
-            reduce_dims = [dim for dim in neural_score.dims if dim not in aggregation_dims]
-            # TODO: this just takes the maximum error but not necessarily the one corresponding to the maximum score
-            neural_score = neural_score.max(reduce_dims)
-            np.testing.assert_array_equal(neural_score.dims, aggregation_dims)
+        benchmarks = {
+            'dicarlo.Majaj2015': DataCollector.DicarloMajaj2015Parser(),
+            'tolias.Cadena2017': DataCollector.ToliasCadena2017Parser()
+        }
+        data = None
+        for benchmark, parser in benchmarks.items():
+            benchmark_data = parser(models)
+            data = benchmark_data if data is None else data.merge(benchmark_data, on='model')
 
-            data['model'].append(model)
-            for region in np.unique(neural_score['region']):
-                region_score = neural_score.sel(region=region)
-                data[region].append(region_score.sel(aggregation='center').values)
-                data[f"{region}-error"] = region_score.sel(aggregation='error').values
-            data['neural_metric'].append(metric)
-
-        data = pd.DataFrame(data=data)
         data.to_csv(savepath)
         return data
 
