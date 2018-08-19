@@ -32,7 +32,8 @@ def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_
         else:
             for layer in layers:
                 single_layers.append(layer)
-    single_layers = list(set(single_layers))
+    # remove duplicates, restore ordering
+    single_layers = list(sorted(set(single_layers), key=single_layers.index))
     single_layer_activations = model_activations(model, single_layers, stimulus_set, weights=weights,
                                                  image_size=image_size, pca_components=pca_components,
                                                  batch_size=batch_size)
