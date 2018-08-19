@@ -26,7 +26,8 @@ class TensorflowSlimModel(DeepModel):
         super().__init__(batch_size=batch_size, image_size=image_size)
         self._create(model_name, batch_size, image_size)
         self._sess = tf.Session()
-        self._restore(model_name, weights)
+        if weights:
+            self._restore(model_name, weights)
 
     def _create(self, model_name, batch_size, image_size):
         _model_properties = self._get_model_properties(model_name)
