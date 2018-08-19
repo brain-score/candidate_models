@@ -24,9 +24,8 @@ def main():
     parser.add_argument('--pca', type=int, default=DeepModelDefaults.pca_components,
                         help='Number of components to reduce the flattened features to')
     parser.add_argument('--no-pca', action='store_const', const=None, dest='pca')
-    parser.add_argument('--neural_data', type=str, default=Defaults.neural_data)
+    parser.add_argument('--benchmark', type=str, default=Defaults.benchmark)
     parser.add_argument('--image_size', type=int, default=DeepModelDefaults.image_size)
-    parser.add_argument('--metric', type=str, default=Defaults.metric_name)
     parser.add_argument('--log_level', type=str, default='INFO')
     args = parser.parse_args()
     print(args.model)
@@ -45,8 +44,10 @@ def main():
     logger.info('Scoring model')
     score = score_model(args.model, layers=args.layers, weights=args.model_weights,
                         pca_components=args.pca, image_size=args.image_size,
-                        neural_data=args.neural_data)
-    print(score.aggregation)
+                        benchmark=args.benchmark)
+    score = score.aggregation
+    print("\n".join([f"{layer}: {center:.3f}+-{error:.3f}" for layer, center, error in zip(
+        score['layer'].values, score.sel(aggregation='center').values, score.sel(aggregation='error').values)]))
 
 
 main()

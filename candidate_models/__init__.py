@@ -16,17 +16,15 @@ caching.store.configure_storagedir(os.path.join(os.path.dirname(__file__), '..',
 
 
 class Defaults(object):
-    neural_data = 'dicarlo.Majaj2015'
-    metric_name = 'pls_fit'
-    target_splits = ('region',)
+    benchmark = 'dicarlo.Majaj2015'
 
 
-def score_model(model, layers, weights=DeepModelDefaults.weights,
+def score_model(model, layers=None, weights=DeepModelDefaults.weights,
                 pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                neural_data=Defaults.neural_data):
+                benchmark=Defaults.benchmark):
     physiology_score = score_physiology(model=model, layers=layers, weights=weights,
                                         pca_components=pca_components, image_size=image_size,
-                                        neural_data=neural_data)
+                                        benchmark=benchmark)
     return physiology_score
 
 
@@ -42,34 +40,57 @@ def _un_combine_layers(key, value):
     return [split_layers_xarray(layers) if ',' in layers else layers for layers in value]
 
 
+class AssemblyPromise(object):
+    def __init__(self, name, load_fnc):
+        self.name = name
+        self._load = load_fnc
+        self.values = None
+
+    def __getattr__(self, item):
+        if item == 'name':
+            return super(AssemblyPromise, self).__getattr__(item)
+        self._ensure_loaded()
+        return getattr(self.values, item)
+
+    def __getitem__(self, item):
+        self._ensure_loaded()
+        return self.values[item]
+
+    def _ensure_loaded(self):
+        if self.values is None:
+            self.values = self._load()
+
+
 def score_physiology(model, layers=None,
                      weights=DeepModelDefaults.weights,
                      pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                     neural_data=Defaults.neural_data, return_unceiled=False):
+                     benchmark=Defaults.benchmark, return_unceiled=False):
     """
     :param str model:
     :param [str]|None layers: layers to score or None to use all layers present in the model activations
     :param str weights:
     :param int pca_components:
-    :param str neural_data:
+    :param str benchmark:
     :param int image_size:
     :return: PhysiologyScore
     """
-    # this method is just a wrapper function around _score_physiology
-    # so that we can properly handle default values for `layers`.
     layers = layers or model_layers[model]
     logger.info('Loading benchmark')
-    benchmark = benchmarks.load(neural_data)
-    logger.info('Computing activations')
-    model_assembly = model_multi_activations(model=model, weights=weights, multi_layers=layers,
-                                             pca_components=pca_components, image_size=image_size,
-                                             stimulus_set=benchmark.stimulus_set_name)
-    logger.info('Scoring activations')
-    ceiled_score, unceiled_score = benchmark(model_assembly, transformation_kwargs=dict(
-        cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_unceiled=True)
-    if return_unceiled:
-        return ceiled_score, unceiled_score
-    return ceiled_score
+    benchmark = benchmarks.load(benchmark)
+
+    def _compute_activations():
+        logger.info('Computing activations')
+        model_assembly = model_multi_activations(model=model, weights=weights, multi_layers=layers,
+                                                 pca_components=pca_components, image_size=image_size,
+                                                 stimulus_set=benchmark.stimulus_set_name)
+        return model_assembly
+
+    promise = AssemblyPromise(model, _compute_activations)
+
+    logger.info(f'Scoring {model}')
+    score = benchmark(promise, transformation_kwargs=dict(
+        cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_unceiled=return_unceiled)
+    return score
 
 
 def score_anatomy(model, region_layers):
