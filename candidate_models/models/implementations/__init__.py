@@ -207,6 +207,7 @@ __vgg_layers = ['pool{}'.format(i + 1) for i in range(5)] + ['fc{}'.format(i + 1
 def __resnet50_layers(bottleneck_version):
     return ['conv1'] + \
            ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
+           ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(4)] + \
            ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(6)] + \
            ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
 
@@ -373,7 +374,8 @@ _model_layers = {
      'mobilenet_v2_0.35_224', 'mobilenet_v2_0.35_192', 'mobilenet_v2_0.35_160', 'mobilenet_v2_0.35_128',
      'mobilenet_v2_0.35_96'):
         ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool'],
-    'cornet_r2': [f'blocks.{block}.last_relu-t{timestep}'
+    'cornet_r2': ['conv1-t0', 'conv2-t0'] +
+                 [f'blocks.{block}.last_relu-t{timestep}'
                   for block, timesteps in [(0, (0, 1)), (1, (0, 1, 2, 3)), (2, (0, 1))] for timestep in timesteps] +
                  ['avgpool-t0'],
 }
