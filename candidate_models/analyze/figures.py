@@ -115,11 +115,16 @@ class IndividualPlot(Plot):
     def __init__(self, ceiling, highlighted_models=()):
         super(IndividualPlot, self).__init__(highlighted_models=highlighted_models)
         self._ceiling = ceiling
+        self._plot_ceiling = True
 
     def collect_results(self):
         data = super().collect_results()
         data = data[data.apply(lambda row: not is_basenet(row['model']), axis=1)]
         return data
+
+    def __call__(self, *args, plot_ceiling=True, **kwargs):
+        self._plot_ceiling = plot_ceiling
+        super(IndividualPlot, self).__call__(*args, **kwargs)
 
     def apply(self, data, ax):
         x, y, error = self.get_xye(data)
@@ -135,7 +140,7 @@ class IndividualPlot(Plot):
         ax.scatter(x, y, alpha=alpha, s=s, **kwargs)
         if error is not None:
             ax.errorbar(x, y, error, elinewidth=1, linestyle='None', alpha=alpha, **kwargs)
-        if self._ceiling:
+        if self._plot_ceiling and self._ceiling:
             ax.plot(ax.get_xlim(), [self._ceiling, self._ceiling], linestyle='dashed', linewidth=1., color='gray')
 
     def _text(self, ax, x, y, label, **kwargs):
@@ -216,8 +221,9 @@ class BehaviorPlot(IndividualPlot):
 
 
 class IndividualPlots(object):
-    def __init__(self, highlighted_models=()):
+    def __init__(self, highlighted_models=(), plot_ceilings=True):
         self._highlighted_models = highlighted_models
+        self._plot_ceilings = plot_ceilings
 
     def __call__(self):
         fig = pyplot.figure(figsize=(10, 3))
@@ -236,7 +242,7 @@ class IndividualPlots(object):
         for i, plotter in enumerate(plotters):
             ax = fig.add_subplot(1, len(plotters), i + 1, sharey=None if i in [0, 3] else axes[0])
             axes.append(ax)
-            plotter(ax=ax)
+            plotter(ax=ax, plot_ceiling=self._plot_ceilings)
 
         # joint xlabel
         ax = fig.add_subplot(111, frameon=False)
@@ -265,7 +271,7 @@ class PaperFigures(object):
         figs = {
             'brain-score': BrainScorePlot(highlighted_models=highlighted_models),
             'brain-score-zoom': BrainScoreZoomPlot(highlighted_models=highlighted_models),
-            'individual': IndividualPlots(highlighted_models=highlighted_models),
+            'individual': IndividualPlots(highlighted_models=highlighted_models, plot_ceilings=False),
         }
         for name, fig_maker in figs.items():
             fig = fig_maker()
