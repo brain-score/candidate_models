@@ -9,7 +9,6 @@ import pandas as pd
 import seaborn
 from matplotlib import pyplot
 
-from brainscore.utils import fullname
 from caching import cache
 from candidate_models import score_physiology
 
@@ -75,17 +74,23 @@ class DataCollector(object):
             data = defaultdict(list)
             for model in models:
                 data['model'].append(model)
-                data['benchmark'].append(self._benchmark)
-                score = score_physiology(model=model, benchmark=self._benchmark)
+                ceiled_score, score = score_physiology(model=model, benchmark=self._benchmark, return_unceiled=True)
                 score = score.aggregation
                 # TODO: this just takes the maximum error but not necessarily the one corresponding to the maximum score
                 score = score.max('layer')
                 self._parse_score(score, data)
+                # bs .435 | alexnet | top-1 57.67 | V4 .663 | IT .587 | behavior .245
 
             return pd.DataFrame(data)
 
         def _parse_score(self, model, target):
             raise NotImplementedError()
+
+        def _set_score(self, target, label, score):
+            center, err = score.sel(aggregation='center').values, score.sel(aggregation='error').values
+            assert center.size == err.size == 1
+            target[label].append(center.tolist())
+            target[f"{label}-error"].append(err.tolist())
 
     class DicarloMajaj2015Parser(ScoreParser):
         def __init__(self):
@@ -94,16 +99,14 @@ class DataCollector(object):
         def _parse_score(self, score, target):
             for region in np.unique(score['region']):
                 region_score = score.sel(region=region)
-                target[region].append(region_score.sel(aggregation='center').values)
-                target[f"{region}-error"] = region_score.sel(aggregation='error').values
+                self._set_score(target, region, score=region_score)
 
     class ToliasCadena2017Parser(ScoreParser):
         def __init__(self):
             super(DataCollector.ToliasCadena2017Parser, self).__init__('tolias.Cadena2017')
 
         def _parse_score(self, score, target):
-            target['V1'].append(score.sel(aggregation='center').values)
-            target["V1-error"] = score.sel(aggregation='error').values
+            self._set_score(target, 'V1', score)
 
     def parse_neural_scores(self, models):
         savepath = os.path.join(os.path.dirname(__file__), 'neural.csv')
@@ -132,9 +135,6 @@ class DataCollector(object):
         global_scores = [[neural_score, row['behavior']] for (_, row), neural_score in
                          zip(data.iterrows(), neural_scores)]
         return np.mean(global_scores, axis=1)
-
-    def __repr__(self):
-        return fullname(self)
 
 
 def is_basenet(model_name):
