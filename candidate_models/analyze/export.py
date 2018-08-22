@@ -1,15 +1,18 @@
 import json
+import logging
 
 from pybtex.database.input import bibtex
 
 from candidate_models.analyze import DataCollector
+
+_logger = logging.getLogger(__name__)
 
 
 def create_fixture(data=None):
     data = data or DataCollector()()
     data = data.dropna()
     fields = {'brain_score': 'brain-score', 'name': 'model', 'imagenet_top1': 'performance',
-              'v4': 'V4', 'it': 'V4', 'behavior': 'behavior',
+              'v4': 'V4', 'it': 'IT', 'behavior': 'behavior',
               'paper_link': 'link', 'paper_identifier': 'identifier'}
 
     def parse_bib(bibtex_str):
@@ -27,7 +30,9 @@ def create_fixture(data=None):
         {"model": "benchmarks.CandidateModel",
          "fields": {field_key: row[field] for field_key, field in fields.items()}}
         for _, row in data.iterrows()]
-    with open('fixture.json', 'w') as f:
+    savepath = 'fixture.json'
+    _logger.info(f'Saving to {savepath}')
+    with open(savepath, 'w') as f:
         json.dump(data_rows, f)
 
 
