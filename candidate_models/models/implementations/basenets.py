@@ -58,8 +58,8 @@ def package(features_path='/braintree/data2/active/users/qbilius/computed/hvm/ai
         model_name = os.path.splitext(os.path.basename(activations_path_pit))[0]
         basenets.append(model_name)
         target_path = os.path.abspath(os.path.join(
-            os.path.dirname(__file__), '..', '..', 'output/neurality.models.model_activations',
-            'model={},stimulus_set=dicarlo.Majaj2015,weights=imagenet,image_size=224,pca_components=1000.pkl'
+            os.path.dirname(__file__), '..', '..', '..', 'output/candidate_models.models.model_activations',
+            'model={},stimulus_set=dicarlo.hvm,weights=imagenet,image_size=224,pca_components=1000.pkl'
                 .format(model_name)))
         print("-->", target_path)
         with open(target_path, 'wb') as target_file:
