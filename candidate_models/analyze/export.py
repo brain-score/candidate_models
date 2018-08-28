@@ -49,10 +49,17 @@ def highlight_max(data):
 
 def create_latex_table(data=None):
     data = data or DataCollector()()
-    table = data[[not model.startswith('basenet') for model in data['model']]]
-    table = table[['brain-score', 'model', 'performance'] +
-                  ['V4', 'IT', 'behavior']]
+    table = data.copy()
+    aggregate_models = ['basenet', 'mobilenet']
+    for model_prefix in aggregate_models:
+        model_data = table[[model.startswith(model_prefix) for model in table['model']]]
+        best_model_index = model_data['brain-score'].idxmax()
+        best_model = model_data.loc[best_model_index]
+        table = table[[not model.startswith(model_prefix) or model == best_model['model'] for model in table['model']]]
+        table['model'].loc[table['model'] == best_model['model']] = 'best ' + model_prefix
+    table = table[['brain-score', 'model', 'V4', 'IT', 'behavior', 'performance']]
     table = table.sort_values('brain-score', ascending=False)
-    table = table.rename(columns={'brain-score': 'Brain Score'})
+    table = table.rename(columns={'brain-score': 'Brain Score',
+                                  'performance': 'ImageNet top-1', 'behavior': 'Behavior'})
     table = table.apply(highlight_max)
     table.to_latex('data.tex', escape=False, index=False)
