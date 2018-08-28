@@ -240,15 +240,11 @@ _model_layers = {
         ['features.' + layer for layer in
          ['2'] +  # max pool
          ['{}.expand3x3_activation'.format(i) for i in [3, 4, 5, 7, 8, 9, 10, 12]]  # fire outputs (ignoring pools)
-         ] +
-        ['classifier.2'  # ReLU after Conv2d; before AvgPool2d
          ],
     'squeezenet1_1':
         ['features.' + layer for layer in
          ['2'] +  # max pool
          ['{}.expand3x3_activation'.format(i) for i in [3, 4, 6, 7, 9, 10, 11, 12]]  # fire outputs (ignoring pools)
-         ] +
-        ['classifier.2'  # ReLU after Conv2d; before AvgPool2d
          ],
     'densenet-121':
         ['conv1/relu'] +
