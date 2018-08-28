@@ -24,6 +24,7 @@ class Plot(object):
             fig, ax = self._create_fig()
         self.apply(data, ax=ax)
         self.highlight_models(ax, data)
+        self.indicate_correlation(ax, data)
         if not ax_given:
             fig.tight_layout()
             return fig
@@ -56,6 +57,18 @@ class Plot(object):
         dx, dy = (xlim[1] - xlim[0]) * 0.02, (ylim[1] - ylim[0]) * 0.02
         ax.plot([x, x + dx], [y, y + dy], color='black', linewidth=1.)
         self._text(ax, x + dx, y + dy, label, fontsize=20)
+
+    def indicate_correlation(self, ax, data):
+        x, y, error = self.get_xye(data)
+        r, p = pearsonr(x, y)
+        significance_threshold = .05
+        if p < significance_threshold:
+            text = f"r = {r:.2f}"
+        else:
+            text = "r n.s."
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        text_x, text_y = xlim[1] - .15 * (xlim[1] - xlim[0]), ylim[0] + .02 * (ylim[1] - ylim[0])
+        self._text(ax=ax, x=text_x, y=text_y, label=text)
 
     def _text(self, ax, x, y, label, **kwargs):
         ax.text(x, y, label, **kwargs)
@@ -141,10 +154,6 @@ class IndividualPlot(Plot):
         ax.grid(b=True, which='major', linewidth=0.5)
         self._despine(ax)
 
-        self.highlight_models(ax, data)
-
-        self.indicate_correlation(x, y, ax=ax)
-
     def _despine(self, ax):
         seaborn.despine(ax=ax, top=True, right=True)
 
@@ -158,17 +167,6 @@ class IndividualPlot(Plot):
     def _text(self, ax, x, y, label, **kwargs):
         kwargs = {**kwargs, **dict(fontsize=5)}
         super(IndividualPlot, self)._text(ax=ax, x=x, y=y, label=label, **kwargs)
-
-    def indicate_correlation(self, x, y, ax):
-        r, p = pearsonr(x, y)
-        significance_threshold = .05
-        if p < significance_threshold:
-            text = f"r = {r:.2f}"
-        else:
-            text = "r n.s."
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        text_x, text_y = xlim[1] - .15 * (xlim[1] - xlim[0]), ylim[0] + .02 * (ylim[1] - ylim[0])
-        self._text(ax=ax, x=text_x, y=text_y, label=text)
 
 
 class V1Plot(IndividualPlot):
