@@ -358,22 +358,14 @@ _model_layers = {
     'pnasnet_large':
         ['Cell_{}'.format(i + 1) for i in range(-1, 11)] +
         ['global_pool'],
-    ('mobilenet_v1_1.0_224', 'mobilenet_v1_1.0_192', 'mobilenet_v1_1.0_160', 'mobilenet_v1_1.0_128',
-     'mobilenet_v1_0.75_224', 'mobilenet_v1_0.75_192', 'mobilenet_v1_0.75_160', 'mobilenet_v1_0.75_128',
-     'mobilenet_v1_0.5_224', 'mobilenet_v1_0.5_192', 'mobilenet_v1_0.5_160', 'mobilenet_v1_0.5_128',
-     'mobilenet_v1_0.25_224', 'mobilenet_v1_0.25_192', 'mobilenet_v1_0.25_160', 'mobilenet_v1_0.25_128'):
+    'mobilenet_v1':
         ['Conv2d_0'] + list(itertools.chain(
             *[['Conv2d_{}_depthwise'.format(i + 1), 'Conv2d_{}_pointwise'.format(i + 1)] for i in range(13)])) +
         ['AvgPool_1a'],
-    ('mobilenet_v2_1.4_224', 'mobilenet_v2_1.3_224', 'mobilenet_v2_1.0_224',
-     'mobilenet_v2_1.0_192', 'mobilenet_v2_1.0_160', 'mobilenet_v2_1.0_128', 'mobilenet_v2_1.0_96',
-     'mobilenet_v2_0.75_224', 'mobilenet_v2_0.75_192', 'mobilenet_v2_0.75_160', 'mobilenet_v2_0.75_128',
-     'mobilenet_v2_0.75_96',
-     'mobilenet_v2_0.5_224', 'mobilenet_v2_0.5_192', 'mobilenet_v2_0.5_160', 'mobilenet_v2_0.5_128',
-     'mobilenet_v2_0.5_96',
-     'mobilenet_v2_0.35_224', 'mobilenet_v2_0.35_192', 'mobilenet_v2_0.35_160', 'mobilenet_v2_0.35_128',
-     'mobilenet_v2_0.35_96'):
+    'mobilenet_v2':
         ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool'],
+    'basenet':
+        ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
     'cornet_r2': ['conv1-t0', 'conv2-t0'] +
                  [f'blocks.{block}.last_relu-t{timestep}'
                   for block, timesteps in [(0, (0, 1)), (1, (0, 1, 2, 3)), (2, (0, 1))] for timestep in timesteps] +
@@ -384,7 +376,19 @@ the last layer in each of the model's layer lists is supposed to always be the l
 i.e. the last layer before readout.
 """
 
-model_layers = {}
+
+class ModelLayers(dict):
+    def __getitem__(self, item):
+        first_error = None
+        for prefix in range(len(item) - 1):
+            try:
+                return super(ModelLayers, self).__getitem__(item[:-prefix] if prefix > 0 else item)
+            except KeyError as e:
+                first_error = first_error or e
+        raise first_error
+
+
+model_layers = ModelLayers()
 for model, layers in _model_layers.items():
     if isinstance(model, str):
         model_layers[model] = layers

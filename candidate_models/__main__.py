@@ -35,8 +35,7 @@ def main():
         args.image_size = int(image_size.values[0])
     else:
         logger.warning("Could not lookup image size")
-    args.layers = args.layers or (model_layers[args.model] if not args.model.startswith('basenet')
-                                  else ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'])
+    args.layers = args.layers or model_layers[args.model]
     logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level))
     logging.getLogger("peewee").setLevel(logging.WARNING)
     logger.info("Running with args %s", vars(args))
