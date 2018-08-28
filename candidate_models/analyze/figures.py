@@ -55,7 +55,7 @@ class Plot(object):
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         dx, dy = (xlim[1] - xlim[0]) * 0.02, (ylim[1] - ylim[0]) * 0.02
         ax.plot([x, x + dx], [y, y + dy], color='black', linewidth=1.)
-        self._text(ax, x + dx, y + dy, label, fontsize=10)
+        self._text(ax, x + dx, y + dy, label, fontsize=20)
 
     def _text(self, ax, x, y, label, **kwargs):
         ax.text(x, y, label, **kwargs)
@@ -64,11 +64,15 @@ class Plot(object):
 class BrainScorePlot(Plot):
     def __init__(self, highlighted_models=()):
         super(BrainScorePlot, self).__init__(highlighted_models=highlighted_models)
-        self._nonbasenet_color = '#780ece'
-        self._basenet_color = 'gray'
+        self._nonbasenet_color = '#078930'
+        self._basenet_color = '#878789'
 
         self._nonbasenet_alpha = .7
         self._basenet_alpha = 0.3
+
+    def __call__(self, *args, **kwargs):
+        with seaborn.plotting_context("paper", font_scale=2):
+            return super(BrainScorePlot, self).__call__(*args, **kwargs)
 
     def _create_fig(self):
         return pyplot.subplots(figsize=(10, 8))
@@ -86,30 +90,33 @@ class BrainScorePlot(Plot):
         self.plot(x=x, y=y, color=color, alpha=alpha, ax=ax)
         ax.set_xlabel('Imagenet performance (% top-1)')
         ax.set_ylabel('Brain-Score')
+        seaborn.despine(ax=ax, top=True, right=True)
 
-    def plot(self, x, y, ax, error=None, label=None, color=None, marker_size=50, alpha: Union[float, list] = 0.3):
-        def _plot(_x, _y, _error, plot_alpha):
+    def plot(self, x, y, ax, error=None, label=None,
+             color: Union[float, list] = None, marker_size=50, alpha: Union[float, list] = 0.3):
+        def _plot(_x, _y, _error, color, alpha):
             # if alpha is a list, provide a way to plot every point separately
-            ax.scatter(_x, _y, label=label, color=color, alpha=plot_alpha, s=marker_size)
+            ax.scatter(_x, _y, label=label, color=color, alpha=alpha, s=marker_size)
             if error:
-                ax.errorbar(_x, _y, _error, label=label, color=color, alpha=plot_alpha,
+                ax.errorbar(_x, _y, _error, label=label, color=color, alpha=alpha,
                             elinewidth=1, linestyle='None')
 
-        if isinstance(alpha, float):
-            _plot(x, y, error, alpha)
+        if isinstance(alpha, float) and isinstance(color, float):
+            _plot(x, y, error, color=color, alpha=alpha)
         else:
-            for _x, _y, _error, _alpha in zip(x, y, error if error is not None else [None] * len(x), alpha):
-                _plot(_x, _y, _error, _alpha)
+            for _x, _y, _error, _color, _alpha in zip(
+                x, y, error if error is not None else [None] * len(x), color, alpha):
+                _plot(_x, _y, _error, color=_color, alpha=_alpha)
 
 
 class BrainScoreZoomPlot(BrainScorePlot):
-    def apply(self, data, ax):
+    def collect_results(self):
+        data = super(BrainScoreZoomPlot, self).collect_results()
         data = data[data['performance'] > 70]
-        super(BrainScoreZoomPlot, self).apply(data, ax)
+        return data
 
-    def plot(self, x, y, ax, error=None, label=None, color=None, marker_size=100, alpha: Union[float, list] = 0.3):
-        super(BrainScoreZoomPlot, self).plot(x=x, y=y, ax=ax, error=error, label=label,
-                                             color=color, marker_size=marker_size, alpha=alpha)
+    def plot(self, *args, marker_size=200, **kwargs):
+        super(BrainScoreZoomPlot, self).plot(*args, marker_size=marker_size, **kwargs)
 
 
 class IndividualPlot(Plot):
@@ -274,15 +281,15 @@ class PaperFigures(object):
 
     def __call__(self):
         highlighted_models = [
-            "cornet_r2",
-            'resnet-152_v2', 'densenet-169',  # best overall
+            "cornet_r2",  # winner
+            'resnet-101_v2', 'densenet-169',  # best ML overall
             'pnasnet_large',  # good ImageNet performance
             'alexnet',  # historic
-            'resnet-50_v2',  # good V4
             'mobilenet_v2_0.75_224',  # best mobilenet
             'mobilenet_v1_1.0.224',  # good IT
             'inception_v4',  # good i2n
-            'vgg-16',  # bad
+            'vgg-19',  # good V4
+            'xception',  # good V4
         ]
 
         figs = {
