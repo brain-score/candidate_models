@@ -302,6 +302,14 @@ _model_layers = {
         ['layer3.0.relu', 'layer3.0.downsample.0', 'layer3.1.relu'] + \
         ['layer4.0.relu', 'layer4.0.downsample.0', 'layer4.1.relu'] + \
         ['avgpool'],
+    'resnet-34':
+        ['conv1'] + \
+        ['layer1.0.conv2', 'layer1.1.conv2', 'layer1.2.conv2'] + \
+        ['layer2.0.downsample.0', 'layer2.1.conv2', 'layer2.2.conv2', 'layer2.3.conv2'] + \
+        ['layer3.0.downsample.0', 'layer3.1.conv2', 'layer3.2.conv2', 'layer3.3.conv2',
+         'layer3.4.conv2', 'layer3.5.conv2'] + \
+        ['layer4.0.downsample.0', 'layer4.1.conv2', 'layer4.2.conv2'] + \
+        ['avgpool'],
 
     # Slim
     'inception_v1':
