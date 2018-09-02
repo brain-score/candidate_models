@@ -15,13 +15,13 @@ pytorch,squeezenet1_0,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
     Journal = {arXiv:1602.07360},
     Year = {2016}
-}",,,,,224,,,,34,14848864815,51539408,0.575,,,25
+}",,,,,224,,,,34,14848864815,51539408,0.575,,0.17975704074986987,25
 pytorch,squeezenet1_1,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Author = {Forrest N. Iandola and Song Han and Matthew W. Moskewicz and Khalid Ashraf and William J. Dally and Kurt Keutzer},
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
     Journal = {arXiv:1602.07360},
     Year = {2016}
-}",,,,,224,,,,34,14848864815,51539408,0.575,,,25
+}",,,,,224,,,,34,14848864815,51539408,0.575,,0.20139813685140573,25
 keras,xception,https://arxiv.org/abs/1610.02357,"@article{DBLP:journals/corr/Chollet16a,
   author    = {Fran{\c{c}}ois Chollet},
   title     = {Xception: Deep Learning with Depthwise Separable Convolutions},
@@ -182,7 +182,7 @@ pytorch,resnet-18,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,,,,224,,,,18,1800000000,,0.6976,0.8908,0.244529425,
+}",,,,,224,,,,18,1800000000,,0.6976,0.8908,0.363837784429276,
 pytorch,resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
@@ -198,7 +198,7 @@ pytorch,resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,,,,224,,,,34,3600000000,,0.733,0.9142,0.244529425,
+}",,,,,224,,,,34,3600000000,,0.733,0.9142,0.37787025989965767,
 slim,resnet-50_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
