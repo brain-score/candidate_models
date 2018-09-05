@@ -11,6 +11,7 @@ from candidate_models.analyze import DataCollector, is_basenet
 
 seaborn.set()
 seaborn.set_style("whitegrid")
+pyplot.rcParams['svg.fonttype'] = 'none'  # avoid individual text letters, https://stackoverflow.com/a/35734729/2225200
 
 
 class Plot(object):
@@ -121,6 +122,11 @@ class BrainScorePlot(Plot):
                 x, y, error if error is not None else [None] * len(x), color, alpha):
                 _plot(_x, _y, _error, color=_color, alpha=_alpha)
 
+    def _highlight(self, ax, label, x, y):
+        if x > 70:
+            return
+        return super(BrainScorePlot, self)._highlight(ax=ax, label=label, x=x, y=y)
+
 
 class BrainScoreZoomPlot(BrainScorePlot):
     def collect_results(self):
@@ -128,8 +134,15 @@ class BrainScoreZoomPlot(BrainScorePlot):
         data = data[data['performance'] > 70]
         return data
 
-    def plot(self, *args, marker_size=200, **kwargs):
+    def plot(self, *args, marker_size=300, **kwargs):
         super(BrainScoreZoomPlot, self).plot(*args, marker_size=marker_size, **kwargs)
+
+    def _highlight(self, ax, label, x, y):
+        return Plot._highlight(self=self, ax=ax, label=label, x=x, y=y)
+
+    def _text(self, ax, x, y, label, **kwargs):
+        kwargs = {**kwargs, **dict(fontsize=30)}
+        super(BrainScoreZoomPlot, self)._text(ax=ax, x=x, y=y, label=label, **kwargs)
 
 
 class IndividualPlot(Plot):
@@ -157,7 +170,7 @@ class IndividualPlot(Plot):
     def _despine(self, ax):
         seaborn.despine(ax=ax, top=True, right=True)
 
-    def _plot(self, x, y, ax, error=None, alpha=0.5, s=20, **kwargs):
+    def _plot(self, x, y, ax, error=None, alpha=0.7, s=20, **kwargs):
         ax.scatter(x, y, alpha=alpha, s=s, **kwargs)
         if error is not None:
             ax.errorbar(x, y, error, elinewidth=1, linestyle='None', alpha=alpha, **kwargs)
@@ -165,7 +178,7 @@ class IndividualPlot(Plot):
             ax.plot(ax.get_xlim(), [self._ceiling, self._ceiling], linestyle='dashed', linewidth=1., color='gray')
 
     def _text(self, ax, x, y, label, **kwargs):
-        kwargs = {**kwargs, **dict(fontsize=5)}
+        kwargs = {**kwargs, **dict(fontsize=10)}
         super(IndividualPlot, self)._text(ax=ax, x=x, y=y, label=label, **kwargs)
 
 
@@ -182,7 +195,7 @@ class V1Plot(IndividualPlot):
         return data['performance'], data['V1'], data['V1-error']
 
     def _plot(self, *args, **kwargs):
-        super(V1Plot, self)._plot(*args, **kwargs, color='#81b7e2')
+        super(V1Plot, self)._plot(*args, **kwargs, color='#CFE9FF')
 
 
 class V4Plot(IndividualPlot):
@@ -192,14 +205,15 @@ class V4Plot(IndividualPlot):
     def apply(self, data, ax):
         super(V4Plot, self).apply(data, ax)
         ax.set_title('V4')
-        for tk in ax.get_yticklabels():
-            tk.set_visible(False)
+        ax.set_ylabel('Neural Predictivity')
+        # for tk in ax.get_yticklabels():
+        #     tk.set_visible(False)
 
     def get_xye(self, data):
         return data['performance'], data['V4'], data['V4-error']
 
     def _plot(self, *args, **kwargs):
-        super(V4Plot, self)._plot(*args, **kwargs, color='#00cc66')
+        super(V4Plot, self)._plot(*args, **kwargs, color='#89B8E0')
 
 
 class ITPlot(IndividualPlot):
@@ -216,7 +230,7 @@ class ITPlot(IndividualPlot):
         return data['performance'], data['IT'], data['IT-error']
 
     def _plot(self, *args, **kwargs):
-        super(ITPlot, self)._plot(*args, **kwargs, color='#ff3232')
+        super(ITPlot, self)._plot(*args, **kwargs, color='#679BC7')
 
 
 class BehaviorPlot(IndividualPlot):
@@ -238,7 +252,7 @@ class BehaviorPlot(IndividualPlot):
         return data['performance'], data['behavior'], None
 
     def _plot(self, *args, **kwargs):
-        super(BehaviorPlot, self)._plot(*args, **kwargs, color='#bb9000')
+        super(BehaviorPlot, self)._plot(*args, **kwargs, color='#4C778E')
 
 
 class IndividualPlots(object):
@@ -247,21 +261,22 @@ class IndividualPlots(object):
         self._plot_ceilings = plot_ceilings
 
     def __call__(self):
-        fig = pyplot.figure(figsize=(10, 3))
+        fig = pyplot.figure(figsize=(10, 4))
         self.apply(fig)
         fig.tight_layout()
         return fig
 
     def apply(self, fig):
         plotters = [
-            V1Plot(highlighted_models=self._highlighted_models),
+            # V1Plot(highlighted_models=self._highlighted_models),
             V4Plot(highlighted_models=self._highlighted_models),
             ITPlot(highlighted_models=self._highlighted_models),
             BehaviorPlot(highlighted_models=self._highlighted_models)
         ]
         axes = []
         for i, plotter in enumerate(plotters):
-            ax = fig.add_subplot(1, len(plotters), i + 1, sharey=None if i in [0, 3] else axes[0])
+            # ax = fig.add_subplot(1, len(plotters), i + 1, sharey=None if i in [0, 3] else axes[0])
+            ax = fig.add_subplot(1, len(plotters), i + 1, sharey=None if i in [0, 2] else axes[0])
             axes.append(ax)
             plotter(ax=ax, plot_ceiling=self._plot_ceilings)
 
@@ -275,12 +290,13 @@ class IndividualPlots(object):
 class PaperFigures(object):
     def __init__(self):
         self._savedir = os.path.join(os.path.dirname(__file__), '..', '..', 'results')
-        self._save_formats = ['svg', 'pdf']
+        self._save_formats = ['svg', 'pdf', 'png']
 
     def __call__(self):
         highlighted_models = [
-            "cornet_r2",  # winner
-            'resnet-101_v2', 'densenet-169',  # best ML overall
+            "cornet_s",  # winner
+            'resnet-101_v2', 'resnet-152_v2',  # ResNet family
+            'densenet-169', 'densenet-201',  # best ML
             'pnasnet_large',  # good ImageNet performance
             'alexnet',  # historic
             'mobilenet_v2_0.75_224',  # best mobilenet
