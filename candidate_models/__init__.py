@@ -64,7 +64,7 @@ class AssemblyPromise(object):
 def score_physiology(model, layers=None,
                      weights=DeepModelDefaults.weights,
                      pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                     benchmark=Defaults.benchmark, return_unceiled=False):
+                     benchmark=Defaults.benchmark, return_ceiled=False):
     """
     :param str model:
     :param [str]|None layers: layers to score or None to use all layers present in the model activations
@@ -89,7 +89,7 @@ def score_physiology(model, layers=None,
 
     logger.info(f'Scoring {model}')
     score = benchmark(promise, transformation_kwargs=dict(
-        cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_unceiled=return_unceiled)
+        cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_ceiled=return_ceiled)
     return score
 
 
