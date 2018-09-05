@@ -10,6 +10,12 @@ publisher = {Curran Associates, Inc.},
 url = {http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf}
 }
 ",alexnet,alexnet_v2,fc7,,224,,,1,8,14846401685,50303912,0.577,,0.244529425,7
+pytorch,cornet_s,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
+title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
+author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
+year = {2018},
+}
+",cornet,cornet,fc7,,224,,,1,8,14846401685,50303912,0.747,,0.382,7
 pytorch,squeezenet1_0,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Author = {Forrest N. Iandola and Song Han and Matthew W. Moskewicz and Khalid Ashraf and William J. Dally and Kurt Keutzer},
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
