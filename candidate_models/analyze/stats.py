@@ -28,17 +28,12 @@ def compute_benchmark_correlations(data=None):
                 & ~np.isnan(data['behavior'])]
     not_mobilenets = [not row['model'].startswith('mobilenet') for _, row in data.iterrows()]
     data = data[not_mobilenets]
-    v4 = data['V4']
-    it = data['IT']
-    behavior = data['behavior']
 
     def corr(a, b):
         c, p = scipy.stats.pearsonr(a, b)
         return c, p
 
-    v4_b_corr, v4_b_p = corr(v4, behavior)
-    it_b_corr, it_b_p = corr(it, behavior)
-    v4_it_corr, v4_it_p = corr(v4, it)
-    print(f"v4, behavior: {v4_b_corr} (p={v4_b_p})")
-    print(f"it, behavior: {it_b_corr} (p={it_b_p})")
-    print(f"v4, it: {v4_it_corr} (p={v4_it_p})")
+    for a, b in [('performance', 'V4'), ('performance', 'IT'), ('performance', 'behavior'),
+                 ('V4', 'IT'), ('V4', 'behavior'), ('IT', 'behavior')]:
+        r, p = corr(data[a], data[b])
+        print(f"{a}, {b}: {r} (p={p})")
