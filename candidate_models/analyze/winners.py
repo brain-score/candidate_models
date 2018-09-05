@@ -18,6 +18,12 @@ def best_models():
     for criterion in ['brain-score', 'V4', 'IT', 'behavior']:
         best(basenets, criterion)
 
+    print()
+    print("CORnet")
+    cornet = data[[row['model'].startswith('cornet') for _, row in data.iterrows()]]
+    for criterion in ['brain-score', 'V4', 'IT', 'behavior']:
+        best(cornet, criterion)
+
 
 if __name__ == '__main__':
     best_models()
