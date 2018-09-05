@@ -134,9 +134,9 @@ def register_model(model_name, model_constructor):
     models[model_name] = model_constructor
 
 
-def cornet(*args, **kwargs):
-    from candidate_models.models.implementations.cornet.cornet_r2 import CORNet2Wrapper
-    return CORNet2Wrapper(*args, **kwargs)
+def cornet_s(*args, **kwargs):
+    from candidate_models.models.implementations.cornet.cornet_s import CORNetWrapper
+    return CORNetWrapper(*args, **kwargs)
 
 
-register_model('cornet_r2', cornet)
+register_model('cornet_s', cornet_s)

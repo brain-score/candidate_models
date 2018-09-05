@@ -223,7 +223,7 @@ class CORNet(nn.Module):
         return x
 
 
-class CORNet2Wrapper(TemporalPytorchModel):
+class CORNetWrapper(TemporalPytorchModel):
     def __init__(self, weights=Defaults.weights, batch_size=Defaults.batch_size,
                  image_size=Defaults.image_size):
         super().__init__('cornet', weights, batch_size, image_size)
