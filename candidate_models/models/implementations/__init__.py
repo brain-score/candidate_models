@@ -374,7 +374,7 @@ _model_layers = {
         ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool'],
     'basenet':
         ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
-    'cornet_r2': ['conv1-t0', 'conv2-t0'] +
+    'cornet_s': ['conv1-t0', 'conv2-t0'] +
                  [f'blocks.{block}.last_relu-t{timestep}'
                   for block, timesteps in [(0, (0, 1)), (1, (0, 1, 2, 3)), (2, (0, 1))] for timestep in timesteps] +
                  ['avgpool-t0'],
