@@ -5,7 +5,7 @@ channels:
 - pytorch
 dependencies:
   - python>=3.6
-  - keras=2.2.0
+  - keras=2.2.0  # required for keras_squeezenet implementation
   - tensorflow>=1.4
   - pytorch
   - torchvision
