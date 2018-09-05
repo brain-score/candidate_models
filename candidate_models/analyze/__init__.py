@@ -33,10 +33,9 @@ class DataCollector(object):
         # neural scores
         data = self.parse_neural_scores(models)
         # merge with behavior, performance and meta
-        meta_filepath = os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'models.csv')
-        model_meta = pd.read_csv(meta_filepath)
-        model_meta = model_meta.rename(columns={'behav_r': 'behavior', 'top1': 'performance'})
-        data = data.merge(model_meta[['model', 'behavior', 'performance', 'link', 'bibtex']], on='model')
+        model_meta = self._get_models_meta()
+        model_meta = model_meta[['model', 'behavior', 'performance', 'link', 'bibtex']]
+        data = data.merge(model_meta, on='model')
         data['performance'] = 100 * data['performance']
         # brain-score
         data['brain-score'] = self.compute_brainscore(data)
@@ -44,16 +43,25 @@ class DataCollector(object):
         data['rank'] = data['brain-score'].rank(ascending=False)
         return data
 
+    def _get_models_meta(self):
+        meta_filepath = os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'models.csv')
+        model_meta = pd.read_csv(meta_filepath)
+        model_meta = model_meta.rename(columns={'behav_r': 'behavior', 'top1': 'performance'})
+        basenet_meta = pd.read_pickle(os.path.join(os.path.dirname(__file__), '..', '..', 'basenets_correct.pkl'))
+        basenet_meta = basenet_meta.rename(columns={'r': 'behavior', 'top1': 'performance'})
+        basenet_meta = basenet_meta[['model', 'behavior', 'performance']]
+        model_meta = pd.concat([model_meta, basenet_meta])
+        return model_meta
+
     def get_models(self):
         models = [file for file in glob(os.path.join(os.path.dirname(__file__), '..', '..',
-                                                     'output', 'brainscore.benchmarks.ToliasCadena2017._call', '*'))]
+                                                     'output', 'brainscore.benchmarks.DicarloMajaj2015._call', '*'))]
         models = [re.match('.*/identifier=(.*)\.pkl', file) for file in models]
         models = [match.group(1) for match in models if match]
         models = np.unique(models)
 
         # check if all models were run
-        all_models_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'models.csv')
-        all_models = pd.read_csv(all_models_path)['model'].values
+        all_models = self._get_models_meta()['model'].values
         missing_models = set(all_models) - set(models)
         print("Missing basenets:", " ".join([model for model in missing_models if model.startswith('basenet')]))
         print("Missing non-basenets:", " ".join([model for model in missing_models if not model.startswith('basenet')]))
@@ -74,12 +82,15 @@ class DataCollector(object):
             data = defaultdict(list)
             for model in models:
                 data['model'].append(model)
-                ceiled_score, score = score_physiology(model=model, benchmark=self._benchmark, return_unceiled=True)
+                score = score_physiology(model=model, benchmark=self._benchmark)
                 score = score.aggregation
-                # TODO: this just takes the maximum error but not necessarily the one corresponding to the maximum score
-                score = score.max('layer')
+
+                def best_layer(group):
+                    argmax = group.sel(aggregation='center').argmax('layer')
+                    return group[:, argmax.values]
+
+                score = score.groupby('region').apply(best_layer)
                 self._parse_score(score, data)
-                # bs .435 | alexnet | top-1 57.67 | V4 .663 | IT .587 | behavior .245
 
             return pd.DataFrame(data)
 
@@ -115,7 +126,7 @@ class DataCollector(object):
 
         benchmarks = {
             'dicarlo.Majaj2015': DataCollector.DicarloMajaj2015Parser(),
-            'tolias.Cadena2017': DataCollector.ToliasCadena2017Parser()
+            # 'tolias.Cadena2017': DataCollector.ToliasCadena2017Parser()
         }
         data = None
         for benchmark, parser in benchmarks.items():
@@ -135,6 +146,10 @@ class DataCollector(object):
         global_scores = [[neural_score, row['behavior']] for (_, row), neural_score in
                          zip(data.iterrows(), neural_scores)]
         return np.mean(global_scores, axis=1)
+
+
+def filter_basenets(data):
+    return data[[is_basenet(row['model']) for _, row in data.iterrows()]]
 
 
 def is_basenet(model_name):
