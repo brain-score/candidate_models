@@ -7,7 +7,7 @@ import torch
 from PIL import Image
 from torch.autograd import Variable
 from torchvision.models.alexnet import alexnet
-from torchvision.models.resnet import resnet18
+from torchvision.models.resnet import resnet18, resnet34
 from torchvision.models.squeezenet import squeezenet1_0, squeezenet1_1
 from torchvision.transforms import transforms
 
@@ -129,4 +129,5 @@ model_constructors = {
     'squeezenet1_0': squeezenet1_0,  # https://arxiv.org/abs/1602.07360
     'squeezenet1_1': squeezenet1_1,  # https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1
     'resnet-18': resnet18,  # https://arxiv.org/abs/1512.03385
+    'resnet-34': resnet34,  # https://arxiv.org/abs/1512.03385
 }
