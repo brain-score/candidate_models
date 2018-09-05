@@ -8,6 +8,7 @@ from candidate_models.analyze.stats import compute_benchmark_correlations, compu
 from candidate_models.analyze.winners import best_models
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.getLogger('peewee').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 logger.info("Plotting figures")
