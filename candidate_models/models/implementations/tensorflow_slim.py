@@ -21,64 +21,22 @@ slim_models = slim_models[slim_models['framework'] == 'slim']
 
 
 class TensorflowSlimModel(DeepModel):
-    def __init__(self, model_name, weights=Defaults.weights,
+    def __init__(self, weights=Defaults.weights,
                  batch_size=Defaults.batch_size, image_size=Defaults.image_size):
         super().__init__(batch_size=batch_size, image_size=image_size)
-        self._create(model_name, batch_size, image_size)
+        self.inputs = self._create_inputs(batch_size, image_size)
+        self._logits, self.endpoints = self._create_model(self.inputs)
         self._sess = tf.Session()
-        if weights:
-            self._restore(model_name, weights)
+        self._restore(weights)
 
-    def _create(self, model_name, batch_size, image_size):
-        _model_properties = self._get_model_properties(model_name)
-        call = _model_properties['callable']
-        arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0.)
-        kwargs = {}
-        if model_name.startswith('mobilenet_v2') or model_name.startswith('mobilenet_v1'):
-            arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0., is_training=False)
-            kwargs = {'depth_multiplier': _model_properties['depth_multiplier']}
-        tf.reset_default_graph()
-        model = nets_factory.networks_map[call]
-        self.inputs = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size, image_size, 3])
-        preprocess_image = vgg_preprocessing.preprocess_image if _model_properties['preprocessing'] == 'vgg' \
-            else inception_preprocessing.preprocess_image
-        self.inputs = tf.map_fn(lambda image: preprocess_image(tf.image.convert_image_dtype(image, dtype=tf.uint8),
-                                                               image_size, image_size), self.inputs)
-        with tf.contrib.slim.arg_scope(arg_scope):
-            self._logits, self.endpoints = model(self.inputs,
-                                           num_classes=1001 - int(_model_properties['labels_offset']),
-                                           is_training=False,
-                                           **kwargs)
+    def _create_inputs(self, batch_size, image_size):
+        raise NotImplementedError()
 
-    def _get_model_properties(self, model_name):
-        _model_properties = slim_models[slim_models['model'] == model_name]
-        _model_properties = {field: next(iter(_model_properties[field]))
-                             for field in _model_properties.columns}
-        return _model_properties
+    def _create_model(self, inputs):
+        raise NotImplementedError()
 
-    def _get_model_path(self):
-        search_paths = ['/braintree/data2/active/users/qbilius/models/slim',
-                        os.path.join(os.path.dirname(__file__), '..', '..', '..', 'model-weights')]
-        for search_path in search_paths:
-            if os.path.isdir(search_path):
-                self._logger.debug("Using model path '{}'".format(search_path))
-                return search_path
-        raise ValueError("No model path found in {}".format(search_paths))
-
-    def _restore(self, model_name, weights):
-        assert weights == 'imagenet'
-        var_list = None
-        if model_name.startswith('mobilenet'):
-            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy
-            ema = tf.train.ExponentialMovingAverage(0.999)
-            var_list = ema.variables_to_restore()
-        restorer = tf.train.Saver(var_list)
-
-        model_path = self._get_model_path()
-        fnames = glob.glob(os.path.join(model_path, model_name, '*.ckpt*'))
-        assert len(fnames) > 0
-        restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
-        restorer.restore(self._sess, restore_path)
+    def _restore(self, weights):
+        raise NotImplementedError()
 
     def _load_image(self, image_filepath):
         image = skimage.io.imread(image_filepath)
@@ -108,3 +66,66 @@ class TensorflowSlimModel(DeepModel):
             g.add_node(name, object=layer, type=type(layer))
         g.add_node("logits", object=self._logits, type=type(self._logits))
         return g
+
+
+class TensorflowSlimPredefinedModel(DeepModel):
+    def __init__(self, model_name, *args, **kwargs):
+        self._model_name = model_name
+        super().__init__(*args, **kwargs)
+
+    def _create_inputs(self, batch_size, image_size):
+        model_properties = self._get_model_properties(self._model_name)
+        inputs = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size, image_size, 3])
+        preprocess_image = vgg_preprocessing.preprocess_image if model_properties['preprocessing'] == 'vgg' \
+            else inception_preprocessing.preprocess_image
+        return tf.map_fn(lambda image: preprocess_image(tf.image.convert_image_dtype(image, dtype=tf.uint8),
+                                                        image_size, image_size), inputs)
+
+    def _create_model(self, inputs):
+        model_properties = self._get_model_properties(self._model_name)
+        call = model_properties['callable']
+        arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0.)
+        kwargs = {}
+        if self._model_name.startswith('mobilenet_v2') or self._model_name.startswith('mobilenet_v1'):
+            arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0., is_training=False)
+            kwargs = {'depth_multiplier': model_properties['depth_multiplier']}
+        tf.reset_default_graph()
+        model = nets_factory.networks_map[call]
+        with tf.contrib.slim.arg_scope(arg_scope):
+            logits, endpoints = model(inputs,
+                                      num_classes=1001 - int(model_properties['labels_offset']),
+                                      is_training=False,
+                                      **kwargs)
+            return logits, endpoints
+
+    def _get_model_properties(self, model_name):
+        _model_properties = slim_models[slim_models['model'] == model_name]
+        _model_properties = {field: next(iter(_model_properties[field]))
+                             for field in _model_properties.columns}
+        return _model_properties
+
+    def _get_model_path(self):
+        search_paths = ['/braintree/data2/active/users/qbilius/models/slim',
+                        os.path.join(os.path.dirname(__file__), '..', '..', '..', 'model-weights')]
+        for search_path in search_paths:
+            if os.path.isdir(search_path):
+                self._logger.debug("Using model path '{}'".format(search_path))
+                return search_path
+        raise ValueError("No model path found in {}".format(search_paths))
+
+    def _restore(self, weights):
+        if weights is None:
+            return
+        assert weights == 'imagenet'
+        var_list = None
+        if self._model_name.startswith('mobilenet'):
+            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy
+            ema = tf.train.ExponentialMovingAverage(0.999)
+            var_list = ema.variables_to_restore()
+        restorer = tf.train.Saver(var_list)
+
+        model_path = self._get_model_path()
+        fnames = glob.glob(os.path.join(model_path, self._model_name, '*.ckpt*'))
+        assert len(fnames) > 0
+        restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
+        restorer.restore(self._sess, restore_path)

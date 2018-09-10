@@ -140,16 +140,16 @@ class DeepModel(object):
 
     def _package(self, layer_activations, stimuli_paths):
         activations = list(layer_activations.values())
-        activations = np.array(activations)
-        self._logger.debug('Activations shape: {}'.format(activations.shape))
-        # layer x images x activations -> images x layer x activations
-        activations = activations.transpose([1, 0, 2])
+        shapes = [a.shape for a in activations]
+        self._logger.debug('Activations shapes: {}'.format(shapes))
+        # layer x images x activations --> images x (layer x activations)
+        activations = np.concatenate(activations, axis=-1)
         assert activations.shape[0] == len(stimuli_paths)
-        assert activations.shape[1] == len(layer_activations)
-        layers = np.array(list(layer_activations.keys()))
-        layers = np.repeat(layers[:, np.newaxis], repeats=activations.shape[-1], axis=1)
-        activations = np.reshape(activations, [activations.shape[0], np.prod(activations.shape[1:])])
-        layers = np.reshape(layers, [np.prod(activations.shape[1:])])
+        assert activations.shape[1] == np.sum([np.prod(shape[1:]) for shape in shapes])
+        layers = []
+        for layer, shape in zip(layer_activations.keys(), shapes):
+            repeated_layer = [layer] * np.prod(shape[1:])
+            layers += repeated_layer
         model_assembly = NeuroidAssembly(
             activations,
             coords={'stimulus_path': stimuli_paths,
@@ -397,9 +397,3 @@ class ModelLayers(dict):
 
 
 model_layers = ModelLayers()
-for model, layers in _model_layers.items():
-    if isinstance(model, str):
-        model_layers[model] = layers
-    else:
-        for _model in model:
-            model_layers[_model] = layers

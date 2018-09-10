@@ -10,10 +10,10 @@ from caching import store_xarray
 from brainscore.assemblies import NeuroidAssembly, merge_data_arrays
 from brainscore.metrics.transformations import subset
 from brainscore.metrics.utils import get_modified_coords
-from .implementations import Defaults as DeepModelDefaults
+from .implementations import Defaults as DeepModelDefaults, DeepModel
 from .implementations.keras import KerasModel
-from .implementations.pytorch import PytorchModel
-from .implementations.tensorflow_slim import TensorflowSlimModel
+from .implementations.pytorch import PytorchPredefinedModel
+from .implementations.tensorflow_slim import TensorflowSlimPredefinedModel
 
 _logger = logging.getLogger(__name__)
 
@@ -23,8 +23,21 @@ class Defaults(object):
 
 
 def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_set,
-                            weights=DeepModelDefaults.weights, image_size=DeepModelDefaults.image_size,
-                            pca_components=DeepModelDefaults.pca_components, batch_size=DeepModelDefaults.batch_size):
+                            model_identifier=None, weights=DeepModelDefaults.weights,
+                            image_size=DeepModelDefaults.image_size, pca_components=DeepModelDefaults.pca_components,
+                            batch_size=DeepModelDefaults.batch_size):
+    """
+    :param model:
+    :param multi_layers:
+    :param stimulus_set:
+    :param model_identifier: optional string for the model name.
+        only required when model is not a string pointing to a saved model.
+    :param weights:
+    :param image_size:
+    :param pca_components:
+    :param batch_size:
+    :return:
+    """
     single_layers = []
     for layers in multi_layers:
         if isinstance(layers, str):
@@ -34,7 +47,8 @@ def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_
                 single_layers.append(layer)
     # remove duplicates, restore ordering
     single_layers = list(sorted(set(single_layers), key=single_layers.index))
-    single_layer_activations = model_activations(model, single_layers, stimulus_set, weights=weights,
+    single_layer_activations = model_activations(model, single_layers, stimulus_set,
+                                                 model_identifier=model_identifier, weights=weights,
                                                  image_size=image_size, pca_components=pca_components,
                                                  batch_size=batch_size)
 
@@ -84,20 +98,38 @@ def package_stimulus_coords(assembly, stimulus_set):
     return assembly
 
 
-@store_xarray(identifier_ignore=['layers', 'batch_size', 'pca_batch_size'], combine_fields={'layers': 'layer'})
-def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, weights=DeepModelDefaults.weights,
+def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_identifier=None,
+                      weights=DeepModelDefaults.weights,
                       image_size=DeepModelDefaults.image_size, pca_components=DeepModelDefaults.pca_components,
                       batch_size=DeepModelDefaults.batch_size):
+    if isinstance(model, str):
+        assert model_identifier is None, "already got model string"
+        _logger.info('Creating model')
+        model_ctr = functools.partial(create_model, model=model)
+    else:
+        assert model_identifier is not None, "need model_identifier to save activations"
+        _logger.debug('Using passed model constructor')
+        model_ctr = model
+
+    return _model_activations(model_ctr=model_ctr, layers=layers, stimulus_set=stimulus_set,
+                              model_identifier=model_identifier, weights=weights,
+                              image_size=image_size, pca_components=pca_components, batch_size=batch_size)
+
+
+@store_xarray(identifier_ignore=['model_ctr', 'layers', 'batch_size', 'pca_batch_size'],
+              combine_fields={'layers': 'layer'})
+def _model_activations(model_identifier, model_ctr, layers, stimulus_set, weights,
+                       image_size, pca_components, batch_size):
     from candidate_models import load_stimulus_set
     _logger.info('Loading stimuli')
     stimulus_set = load_stimulus_set(stimulus_set)
     stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))
 
-    _logger.info('Creating model')
-    model = create_model(model=model, weights=weights, batch_size=batch_size, image_size=image_size)
+    _logger.info(f'Creating model {model_identifier}')
+    model = model_ctr(weights=weights, batch_size=batch_size, image_size=image_size)
     _logger.debug(str(model))
 
-    _logger.info('Computing activations')
+    _logger.info('Retrieving activations')
     assembly = model.get_activations(stimuli_paths=stimuli_paths, layers=layers, pca_components=pca_components)
     assembly = package_stimulus_coords(assembly, stimulus_set)
     return assembly
@@ -113,7 +145,9 @@ def load_model_definitions():
         framework = row['framework']
         if not framework:  # basenet
             continue
-        framework = {'keras': KerasModel, 'pytorch': PytorchModel, 'slim': TensorflowSlimModel}[framework]
+        framework = {'keras': KerasModel,
+                     'pytorch': PytorchPredefinedModel,
+                     'slim': TensorflowSlimPredefinedModel}[framework]
         model = row['model']
         models[model] = functools.partial(framework, model_name=model)
     return models

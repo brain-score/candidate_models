@@ -20,18 +20,17 @@ SUBMODULE_SEPARATOR = '.'
 
 
 class PytorchModel(DeepModel):
-    def __init__(self, model_name, weights=Defaults.weights,
+    def __init__(self, weights=Defaults.weights,
                  batch_size=Defaults.batch_size, image_size=Defaults.image_size):
         super().__init__(batch_size=batch_size, image_size=image_size)
-        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self._device = torch.device("cpu")
         self._logger.debug(f"Using device {self._device}")
-        self._model = self._create_model(model_name, weights)
+        self._model = self._create_model(weights)
         self._model = self._model.to(self._device)
 
-    def _create_model(self, model_name, weights):
-        constructor = model_constructors[model_name]
-        assert weights in ['imagenet', None]
-        return constructor(pretrained=weights == 'imagenet')
+    def _create_model(self, weights):
+        raise NotImplementedError()
 
     def _load_image(self, image_filepath):
         with Image.open(image_filepath) as image:
@@ -115,6 +114,25 @@ class PytorchModel(DeepModel):
         return g
 
 
+class PytorchPredefinedModel(DeepModel):
+    model_constructors = {
+        'alexnet': alexnet,  # https://arxiv.org/abs/1404.5997
+        'squeezenet1_0': squeezenet1_0,  # https://arxiv.org/abs/1602.07360
+        'squeezenet1_1': squeezenet1_1,  # https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1
+        'resnet-18': resnet18,  # https://arxiv.org/abs/1512.03385
+        'resnet-34': resnet34,  # https://arxiv.org/abs/1512.03385
+    }
+
+    def __init__(self, model_name, *args, **kwargs):
+        self._model_name = model_name
+        super().__init__(*args, **kwargs)
+
+    def _create_model(self, weights):
+        constructor = self.model_constructors[self._model_name]
+        assert weights in ['imagenet', None]
+        return constructor(pretrained=weights == 'imagenet')
+
+
 def torchvision_preprocess_input(image_size, normalize_mean=[0.485, 0.456, 0.406], normalize_std=[0.229, 0.224, 0.225]):
     return transforms.Compose([
         transforms.Resize(image_size),
@@ -122,12 +140,3 @@ def torchvision_preprocess_input(image_size, normalize_mean=[0.485, 0.456, 0.406
         transforms.Normalize(mean=normalize_mean, std=normalize_std),
         lambda img: img.unsqueeze(0)
     ])
-
-
-model_constructors = {
-    'alexnet': alexnet,  # https://arxiv.org/abs/1404.5997
-    'squeezenet1_0': squeezenet1_0,  # https://arxiv.org/abs/1602.07360
-    'squeezenet1_1': squeezenet1_1,  # https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1
-    'resnet-18': resnet18,  # https://arxiv.org/abs/1512.03385
-    'resnet-34': resnet34,  # https://arxiv.org/abs/1512.03385
-}

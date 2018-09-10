@@ -28,18 +28,6 @@ def score_model(model, layers=None, weights=DeepModelDefaults.weights,
     return physiology_score
 
 
-def _combine_layers(key, value):
-    if key != 'layer':
-        return value
-    return [combine_layers_xarray(layers) if not isinstance(layers, str) else layers for layers in value]
-
-
-def _un_combine_layers(key, value):
-    if key != 'layer':
-        return value
-    return [split_layers_xarray(layers) if ',' in layers else layers for layers in value]
-
-
 class AssemblyPromise(object):
     def __init__(self, name, load_fnc):
         self.name = name
@@ -74,7 +62,9 @@ def score_physiology(model, layers=None,
     :param int image_size:
     :return: PhysiologyScore
     """
-    layers = layers or model_layers[model]
+    if layers is None:
+        assert isinstance(model, str), "need either known model string or list of layers"
+        layers = model_layers[model]
     logger.info('Loading benchmark')
     benchmark = benchmarks.load(benchmark)
 
@@ -100,3 +90,15 @@ def score_anatomy(model, region_layers):
     benchmark = load_neural_benchmark(assembly_name='ventral_stream', metric_name='edge_ratio')
     score = benchmark(graph)
     return score
+
+
+def _combine_layers(key, value):
+    if key != 'layer':
+        return value
+    return [combine_layers_xarray(layers) if not isinstance(layers, str) else layers for layers in value]
+
+
+def _un_combine_layers(key, value):
+    if key != 'layer':
+        return value
+    return [split_layers_xarray(layers) if ',' in layers else layers for layers in value]
