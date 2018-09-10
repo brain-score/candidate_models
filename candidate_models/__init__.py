@@ -19,15 +19,6 @@ class Defaults(object):
     benchmark = 'dicarlo.Majaj2015'
 
 
-def score_model(model, layers=None, weights=DeepModelDefaults.weights,
-                pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                benchmark=Defaults.benchmark):
-    physiology_score = score_physiology(model=model, layers=layers, weights=weights,
-                                        pca_components=pca_components, image_size=image_size,
-                                        benchmark=benchmark)
-    return physiology_score
-
-
 class AssemblyPromise(object):
     def __init__(self, name, load_fnc):
         self.name = name
@@ -49,10 +40,10 @@ class AssemblyPromise(object):
             self.values = self._load()
 
 
-def score_physiology(model, layers=None,
-                     weights=DeepModelDefaults.weights,
-                     pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
-                     benchmark=Defaults.benchmark, return_ceiled=False):
+def score_model(model, model_identifier=None, layers=None,
+                weights=DeepModelDefaults.weights,
+                pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
+                benchmark=Defaults.benchmark, return_ceiled=False):
     """
     :param str model:
     :param [str]|None layers: layers to score or None to use all layers present in the model activations
@@ -60,45 +51,29 @@ def score_physiology(model, layers=None,
     :param int pca_components:
     :param str benchmark:
     :param int image_size:
-    :return: PhysiologyScore
+    :return: Score
     """
     if layers is None:
         assert isinstance(model, str), "need either known model string or list of layers"
         layers = model_layers[model]
+
+    assert model_identifier is not None or isinstance(model, str), "need either known model string or model_identifier"
+    model_name = model_identifier if model_identifier is not None else model
+
     logger.info('Loading benchmark')
     benchmark = benchmarks.load(benchmark)
 
     def _compute_activations():
         logger.info('Computing activations')
-        model_assembly = model_multi_activations(model=model, weights=weights, multi_layers=layers,
+        model_assembly = model_multi_activations(model=model, model_identifier=model_identifier,
+                                                 weights=weights, multi_layers=layers,
                                                  pca_components=pca_components, image_size=image_size,
                                                  stimulus_set=benchmark.stimulus_set_name)
         return model_assembly
 
-    promise = AssemblyPromise(model, _compute_activations)
+    promise = AssemblyPromise(name=model_name, load_fnc=_compute_activations)
 
     logger.info(f'Scoring {model}')
     score = benchmark(promise, transformation_kwargs=dict(
         cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_ceiled=return_ceiled)
     return score
-
-
-def score_anatomy(model, region_layers):
-    graph = model_graph(model, layers=list(region_layers.values()))
-    graph = combine_graph(graph, region_layers)
-    graph = cut_graph(graph, keep_nodes=relevant_regions)
-    benchmark = load_neural_benchmark(assembly_name='ventral_stream', metric_name='edge_ratio')
-    score = benchmark(graph)
-    return score
-
-
-def _combine_layers(key, value):
-    if key != 'layer':
-        return value
-    return [combine_layers_xarray(layers) if not isinstance(layers, str) else layers for layers in value]
-
-
-def _un_combine_layers(key, value):
-    if key != 'layer':
-        return value
-    return [split_layers_xarray(layers) if ',' in layers else layers for layers in value]
