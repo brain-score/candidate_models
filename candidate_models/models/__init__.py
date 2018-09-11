@@ -104,6 +104,7 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_i
                       batch_size=DeepModelDefaults.batch_size):
     if isinstance(model, str):
         assert model_identifier is None, "already got model string"
+        model_identifier = model
         _logger.info('Creating model')
         model_ctr = functools.partial(create_model, model=model)
     else:
