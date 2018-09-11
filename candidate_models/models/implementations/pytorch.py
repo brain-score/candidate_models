@@ -114,7 +114,7 @@ class PytorchModel(DeepModel):
         return g
 
 
-class PytorchPredefinedModel(DeepModel):
+class PytorchPredefinedModel(PytorchModel):
     model_constructors = {
         'alexnet': alexnet,  # https://arxiv.org/abs/1404.5997
         'squeezenet1_0': squeezenet1_0,  # https://arxiv.org/abs/1602.07360

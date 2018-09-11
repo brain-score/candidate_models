@@ -68,7 +68,7 @@ class TensorflowSlimModel(DeepModel):
         return g
 
 
-class TensorflowSlimPredefinedModel(DeepModel):
+class TensorflowSlimPredefinedModel(TensorflowSlimModel):
     def __init__(self, model_name, *args, **kwargs):
         self._model_name = model_name
         super().__init__(*args, **kwargs)
