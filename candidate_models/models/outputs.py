@@ -12,6 +12,7 @@ from pathos.pools import ThreadPool as Pool
 import numpy as np
 from sklearn.decomposition import PCA
 
+from candidate_models import s3
 from candidate_models.models.type import get_model_type, ModelType, PYTORCH_SUBMODULE_SEPARATOR
 
 _logger = logging.getLogger(__name__)
@@ -53,10 +54,10 @@ def _get_imagenet_val(nimg, image_size):
     for i in range((nimg - 1) % 1000 + 1):
         idx.extend(50 * i + np.array([n_img_per_class]).astype(int))
 
-    imagenet_file = '/braintree/data2/active/users/qbilius/datasets/imagenet2012.hdf5'
+    imagenet_file = os.path.join(os.path.dirname(__file__), '..', '..', 'imagenet2012.hdf5')
     if not os.path.isfile(imagenet_file):
-        _logger.error("Imagenet file not found - mocking data")
-        return np.random.rand(nimg, image_size, image_size, 3)
+        _logger.debug("Downloading ImageNet validation")
+        s3.download_file("imagenet2012-val.hdf5", imagenet_file)
     with h5py.File(imagenet_file, 'r') as f:
         ims = np.array([skimage.transform.resize(f['val/images'][i], (image_size, image_size)) for i in idx])
     return ims

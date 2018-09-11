@@ -11,9 +11,7 @@ Recommended for most users. Use as a library.
 
 `pip install git+https://github.com/dicarlolab/candidate_models`
 
-You will also need to download ImageNet validation data to initialize the principal components.
-Once you have done that, find the line [here](candidate_models/models/implementations/__init__.py) that points to `/braintree/data2/active/users/qbilius/datasets/imagenet2012.hdf5` and replace it with your downloaded ImageNet.
-Or alternatively, give us a couple of days and this step will work automatically. :)
+During first-time use, ImageNet validation images (9.8 GB) will be downloaded, so give it a couple of minutes.
 
 To contribute code to this framework, see the [Development Setup](#development-setup).
 

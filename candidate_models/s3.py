@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 import boto3
 from tqdm import tqdm
@@ -25,3 +26,14 @@ def download_folder(folder_key, target_directory, bucket=default_bucket, region=
         temp_path = target_path + '.filepart'
         bucket.download_file(file, temp_path)
         os.rename(temp_path, target_path)
+
+
+def download_file(key, target_path, bucket=default_bucket, region=default_region):
+    s3 = boto3.resource('s3', region_name=region)
+    obj = s3.Object(bucket, key)
+    # show progress. see https://gist.github.com/wy193777/e7607d12fad13459e8992d4f69b53586
+    with tqdm(total=obj.content_length, unit='B', unit_scale=True, desc=key, file=sys.stdout) as progress_bar:
+        def progress_hook(bytes_amount):
+            progress_bar.update(bytes_amount)
+
+        obj.download_file(target_path, Callback=progress_hook)
