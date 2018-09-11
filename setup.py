@@ -20,6 +20,7 @@ requirements = [
     "pillow",
     "llist",
     "networkx",
+    "boto3",
     "matplotlib",
     "seaborn",
     "jupyter",

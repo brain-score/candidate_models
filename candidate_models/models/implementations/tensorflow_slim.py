@@ -12,6 +12,7 @@ import tensorflow as tf
 from nets import nets_factory
 from preprocessing import inception_preprocessing, vgg_preprocessing
 
+from candidate_models import s3
 from candidate_models.models.implementations import DeepModel, Defaults
 
 _logger = logging.getLogger(__name__)
@@ -104,15 +105,6 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
                              for field in _model_properties.columns}
         return _model_properties
 
-    def _get_model_path(self):
-        search_paths = ['/braintree/data2/active/users/qbilius/models/slim',
-                        os.path.join(os.path.dirname(__file__), '..', '..', '..', 'model-weights')]
-        for search_path in search_paths:
-            if os.path.isdir(search_path):
-                self._logger.debug("Using model path '{}'".format(search_path))
-                return search_path
-        raise ValueError("No model path found in {}".format(search_paths))
-
     def _restore(self, weights):
         if weights is None:
             return
@@ -124,8 +116,16 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
             var_list = ema.variables_to_restore()
         restorer = tf.train.Saver(var_list)
 
-        model_path = self._get_model_path()
-        fnames = glob.glob(os.path.join(model_path, self._model_name, '*.ckpt*'))
+        restore_path = self._find_model_weights(self._model_name)
+        restorer.restore(self._sess, restore_path)
+
+    def _find_model_weights(self, model_name):
+        model_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'model-weights', 'slim', model_name)
+        if not os.path.isdir(model_path):
+            self._logger.debug(f"Downloading weights for '{model_name}'")
+            os.makedirs(model_path)
+            s3.download_folder(f"slim/{model_name}", model_path)
+        fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
         assert len(fnames) > 0
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
-        restorer.restore(self._sess, restore_path)
+        return restore_path

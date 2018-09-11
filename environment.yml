@@ -13,6 +13,7 @@ dependencies:
   - networkx
   - scikit-learn
   - scikit-image
+  - boto3
   - matplotlib
   - seaborn
   - jupyter
