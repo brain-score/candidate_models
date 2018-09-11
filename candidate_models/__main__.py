@@ -45,8 +45,14 @@ def main():
                         pca_components=args.pca, image_size=args.image_size,
                         benchmark=args.benchmark)
     score = score.aggregation
-    print("\n".join([f"{layer}: {center:.3f}+-{error:.3f}" for layer, center, error in zip(
-        score['layer'].values, score.sel(aggregation='center').values, score.sel(aggregation='error').values)]))
+    for region in score['region'].values:
+        print(region)
+        region_score = score.sel(region=region)
+        print("\n".join([f"{layer}: {center:.3f}+-{error:.3f}" for layer, center, error in zip(
+            region_score['layer'].values.tolist(),
+            region_score.sel(aggregation='center').values.tolist(),
+            region_score.sel(aggregation='error').values.tolist())]))
+        print()
 
 
 main()
