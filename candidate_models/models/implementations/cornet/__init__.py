@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 
-from candidate_models.models import PytorchModel
+from candidate_models.models.implementations.pytorch import PytorchModel
 
 
 class TemporalPytorchModel(PytorchModel):
