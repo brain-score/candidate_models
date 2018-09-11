@@ -161,17 +161,3 @@ def load_model_meta():
 
 models_meta = load_model_meta()
 models = load_model_definitions()
-
-
-def register_model(model_name, model_constructor):
-    if model_name in models:
-        _logger.warning(f"{model_name} already in models ({model_constructor} - overwriting")
-    models[model_name] = model_constructor
-
-
-def cornet_s(*args, **kwargs):
-    from candidate_models.models.implementations.cornet.cornet_s import CORNetWrapper
-    return CORNetWrapper(*args, **kwargs)
-
-
-register_model('cornet_s', cornet_s)
