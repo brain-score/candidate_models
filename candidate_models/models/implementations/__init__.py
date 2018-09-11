@@ -2,6 +2,7 @@ import copy
 import functools
 import itertools
 import logging
+import os
 from collections import OrderedDict
 
 import h5py
@@ -10,6 +11,7 @@ from sklearn.decomposition import PCA
 
 from brainscore.assemblies import NeuroidAssembly
 from brainscore.utils import fullname
+from candidate_models import s3
 
 
 class Defaults(object):
@@ -126,7 +128,10 @@ class DeepModel(object):
         for i in range((num_images - 1) % num_classes + 1):
             indices.extend(50 * i + np.array([num_images_per_class]).astype(int))
 
-        imagenet_file = '/braintree/data2/active/users/qbilius/datasets/imagenet2012.hdf5'
+        imagenet_file = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'imagenet2012.hdf5')
+        if not os.path.isfile(imagenet_file):
+            self._logger.debug("Downloading ImageNet validation")
+            s3.download_file("imagenet2012-val.hdf5", imagenet_file)
         with h5py.File(imagenet_file, 'r') as f:
             images = np.array([f['val/images'][i] for i in indices])
         return images
