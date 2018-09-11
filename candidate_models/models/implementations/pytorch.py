@@ -94,18 +94,10 @@ class PytorchModel(DeepModel):
         return repr(self._model)
 
     def layers(self):
-        return self._layers(self._model)
-
-    @classmethod
-    def _layers(cls, module, name_prefix=None):
-        if not module._modules:
-            module_name = name_prefix + SUBMODULE_SEPARATOR + module.__class__.__name__
-            yield module_name, module
-            return
-        for submodule_name, submodule in module._modules.items():
-            submodule_prefix = (name_prefix + SUBMODULE_SEPARATOR + submodule_name) if name_prefix is not None \
-                else submodule_name
-            yield from cls._layers(submodule, name_prefix=submodule_prefix)
+        for name, module in self._model.named_modules():
+            if len(list(module.children())) > 0:  # this module only holds other modules
+                continue
+            yield name, module
 
     def graph(self):
         g = nx.DiGraph()
