@@ -44,15 +44,16 @@ def main():
     score = score_model(args.model, layers=args.layers, weights=args.model_weights,
                         pca_components=args.pca, image_size=args.image_size,
                         benchmark=args.benchmark)
-    score = score.aggregation
-    for region in score['region'].values:
-        print(region)
-        region_score = score.sel(region=region)
-        print("\n".join([f"{layer}: {center:.3f}+-{error:.3f}" for layer, center, error in zip(
-            region_score['layer'].values.tolist(),
-            region_score.sel(aggregation='center').values.tolist(),
-            region_score.sel(aggregation='error').values.tolist())]))
-        print()
+    if args.benchmark == 'brain-score':
+        score = score.values.sel(benchmark='dicarlo.Majaj2015')
+        for region in score['region'].values:
+            print(region)
+            region_score = score.sel(region=region)
+            print("\n".join([f"{layer}: {center:.3f}+-{error:.3f}" for layer, center, error in zip(
+                region_score['layer'].values.tolist(),
+                region_score.sel(aggregation='center').values.tolist(),
+                region_score.sel(aggregation='error').values.tolist())]))
+            print()
 
 
 main()
