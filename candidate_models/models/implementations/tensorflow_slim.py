@@ -72,6 +72,7 @@ class TensorflowSlimModel(DeepModel):
 class TensorflowSlimPredefinedModel(TensorflowSlimModel):
     def __init__(self, model_name, *args, **kwargs):
         self._model_name = model_name
+        tf.reset_default_graph()
         super().__init__(*args, **kwargs)
 
     def _create_inputs(self, batch_size, image_size):
@@ -90,7 +91,6 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
         if self._model_name.startswith('mobilenet_v2') or self._model_name.startswith('mobilenet_v1'):
             arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0., is_training=False)
             kwargs = {'depth_multiplier': model_properties['depth_multiplier']}
-        tf.reset_default_graph()
         model = nets_factory.networks_map[call]
         with tf.contrib.slim.arg_scope(arg_scope):
             logits, endpoints = model(inputs,
