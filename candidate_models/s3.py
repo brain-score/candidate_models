@@ -2,6 +2,7 @@ import logging
 import os
 
 import boto3
+from tqdm import tqdm
 
 _logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ def download_folder(folder_key, target_directory, bucket=default_bucket, region=
     bucket_contents = list(bucket.objects.all())
     files = [obj.key for obj in bucket_contents if obj.key.startswith(folder_key)]
     _logger.debug(f"Found {len(files)} files")
-    for file in files:
+    for file in tqdm(files):
         # get part of file after given folder_key
         filename = file[len(folder_key):]
         target_path = os.path.join(target_directory, filename)

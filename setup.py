@@ -21,6 +21,7 @@ requirements = [
     "llist",
     "networkx",
     "boto3",
+    "tqdm",
     "matplotlib",
     "seaborn",
     "jupyter",
