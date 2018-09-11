@@ -201,192 +201,193 @@ class DeepModel(object):
         raise NotImplementedError()
 
 
-__vgg_layers = ['pool{}'.format(i + 1) for i in range(5)] + ['fc{}'.format(i + 1) for i in range(5, 7)]
-
-
-def __resnet50_layers(bottleneck_version):
-    return ['conv1'] + \
-           ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
-           ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(4)] + \
-           ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(6)] + \
-           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
-
-
-def __resnet101_layers(bottleneck_version):
-    return ['conv1'] + \
-           ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
-           ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(4)] + \
-           ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(23)] + \
-           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
-
-
-def __resnet152_layers(bottleneck_version):
-    return ['conv1'] + \
-           ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
-           ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(8)] + \
-           ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(36)] + \
-           ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
-
-
-_model_layers = {
-    'alexnet':
-        ['features.2', 'features.5', 'features.7', 'features.9', 'features.12',  # conv-relu-[pool]{1,2,3,4,5}
-         'classifier.2', 'classifier.5'],  # fc-[relu]{6,7,8}
-    'vgg-16':
-        ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
-    'vgg-19':
-        ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2'],
-    'squeezenet1_0':
-        ['features.' + layer for layer in
-         ['2'] +  # max pool
-         ['{}.expand3x3_activation'.format(i) for i in [3, 4, 5, 7, 8, 9, 10, 12]]  # fire outputs (ignoring pools)
-         ],
-    'squeezenet1_1':
-        ['features.' + layer for layer in
-         ['2'] +  # max pool
-         ['{}.expand3x3_activation'.format(i) for i in [3, 4, 6, 7, 9, 10, 11, 12]]  # fire outputs (ignoring pools)
-         ],
-    'densenet-121':
-        ['conv1/relu'] +
-        ['pool1'] +
-        ['conv2_block{}_concat'.format(i + 1) for i in range(6)] +
-        ['pool2_pool'] +
-        ['conv3_block{}_concat'.format(i + 1) for i in range(12)] +
-        ['pool3_pool'] +
-        ['conv4_block{}_concat'.format(i + 1) for i in range(24)] +
-        ['pool4_pool'] +
-        ['conv5_block{}_concat'.format(i + 1) for i in range(16)] +
-        ['avg_pool'],
-    'densenet-169':
-        ['conv1/relu'] +
-        ['pool1'] +
-        ['conv2_block{}_concat'.format(i + 1) for i in range(6)] +
-        ['pool2_pool'] +
-        ['conv3_block{}_concat'.format(i + 1) for i in range(12)] +
-        ['pool3_pool'] +
-        ['conv4_block{}_concat'.format(i + 1) for i in range(32)] +
-        ['pool4_pool'] +
-        ['conv5_block{}_concat'.format(i + 1) for i in range(32)] +
-        ['avg_pool'],
-    'densenet-201':
-        ['conv1/relu'] +
-        ['pool1'] +
-        ['conv2_block{}_concat'.format(i + 1) for i in range(6)] +
-        ['pool2_pool'] +
-        ['conv3_block{}_concat'.format(i + 1) for i in range(12)] +
-        ['pool3_pool'] +
-        ['conv4_block{}_concat'.format(i + 1) for i in range(48)] +
-        ['pool4_pool'] +
-        ['conv5_block{}_concat'.format(i + 1) for i in range(32)] +
-        ['avg_pool'],
-    'xception':
-        ['block1_conv{}_act'.format(i + 1) for i in range(2)] +
-        ['block2_sepconv2_act'] +
-        ['block3_sepconv{}_act'.format(i + 1) for i in range(2)] +
-        ['block4_sepconv{}_act'.format(i + 1) for i in range(2)] +
-        ['block5_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block6_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block7_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block8_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block9_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block10_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block11_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block12_sepconv{}_act'.format(i + 1) for i in range(3)] +
-        ['block13_sepconv{}_act'.format(i + 1) for i in range(2)] +
-        ['block14_sepconv{}_act'.format(i + 1) for i in range(2)] +
-        ['avg_pool'],
-    'resnet-18':
-        ['conv1'] + \
-        ['layer1.0.relu', 'layer1.1.relu'] + \
-        ['layer2.0.relu', 'layer2.0.downsample.0', 'layer2.1.relu'] + \
-        ['layer3.0.relu', 'layer3.0.downsample.0', 'layer3.1.relu'] + \
-        ['layer4.0.relu', 'layer4.0.downsample.0', 'layer4.1.relu'] + \
-        ['avgpool'],
-    'resnet-34':
-        ['conv1'] + \
-        ['layer1.0.conv2', 'layer1.1.conv2', 'layer1.2.conv2'] + \
-        ['layer2.0.downsample.0', 'layer2.1.conv2', 'layer2.2.conv2', 'layer2.3.conv2'] + \
-        ['layer3.0.downsample.0', 'layer3.1.conv2', 'layer3.2.conv2', 'layer3.3.conv2',
-         'layer3.4.conv2', 'layer3.5.conv2'] + \
-        ['layer4.0.downsample.0', 'layer4.1.conv2', 'layer4.2.conv2'] + \
-        ['avgpool'],
-
-    # Slim
-    'inception_v1':
-        ['MaxPool_2a_3x3'] +
-        ['Mixed_3{}'.format(i) for i in ['b', 'c']] +
-        ['Mixed_4{}'.format(i) for i in ['b', 'c', 'd', 'e', 'f']] +
-        ['Mixed_5{}'.format(i) for i in ['b', 'c']] +
-        ['AvgPool_0a_7x7'],
-    'inception_v2':
-        ['MaxPool_2a_3x3'] +
-        ['Mixed_3{}'.format(i) for i in ['b', 'c']] +
-        ['Mixed_4{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e']] +
-        ['Mixed_5{}'.format(i) for i in ['a', 'b', 'c']] +
-        ['AvgPool_1a'],
-    'inception_v3':
-        ['Conv2d_1a_3x3', 'MaxPool_3a_3x3', 'MaxPool_5a_3x3'] +
-        ['Mixed_5{}'.format(i) for i in ['b', 'c', 'd']] +
-        ['Mixed_6{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e']] +
-        ['Mixed_7{}'.format(i) for i in ['a', 'b', 'c']] +
-        ['AvgPool_1a'],
-    'inception_v4':
-        ['Conv2d_1a_3x3'] +
-        ['Mixed_3a'] +
-        ['Mixed_4a'] +
-        ['Mixed_5{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e']] +
-        ['Mixed_6{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']] +
-        ['Mixed_7{}'.format(i) for i in ['a', 'b', 'c', 'd']] +
-        ['global_pool'],
-    'inception_resnet_v2':
-        ['Conv2d_1a_3x3', 'MaxPool_3a_3x3', 'MaxPool_5a_3x3',
-         'Mixed_5b', 'Mixed_6a', 'Mixed_7a', 'Conv2d_7b_1x1', 'global_pool'],
-    'resnet-50_v1':
-        ["resnet_v1_50/{}".format(layer) for layer in __resnet50_layers(1)] + ['global_pool'],
-    'resnet-50_v2':
-        ["resnet_v2_50/{}".format(layer) for layer in __resnet50_layers(2)] + ['global_pool'],
-    'resnet-101_v1':
-        ["resnet_v1_101/{}".format(layer) for layer in __resnet101_layers(1)] + ['global_pool'],
-    'resnet-101_v2':
-        ["resnet_v2_101/{}".format(layer) for layer in __resnet101_layers(2)] + ['global_pool'],
-    'resnet-152_v1':
-        ["resnet_v1_152/{}".format(layer) for layer in __resnet152_layers(1)] + ['global_pool'],
-    'resnet-152_v2':
-        ["resnet_v2_152/{}".format(layer) for layer in __resnet152_layers(2)] + ['global_pool'],
-    'nasnet_mobile':
-        ['Cell_{}'.format(i + 1) for i in range(-1, 3)] + ['Reduction_Cell_0'] +
-        ['Cell_{}'.format(i + 1) for i in range(3, 7)] + ['Reduction_Cell_1'] +
-        ['Cell_{}'.format(i + 1) for i in range(7, 11)] +
-        ['global_pool'],
-    'nasnet_large':
-        ['Cell_{}'.format(i + 1) for i in range(-1, 5)] + ['Reduction_Cell_0'] +
-        ['Cell_{}'.format(i + 1) for i in range(5, 11)] + ['Reduction_Cell_1'] +
-        ['Cell_{}'.format(i + 1) for i in range(11, 17)] +
-        ['global_pool'],
-    'pnasnet_large':
-        ['Cell_{}'.format(i + 1) for i in range(-1, 11)] +
-        ['global_pool'],
-    'mobilenet_v1':
-        ['Conv2d_0'] + list(itertools.chain(
-            *[['Conv2d_{}_depthwise'.format(i + 1), 'Conv2d_{}_pointwise'.format(i + 1)] for i in range(13)])) +
-        ['AvgPool_1a'],
-    'mobilenet_v2':
-        ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool'],
-    'basenet':
-        ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
-    'cornet_s': ['conv1-t0', 'conv2-t0'] +
-                 [f'blocks.{block}.last_relu-t{timestep}'
-                  for block, timesteps in [(0, (0, 1)), (1, (0, 1, 2, 3)), (2, (0, 1))] for timestep in timesteps] +
-                 ['avgpool-t0'],
-}
-"""
-the last layer in each of the model's layer lists is supposed to always be the last feature layer, 
-i.e. the last layer before readout.
-"""
-
-
 class ModelLayers(dict):
+    def __init__(self):
+        super(ModelLayers, self).__init__()
+
+        self['alexnet'] = \
+            ['features.2', 'features.5', 'features.7', 'features.9', 'features.12',  # conv-relu-[pool]{1,2,3,4,5}
+             'classifier.2', 'classifier.5']  # fc-[relu]{6,7,8}
+        self['vgg-16'] = \
+            ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2']
+        self['vgg-19'] = \
+            ['block{}_pool'.format(i + 1) for i in range(5)] + ['fc1', 'fc2']
+        self['squeezenet1_0'] = \
+            ['features.' + layer for layer in
+             ['2'] +  # max pool
+             ['{}.expand3x3_activation'.format(i) for i in [3, 4, 5, 7, 8, 9, 10, 12]]  # fire outputs (ignoring pools)
+             ]
+        self['squeezenet1_1'] = \
+            ['features.' + layer for layer in
+             ['2'] +  # max pool
+             ['{}.expand3x3_activation'.format(i) for i in [3, 4, 6, 7, 9, 10, 11, 12]]  # fire outputs (ignoring pools)
+             ]
+        self['densenet-121'] = \
+            ['conv1/relu'] + \
+            ['pool1'] + \
+            ['conv2_block{}_concat'.format(i + 1) for i in range(6)] + \
+            ['pool2_pool'] + \
+            ['conv3_block{}_concat'.format(i + 1) for i in range(12)] + \
+            ['pool3_pool'] + \
+            ['conv4_block{}_concat'.format(i + 1) for i in range(24)] + \
+            ['pool4_pool'] + \
+            ['conv5_block{}_concat'.format(i + 1) for i in range(16)] + \
+            ['avg_pool']
+        self['densenet-169'] = \
+            ['conv1/relu'] + \
+            ['pool1'] + \
+            ['conv2_block{}_concat'.format(i + 1) for i in range(6)] + \
+            ['pool2_pool'] + \
+            ['conv3_block{}_concat'.format(i + 1) for i in range(12)] + \
+            ['pool3_pool'] + \
+            ['conv4_block{}_concat'.format(i + 1) for i in range(32)] + \
+            ['pool4_pool'] + \
+            ['conv5_block{}_concat'.format(i + 1) for i in range(32)] + \
+            ['avg_pool']
+        self['densenet-201'] = \
+            ['conv1/relu'] + \
+            ['pool1'] + \
+            ['conv2_block{}_concat'.format(i + 1) for i in range(6)] + \
+            ['pool2_pool'] + \
+            ['conv3_block{}_concat'.format(i + 1) for i in range(12)] + \
+            ['pool3_pool'] + \
+            ['conv4_block{}_concat'.format(i + 1) for i in range(48)] + \
+            ['pool4_pool'] + \
+            ['conv5_block{}_concat'.format(i + 1) for i in range(32)] + \
+            ['avg_pool']
+        self['xception'] = \
+            ['block1_conv{}_act'.format(i + 1) for i in range(2)] + \
+            ['block2_sepconv2_act'] + \
+            ['block3_sepconv{}_act'.format(i + 1) for i in range(2)] + \
+            ['block4_sepconv{}_act'.format(i + 1) for i in range(2)] + \
+            ['block5_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block6_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block7_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block8_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block9_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block10_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block11_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block12_sepconv{}_act'.format(i + 1) for i in range(3)] + \
+            ['block13_sepconv{}_act'.format(i + 1) for i in range(2)] + \
+            ['block14_sepconv{}_act'.format(i + 1) for i in range(2)] + \
+            ['avg_pool']
+        self['resnet-18'] = \
+            ['conv1'] + \
+            ['layer1.0.relu', 'layer1.1.relu'] + \
+            ['layer2.0.relu', 'layer2.0.downsample.0', 'layer2.1.relu'] + \
+            ['layer3.0.relu', 'layer3.0.downsample.0', 'layer3.1.relu'] + \
+            ['layer4.0.relu', 'layer4.0.downsample.0', 'layer4.1.relu'] + \
+            ['avgpool']
+        self['resnet-34'] = \
+            ['conv1'] + \
+            ['layer1.0.conv2', 'layer1.1.conv2', 'layer1.2.conv2'] + \
+            ['layer2.0.downsample.0', 'layer2.1.conv2', 'layer2.2.conv2', 'layer2.3.conv2'] + \
+            ['layer3.0.downsample.0', 'layer3.1.conv2', 'layer3.2.conv2', 'layer3.3.conv2',
+             'layer3.4.conv2', 'layer3.5.conv2'] + \
+            ['layer4.0.downsample.0', 'layer4.1.conv2', 'layer4.2.conv2'] + \
+            ['avgpool']
+
+        # Slim
+        self['inception_v1'] = \
+            ['MaxPool_2a_3x3'] + \
+            ['Mixed_3{}'.format(i) for i in ['b', 'c']] + \
+            ['Mixed_4{}'.format(i) for i in ['b', 'c', 'd', 'e', 'f']] + \
+            ['Mixed_5{}'.format(i) for i in ['b', 'c']] + \
+            ['AvgPool_0a_7x7']
+        self['inception_v2'] = \
+            ['MaxPool_2a_3x3'] + \
+            ['Mixed_3{}'.format(i) for i in ['b', 'c']] + \
+            ['Mixed_4{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e']] + \
+            ['Mixed_5{}'.format(i) for i in ['a', 'b', 'c']] + \
+            ['AvgPool_1a']
+        self['inception_v3'] = \
+            ['Conv2d_1a_3x3', 'MaxPool_3a_3x3', 'MaxPool_5a_3x3'] + \
+            ['Mixed_5{}'.format(i) for i in ['b', 'c', 'd']] + \
+            ['Mixed_6{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e']] + \
+            ['Mixed_7{}'.format(i) for i in ['a', 'b', 'c']] + \
+            ['AvgPool_1a']
+        self['inception_v4'] = \
+            ['Conv2d_1a_3x3'] + \
+            ['Mixed_3a'] + \
+            ['Mixed_4a'] + \
+            ['Mixed_5{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e']] + \
+            ['Mixed_6{}'.format(i) for i in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']] + \
+            ['Mixed_7{}'.format(i) for i in ['a', 'b', 'c', 'd']] + \
+            ['global_pool']
+        self['inception_resnet_v2'] = \
+            ['Conv2d_1a_3x3', 'MaxPool_3a_3x3', 'MaxPool_5a_3x3',
+             'Mixed_5b', 'Mixed_6a', 'Mixed_7a', 'Conv2d_7b_1x1', 'global_pool']
+        self['resnet-50_v1'] = \
+            ["resnet_v1_50/{}".format(layer) for layer in self._resnet50_layers(1)] + ['global_pool']
+        self['resnet-50_v2'] = \
+            ["resnet_v2_50/{}".format(layer) for layer in self._resnet50_layers(2)] + ['global_pool']
+        self['resnet-101_v1'] = \
+            ["resnet_v1_101/{}".format(layer) for layer in self._resnet101_layers(1)] + ['global_pool']
+        self['resnet-101_v2'] = \
+            ["resnet_v2_101/{}".format(layer) for layer in self._resnet101_layers(2)] + ['global_pool']
+        self['resnet-152_v1'] = \
+            ["resnet_v1_152/{}".format(layer) for layer in self._resnet152_layers(1)] + ['global_pool']
+        self['resnet-152_v2'] = \
+            ["resnet_v2_152/{}".format(layer) for layer in self._resnet152_layers(2)] + ['global_pool']
+        self['nasnet_mobile'] = \
+            ['Cell_{}'.format(i + 1) for i in range(-1, 3)] + ['Reduction_Cell_0'] + \
+            ['Cell_{}'.format(i + 1) for i in range(3, 7)] + ['Reduction_Cell_1'] + \
+            ['Cell_{}'.format(i + 1) for i in range(7, 11)] + \
+            ['global_pool']
+        self['nasnet_large'] = \
+            ['Cell_{}'.format(i + 1) for i in range(-1, 5)] + ['Reduction_Cell_0'] + \
+            ['Cell_{}'.format(i + 1) for i in range(5, 11)] + ['Reduction_Cell_1'] + \
+            ['Cell_{}'.format(i + 1) for i in range(11, 17)] + \
+            ['global_pool']
+        self['pnasnet_large'] = \
+            ['Cell_{}'.format(i + 1) for i in range(-1, 11)] + \
+            ['global_pool']
+        self['mobilenet_v1'] = \
+            ['Conv2d_0'] + list(itertools.chain(
+                *[['Conv2d_{}_depthwise'.format(i + 1), 'Conv2d_{}_pointwise'.format(i + 1)] for i in range(13)])) + \
+            ['AvgPool_1a']
+        self['mobilenet_v2'] = \
+            ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool']
+        self['basenet'] = \
+            ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait']
+        self['cornet_s'] = ['conv1-t0', 'conv2-t0'] + \
+                           [f'blocks.{block}.last_relu-t{timestep}'
+                            for block, timesteps in [(0, (0, 1)), (1, (0, 1, 2, 3)), (2, (0, 1))] for timestep in
+                            timesteps] + \
+                           ['avgpool-t0']
+        """
+        the last layer in each of the model's layer lists is supposed to always be the last feature layer, 
+        i.e. the last layer before readout.
+        """
+
+    @staticmethod
+    def _resnet50_layers(bottleneck_version):
+        return ['conv1'] + \
+               ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
+               ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(4)] + \
+               ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(6)] + \
+               ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
+
+    @staticmethod
+    def _resnet101_layers(bottleneck_version):
+        return ['conv1'] + \
+               ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
+               ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(4)] + \
+               ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(23)] + \
+               ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
+
+    @staticmethod
+    def _resnet152_layers(bottleneck_version):
+        return ['conv1'] + \
+               ["block1/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)] + \
+               ["block2/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(8)] + \
+               ["block3/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(36)] + \
+               ["block4/unit_{}/bottleneck_v{}".format(i + 1, bottleneck_version) for i in range(3)]
+
     def __getitem__(self, item):
+        """
+        allow prefixes, e.g. mobilenet_v2 covers mobilenet_v2-123 as well as mobilenet_v2-abc
+        """
         first_error = None
         for prefix in range(len(item) - 1):
             try:
