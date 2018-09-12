@@ -11,8 +11,8 @@ requirements = [
     "numpy",
     "keras",
     "tensorflow>=1.4",  # if you run into errors here, make sure your Python version is supported
-    "pytorch",
-    "torchvision",
+    # "pytorch",  # current version cannot be installed from pip
+    # "torchvision",
     "h5py",
     "scikit-learn",
     "scikit-image",
