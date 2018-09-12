@@ -7,9 +7,10 @@ with open('README.md') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "brain-score",  # (see dependency_links for error handling)
+    # "brain-score",  # see dependency_links for error handling
+    "numpy",
     "keras",
-    "tensorflow>=1.4",
+    "tensorflow>=1.4",  # if you run into errors here, make sure your Python version is supported
     "pytorch",
     "torchvision",
     "h5py",
@@ -33,9 +34,9 @@ test_requirements = [
 ]
 
 dependency_links = [
-    # if you get an error here (due to the repository being private,
-    # install it by hand: pip install https://github.com/dicarlolab/brain-score.git
-    "https://github.com/dicarlolab/brain-score/master/tarball",
+    # install brain-score by hand as long as it is private (pip has trouble otherwise):
+    # pip install https://github.com/dicarlolab/brain-score.git
+    # "https://github.com/dicarlolab/brain-score/master/tarball",
     "https://github.com/mschrimpf/caching/master/tarball",
     "https://github.com/rcmalli/keras-squeezenet/master/tarball",
 ]
