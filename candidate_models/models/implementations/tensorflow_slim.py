@@ -9,8 +9,6 @@ import pandas as pd
 import skimage.io
 import skimage.transform
 import tensorflow as tf
-from nets import nets_factory
-from preprocessing import inception_preprocessing, vgg_preprocessing
 
 from candidate_models import s3
 from candidate_models.models.implementations import DeepModel, Defaults
@@ -76,6 +74,7 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
         super().__init__(*args, **kwargs)
 
     def _create_inputs(self, batch_size, image_size):
+        from preprocessing import inception_preprocessing, vgg_preprocessing
         model_properties = self._get_model_properties(self._model_name)
         inputs = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size, image_size, 3])
         preprocess_image = vgg_preprocessing.preprocess_image if model_properties['preprocessing'] == 'vgg' \
@@ -84,6 +83,7 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
                                                         image_size, image_size), inputs)
 
     def _create_model(self, inputs):
+        from nets import nets_factory
         model_properties = self._get_model_properties(self._model_name)
         call = model_properties['callable']
         arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0.)
