@@ -7,7 +7,6 @@ def load_neural_benchmark(assembly_name, metric_name, ceiling_name=None, target_
                            target_splits=target_splits)
 
 
-def load_stimulus_set(assembly_name):
-    assembly = brainscore.get_assembly(assembly_name)
-    stimulus_set = assembly.attrs['stimulus_set']
+def load_stimulus_set(stimulus_set_name):
+    stimulus_set = brainscore.get_stimulus_set(stimulus_set_name)
     return stimulus_set
