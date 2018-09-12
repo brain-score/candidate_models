@@ -23,7 +23,27 @@ During first-time use, ImageNet validation images (9.8 GB) will be downloaded, s
 To contribute code to this framework, see the [Development Setup](#development-setup).
 
 
-### Troubleshooting
+## Usage
+```bash
+PYTHONPATH=. python candidate_models --model alexnet
+```
+
+See the [examples](examples/) for more elaborate examples.
+
+
+## Development setup
+
+Only necessary if you plan to change code.
+
+1. Clone the Git repository to wherever you keep repositories:
+    * `cd ~/dev`
+    * `git clone git@github.com:dicarlolab/candidate_models.git`
+3. Create and activate a Conda environment with relevant packages:
+    * `conda env create -f environment.yml`
+    * `conda activate candidate-models`
+
+
+## Troubleshooting
 ###### Could not find a version that satisfies the requirement brain-score
 pip has trouble when dependency links are private repositories (as is the case now for brain-score).
 To circumvent, install brain-score by hand before installing candidate_models:
@@ -43,22 +63,6 @@ Check [the website](https://pytorch.org/) for installation instructions, right n
 pip install torchvision`.
 Or just use conda, e.g., for CPU: `conda install pytorch-cpu torchvision-cpu -c pytorch`
 
-
-## Usage
-```bash
-PYTHONPATH=. python candidate_models --model alexnet
-```
-
-See the [examples](examples/) for more elaborate examples.
-
-
-## Development setup
-
-Only necessary if you plan to change code.
-
-1. Clone the Git repository to wherever you keep repositories:
-    * `cd ~/dev`
-    * `git clone git@github.com:dicarlolab/candidate_models.git`
-3. Create and activate a Conda environment with relevant packages:
-    * `conda env create -f environment.yml`
-    * `conda activate candidate-models`
+###### No module named `nets`
+You probably haven't installed TensorFlow/research/slim.
+Follow the instructions [here](https://github.com/tensorflow/models/tree/master/research/slim#Install).
