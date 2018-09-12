@@ -1,7 +1,7 @@
 import logging
 import os
 
-import caching
+import result_caching
 from brainscore import benchmarks
 from candidate_models import models
 from candidate_models.assemblies import load_neural_benchmark, load_stimulus_set
@@ -12,11 +12,11 @@ from candidate_models.models.implementations import Defaults as DeepModelDefault
 from candidate_models.models.implementations import model_layers
 
 logger = logging.getLogger(__name__)
-caching.store.configure_storagedir(os.path.join(os.path.dirname(__file__), '..', 'output'))
+result_caching.store.configure_storagedir(os.path.join(os.path.dirname(__file__), '..', 'output'))
 
 
 class Defaults(object):
-    benchmark = 'dicarlo.Majaj2015'
+    benchmark = 'brain-score'
 
 
 class AssemblyPromise(object):
@@ -63,6 +63,8 @@ def score_model(model, model_identifier=None, layers=None,
     logger.info('Loading benchmark')
     benchmark = benchmarks.load(benchmark)
 
+    # package model assembly in lazily-loaded promise
+    # so that we don't need to have activations stored locally when we just want to look at scores
     def _compute_activations():
         logger.info('Computing activations')
         model_assembly = model_multi_activations(model=model, model_identifier=model_identifier,
@@ -73,7 +75,7 @@ def score_model(model, model_identifier=None, layers=None,
 
     promise = AssemblyPromise(name=model_name, load_fnc=_compute_activations)
 
-    logger.info(f'Scoring {model}')
+    logger.info(f'Scoring {model_name}')
     score = benchmark(promise, transformation_kwargs=dict(
         cartesian_product_kwargs=dict(dividing_coord_names_source=['layer'])), return_ceiled=return_ceiled)
     return score

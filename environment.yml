@@ -25,6 +25,6 @@ dependencies:
     - git+https://github.com/rcmalli/keras-squeezenet.git
     - pillow
     - llist
-    - git+https://github.com/mschrimpf/caching
+    - git+https://github.com/mschrimpf/result_caching
     - pybtex
     - pyyaml

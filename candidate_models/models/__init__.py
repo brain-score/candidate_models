@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from caching import store_xarray
+from result_caching import store_xarray
 from brainscore.assemblies import NeuroidAssembly, merge_data_arrays
 from brainscore.metrics.transformations import subset
 from brainscore.metrics.utils import get_modified_coords

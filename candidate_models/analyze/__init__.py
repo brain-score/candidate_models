@@ -9,8 +9,8 @@ import pandas as pd
 import seaborn
 from matplotlib import pyplot
 
-from caching import cache
-from candidate_models import score_physiology
+from result_caching import cache
+from candidate_models import score_model
 
 
 def shaded_errorbar(x, y, error, ax=None, alpha=0.4, **kwargs):
@@ -82,7 +82,7 @@ class DataCollector(object):
             data = defaultdict(list)
             for model in models:
                 data['model'].append(model)
-                score = score_physiology(model=model, benchmark=self._benchmark)
+                score = score_model(model=model, benchmark=self._benchmark)
                 score = score.aggregation
 
                 def best_layer(group):

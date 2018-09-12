@@ -16,7 +16,7 @@ requirements = [
     "h5py",
     "scikit-learn",
     "scikit-image",
-    "caching",
+    "result_caching",
     "keras-squeezenet",
     "pillow",
     "llist",
@@ -37,7 +37,7 @@ dependency_links = [
     # install brain-score by hand as long as it is private (pip has trouble otherwise):
     # pip install https://github.com/dicarlolab/brain-score.git
     # "https://github.com/dicarlolab/brain-score/master/tarball",
-    "https://github.com/mschrimpf/caching/master/tarball",
+    "https://github.com/mschrimpf/result_caching/master/tarball",
     "https://github.com/rcmalli/keras-squeezenet/master/tarball",
 ]
 
@@ -48,7 +48,7 @@ setup(
     long_description=readme,
     author="Martin Schrimpf",
     author_email='msch@mit.edu',
-    url='https://github.com/mschrimpf/candidate-models',
+    url='https://github.com/dicarlolab/candidate-models',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     install_requires=requirements,
@@ -68,6 +68,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     tests_require=test_requirements

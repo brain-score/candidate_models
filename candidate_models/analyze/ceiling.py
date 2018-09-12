@@ -7,7 +7,7 @@ import scipy
 from matplotlib import pyplot
 from scipy.optimize import OptimizeWarning
 
-from caching import store, cache
+from result_caching import store, cache
 from brainscore import benchmarks
 from brainscore.assemblies import merge_data_arrays
 from brainscore.benchmarks import metrics

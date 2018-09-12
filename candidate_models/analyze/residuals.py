@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from caching import store_xarray
+from result_caching import store_xarray
 from brainscore.assemblies import walk_coords, DataAssembly
 from brainscore.benchmarks import DicarloMajaj2015
 from brainscore.metrics.ceiling import SplitNoCeiling
