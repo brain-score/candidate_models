@@ -14,8 +14,8 @@ Recommended for most users. Use as a library.
 pip install http://download.pytorch.org/whl/cpu/torch-0.4.1-cp36-cp36m-linux_x86_64.whl
 pip install torchvision
 # Brain-Score and Candidate-Models (this framework)
-pip install git+https://github.com/dicarlolab/brain-score
-pip install git+https://github.com/dicarlolab/candidate_models
+pip install --process-dependency-links git+https://github.com/dicarlolab/brain-score
+pip install --process-dependency-links git+https://github.com/dicarlolab/candidate_models
 ```
 
 During first-time use, ImageNet validation images (9.8 GB) will be downloaded, so give it a couple of minutes.
@@ -26,7 +26,8 @@ To contribute code to this framework, see the [Development Setup](#development-s
 ### Troubleshooting
 ###### Could not find a version that satisfies the requirement brain-score
 pip has trouble when dependency links are private repositories (as is the case now for brain-score).
-To circumvent, install brain-score by hand before installing candidate_models: `pip install git+https://github.com/dicarlolab/brain-score`.
+To circumvent, install brain-score by hand before installing candidate_models:
+`pip install --process-dependency-links git+https://github.com/dicarlolab/brain-score`.
 
 ###### Could not find a version that satisfies the requirement tensorflow
 TensorFlow doesn't always catch up with newer Python versions.
