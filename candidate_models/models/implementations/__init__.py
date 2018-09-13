@@ -57,28 +57,21 @@ class DeepModel(object):
     def get_activations(self, stimuli_paths, layers,
                         pca_components=Defaults.pca_components):
         # PCA
-        get_image_activations = functools.partial(self._get_image_activations, layers=layers,
-                                                  batch_size=self._batch_size, min_components=pca_components)
+        get_activations = functools.partial(self._get_activations_batched, layers=layers, batch_size=self._batch_size)
 
         def get_image_activations_preprocessed(inputs, *args, **kwargs):
             inputs = TransformGenerator(inputs, functools.partial(self._preprocess_images, image_size=self._image_size))
-            return get_image_activations(inputs, *args, **kwargs)
+            return get_activations(inputs, *args, **kwargs)
 
         reduce_dimensionality = self._initialize_dimensionality_reduction(pca_components,
                                                                           get_image_activations_preprocessed)
         # actual stimuli
         self._logger.info('Running stimuli')
         inputs = TransformGenerator(stimuli_paths, functools.partial(self._load_images, image_size=self._image_size))
-        layer_activations = get_image_activations(inputs, reduce_dimensionality=reduce_dimensionality)
+        layer_activations = get_activations(inputs, reduce_dimensionality=reduce_dimensionality)
 
         self._logger.info('Packaging into assembly')
         return self._package(layer_activations, stimuli_paths)
-
-    def _get_image_activations(self, inputs, layers, batch_size, min_components, reduce_dimensionality):
-        layer_activations = self._get_activations_batched(inputs, layers, batch_size=batch_size,
-                                                          reduce_dimensionality=reduce_dimensionality)
-        self._pad_layers(layer_activations, min_components)
-        return layer_activations
 
     def _get_activations_batched(self, inputs, layers, batch_size, reduce_dimensionality):
         layer_activations = None
@@ -103,16 +96,33 @@ class DeepModel(object):
             return flatten
 
         self._logger.info('Pre-computing principal components')
+        self._logger.debug('Retrieving ImageNet activations')
         imagenet_images = self._get_imagenet_val(pca_components)
         imagenet_activations = get_image_activations(imagenet_images, reduce_dimensionality=flatten)
-        pca = self._change_layer_activations(imagenet_activations,
-                                             lambda activations: PCA(n_components=pca_components).fit(activations))
 
+        self._logger.debug('Computing ImageNet principal components')
+        progress = tqdm(total=len(imagenet_activations), desc="layer principal components")
+
+        def compute_layer_pca(activations):
+            if activations.shape[1] <= pca_components:
+                self._logger.debug(f"Not computing principal components for activations {activations.shape} "
+                                   f"as shape is small enough already")
+                pca = None
+            else:
+                pca = PCA(n_components=pca_components)
+                pca = pca.fit(activations)
+            progress.update(1)
+            return pca
+
+        pca = self._change_layer_activations(imagenet_activations, compute_layer_pca)
+        progress.close()
+
+        # define dimensionality reduction method for external use
         def reduce_dimensionality(layer_name, layer_activations):
             layer_activations = flatten(layer_name, layer_activations)
             if layer_activations.shape[1] < pca_components:
-                self._logger.warning("layer {} activations are smaller than pca components: {}".format(
-                    layer_name, layer_activations.shape))
+                self._logger.debug(f"layer {layer_name} activations are smaller than pca components: "
+                                   f"{layer_activations.shape} -- not performing PCA")
                 return layer_activations
             return pca[layer_name].transform(layer_activations)
 
@@ -165,19 +175,6 @@ class DeepModel(object):
             dims=['stimulus_path', 'neuroid']
         )
         return model_assembly
-
-    def _pad_layers(self, layer_activations, num_components):
-        """
-        make sure all layers are the minimum size
-        """
-        too_small_layers = [key for key, values in layer_activations.items()
-                            if num_components is not None and values[0].size < num_components]
-        for layer in too_small_layers:
-            self._logger.warning("Padding layer {} with zeros since its activations are too small ({})".format(
-                layer, layer_activations[layer].shape))
-            layer_activations[layer] = np.array([
-                np.pad(a, (0, num_components - a.size), 'constant', constant_values=(0,))
-                for a in layer_activations[layer]])
 
     def _pad(self, batch_images, batch_size):
         if len(batch_images) % batch_size == 0:
