@@ -8,6 +8,7 @@ from collections import OrderedDict
 import h5py
 import numpy as np
 from sklearn.decomposition import PCA
+from tqdm import tqdm
 
 from brainscore.assemblies import NeuroidAssembly
 from brainscore.utils import fullname
@@ -66,6 +67,7 @@ class DeepModel(object):
         reduce_dimensionality = self._initialize_dimensionality_reduction(pca_components,
                                                                           get_image_activations_preprocessed)
         # actual stimuli
+        self._logger.info('Running stimuli')
         inputs = TransformGenerator(stimuli_paths, functools.partial(self._load_images, image_size=self._image_size))
         layer_activations = get_image_activations(inputs, reduce_dimensionality=reduce_dimensionality)
 
@@ -80,8 +82,7 @@ class DeepModel(object):
 
     def _get_activations_batched(self, inputs, layers, batch_size, reduce_dimensionality):
         layer_activations = None
-        batch_start = 0
-        while batch_start < len(inputs):
+        for batch_start in tqdm(range(0, len(inputs), batch_size), desc="activations batches"):
             batch_end = min(batch_start + batch_size, len(inputs))
             self._logger.debug('Batch %d->%d/%d', batch_start, batch_end, len(inputs))
             batch_inputs = inputs[batch_start:batch_end]
@@ -92,7 +93,6 @@ class DeepModel(object):
             else:
                 for layer_name, layer_output in batch_activations.items():
                     layer_activations[layer_name] = np.concatenate((layer_activations[layer_name], layer_output))
-            batch_start = batch_end
         return layer_activations
 
     def _initialize_dimensionality_reduction(self, pca_components, get_image_activations):
