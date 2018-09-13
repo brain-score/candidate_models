@@ -49,10 +49,13 @@ def main():
         for region in score['region'].values:
             print(region)
             region_score = score.sel(region=region)
-            print("\n".join([f"{layer}: {center:.3f}+-{error:.3f}" for layer, center, error in zip(
+            best_value = region_score.sel(aggregation='center').values == \
+                         region_score.sel(aggregation='center').values.max()
+            print("\n".join([f"{layer}: {center:.3f}+-{error:.3f} {best}" for layer, center, error, best in zip(
                 region_score['layer'].values.tolist(),
                 region_score.sel(aggregation='center').values.tolist(),
-                region_score.sel(aggregation='error').values.tolist())]))
+                region_score.sel(aggregation='error').values.tolist(),
+                [["", "[best]"][is_best] for is_best in best_value])]))
             print()
 
 
