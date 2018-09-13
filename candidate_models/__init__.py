@@ -1,7 +1,5 @@
 import logging
-import os
 
-import result_caching
 from brainscore import benchmarks
 from candidate_models import models
 from candidate_models.assemblies import load_neural_benchmark, load_stimulus_set
@@ -12,7 +10,6 @@ from candidate_models.models.implementations import Defaults as DeepModelDefault
 from candidate_models.models.implementations import model_layers
 
 logger = logging.getLogger(__name__)
-result_caching.store.configure_storagedir(os.path.join(os.path.dirname(__file__), '..', 'output'))
 
 
 class Defaults(object):
