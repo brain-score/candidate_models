@@ -120,9 +120,11 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
         restorer.restore(self._sess, restore_path)
 
     def _find_model_weights(self, model_name):
-        model_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'model-weights', 'slim', model_name)
+        framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+        weights_path = os.getenv('CM_TSLIM_WEIGHTS_DIR', os.path.join(framework_home, 'model-weights', 'slim'))
+        model_path = os.path.join(weights_path, model_name)
         if not os.path.isdir(model_path):
-            self._logger.debug(f"Downloading weights for '{model_name}'")
+            self._logger.debug(f"Downloading weights for {model_name} to {model_path}")
             os.makedirs(model_path)
             s3.download_folder(f"slim/{model_name}", model_path)
         fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))

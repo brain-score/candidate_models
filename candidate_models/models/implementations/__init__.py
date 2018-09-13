@@ -128,11 +128,13 @@ class DeepModel(object):
         for i in range((num_images - 1) % num_classes + 1):
             indices.extend(50 * i + np.array([num_images_per_class]).astype(int))
 
-        imagenet_file = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'imagenet2012.hdf5')
-        if not os.path.isfile(imagenet_file):
-            self._logger.debug("Downloading ImageNet validation")
-            s3.download_file("imagenet2012-val.hdf5", imagenet_file)
-        with h5py.File(imagenet_file, 'r') as f:
+        framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+        imagenet_filepath = os.getenv('CM_IMAGENET_PATH', os.path.join(framework_home, 'imagenet2012.hdf5'))
+        if not os.path.isfile(imagenet_filepath):
+            os.makedirs(os.path.dirname(imagenet_filepath), exist_ok=True)
+            self._logger.debug(f"Downloading ImageNet validation to {imagenet_filepath}")
+            s3.download_file("imagenet2012-val.hdf5", imagenet_filepath)
+        with h5py.File(imagenet_filepath, 'r') as f:
             images = np.array([f['val/images'][i] for i in indices])
         return images
 

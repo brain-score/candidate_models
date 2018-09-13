@@ -31,6 +31,16 @@ PYTHONPATH=. python candidate_models --model alexnet
 See the [examples](examples/) for more elaborate examples.
 
 
+### Environment variables
+Environment variables are prefixed with `CM_`.
+
+| Variable               | Description                                                  |
+|------------------------|--------------------------------------------------------------|
+| CM_HOME                | path to framework root                                       |
+| CM_IMAGENET_PATH       | path to ImageNet file containing the validation image set    |
+| CM_TSLIM_WEIGHTS_DIR   | path to stored weights for TensorFlow/research/slim models   |
+
+
 ## Development setup
 
 Only necessary if you plan to change code.
@@ -66,3 +76,7 @@ Or just use conda, e.g., for CPU: `conda install pytorch-cpu torchvision-cpu -c 
 ###### No module named `nets`
 You probably haven't installed TensorFlow/research/slim.
 Follow the instructions [here](https://github.com/tensorflow/models/tree/master/research/slim#Install).
+
+###### ImportError: cannot import name '_obtain_input_shape'
+keras_squeezenet unfortunately does not run with keras > 2.2.0.
+To fix, `pip install keras==2.2.0`.
