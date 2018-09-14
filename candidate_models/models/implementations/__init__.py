@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 import h5py
 import numpy as np
+from multiprocessing.pool import ThreadPool
 from sklearn.decomposition import PCA
 from tqdm import tqdm
 
@@ -80,7 +81,8 @@ class DeepModel(object):
             self._logger.debug('Batch %d->%d/%d', batch_start, batch_end, len(inputs))
             batch_inputs = inputs[batch_start:batch_end]
             batch_activations = self._get_batch_activations(batch_inputs, layer_names=layers, batch_size=batch_size)
-            batch_activations = self._change_layer_activations(batch_activations, reduce_dimensionality, keep_name=True)
+            batch_activations = self._change_layer_activations(batch_activations, reduce_dimensionality,
+                                                               keep_name=True, multithread=True)
             if layer_activations is None:
                 layer_activations = copy.copy(batch_activations)
             else:
@@ -114,7 +116,7 @@ class DeepModel(object):
             progress.update(1)
             return pca
 
-        pca = self._change_layer_activations(imagenet_activations, compute_layer_pca)
+        pca = self._change_layer_activations(imagenet_activations, compute_layer_pca, multithread=True)
         progress.close()
 
         # define dimensionality reduction method for external use
@@ -186,9 +188,21 @@ class DeepModel(object):
     def _unpad(self, layer_activations, num_padding):
         return self._change_layer_activations(layer_activations, lambda values: values[:-num_padding or None])
 
-    def _change_layer_activations(self, layer_activations, change_function, keep_name=False):
-        return OrderedDict((layer, change_function(values) if not keep_name else change_function(layer, values))
-                           for layer, values in layer_activations.items())
+    def _change_layer_activations(self, layer_activations, change_function, keep_name=False, multithread=False):
+        if not multithread:
+            map_fnc = map
+        else:
+            pool = ThreadPool()
+            map_fnc = pool.map
+
+        def apply_change(layer_values):
+            layer, values = layer_values
+            values = change_function(values) if not keep_name else change_function(layer, values)
+            return layer, values
+
+        results = map_fnc(apply_change, layer_activations.items())
+        results = OrderedDict(results)
+        return results
 
     def _get_activations(self, images, layer_names):
         raise NotImplementedError()
