@@ -75,7 +75,7 @@ class DeepModel(object):
 
     def _get_activations_batched(self, inputs, layers, batch_size, reduce_dimensionality):
         layer_activations = None
-        for batch_start in tqdm(range(0, len(inputs), batch_size), desc="activations batches"):
+        for batch_start in tqdm(range(0, len(inputs), batch_size), unit_scale=batch_size, desc="activations"):
             batch_end = min(batch_start + batch_size, len(inputs))
             self._logger.debug('Batch %d->%d/%d', batch_start, batch_end, len(inputs))
             batch_inputs = inputs[batch_start:batch_end]
