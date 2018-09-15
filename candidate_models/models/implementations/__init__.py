@@ -202,6 +202,8 @@ class DeepModel(object):
 
         results = map_fnc(apply_change, layer_activations.items())
         results = OrderedDict(results)
+        if multithread:
+            pool.close()
         return results
 
     def _get_activations(self, images, layer_names):
