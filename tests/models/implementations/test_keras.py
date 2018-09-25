@@ -7,7 +7,7 @@ from candidate_models.models.implementations.keras import KerasModel
 
 
 class TestLoadImageKeras:
-    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg']
+    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg', 'grayscale_alpha.png']
 
     @pytest.mark.parametrize('filename', images)
     def test_rgb(self, filename):

@@ -23,8 +23,7 @@ class PytorchModel(DeepModel):
     def __init__(self, weights=Defaults.weights,
                  batch_size=Defaults.batch_size, image_size=Defaults.image_size):
         super().__init__(batch_size=batch_size, image_size=image_size)
-        # self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self._device = torch.device("cpu")
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._logger.debug(f"Using device {self._device}")
         self._model = self._create_model(weights)
         self._model = self._model.to(self._device)
@@ -34,7 +33,7 @@ class PytorchModel(DeepModel):
 
     def _load_image(self, image_filepath):
         with Image.open(image_filepath) as image:
-            if image.mode.upper() != 'L':  # not binary
+            if 'L' not in image.mode.upper() and 'A' not in image.mode.upper():  # not binary and not alpha
                 # work around to https://github.com/python-pillow/Pillow/issues/1144,
                 # see https://stackoverflow.com/a/30376272/2225200
                 return image.copy()

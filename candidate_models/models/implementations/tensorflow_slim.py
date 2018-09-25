@@ -46,12 +46,14 @@ class TensorflowSlimModel(DeepModel):
         return np.array(images)
 
     def _preprocess_image(self, image, image_size):
-        image = skimage.transform.resize(image, (image_size, image_size))
-        assert image.min() >= 0
-        assert image.max() <= 1
         if image.ndim == 2:  # binary
             image = skimage.color.gray2rgb(image)
         assert image.ndim == 3
+        if image.shape[2] == 4:  # alpha
+            image = image[:, :, :3]
+        image = skimage.transform.resize(image, (image_size, image_size))
+        assert image.min() >= 0
+        assert image.max() <= 1
         return image
 
     def _get_activations(self, images, layer_names):

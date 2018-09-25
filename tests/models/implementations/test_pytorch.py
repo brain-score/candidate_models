@@ -9,13 +9,15 @@ from candidate_models.models.implementations.pytorch import PytorchModel, Pytorc
 
 
 class TestLoadImage:
-    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg']
+    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg', 'grayscale_alpha.png']
 
     @pytest.mark.parametrize('filename', images)
     def test_image(self, filename):
         img = PytorchModel._load_image(None, os.path.join(os.path.dirname(__file__), filename))
-        assert img.mode == 'RGB'
-        assert np.asarray(img).sum() > 0
+        assert 'RGB' == img.mode
+        assert 3 == len(np.array(img).shape)
+        assert 3 == np.array(img).shape[2]
+        assert np.array(img).sum() > 0
 
 
 class TestLayers:

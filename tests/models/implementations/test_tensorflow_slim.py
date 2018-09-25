@@ -15,7 +15,7 @@ slim = tf.contrib.slim
 
 
 class TestLoadPreprocessImage:
-    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg']
+    images = ['rgb.jpg', 'grayscale.png', 'grayscale2.jpg', 'grayscale_alpha.png']
 
     @pytest.mark.parametrize('filename', images)
     def test_rgb(self, filename):
