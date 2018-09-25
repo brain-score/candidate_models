@@ -1,8 +1,7 @@
-# Brain-Score: Which Artificial Neural Network is most Brain-Like?
-##### Neural net-specific framework
+# Candidate Models for Brain-Score: Which Artificial Neural Network is most Brain-Like?
 
 Candidate models to evaluate on brain measurements, i.e. neural and behavioral recordings.
-Brain recordings are packaged [here](https://github.com/dicarlolab/brain-score).
+Brain recordings are packaged in [Brain-Score](https://github.com/dicarlolab/brain-score).
 
 
 ## Quick setup
