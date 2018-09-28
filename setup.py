@@ -9,10 +9,10 @@ with open('README.md') as readme_file:
 requirements = [
     # "brain-score",  # see dependency_links for error handling
     "numpy",
-    "keras==2.2.0",  # keras_squeezenet only works up to this version
-    "tensorflow>=1.4",  # if you run into errors here, make sure your Python version is supported
-    # "pytorch",  # current version cannot be installed from pip
-    # "torchvision",
+    "keras==2.2.0",  # keras_squeezenet only works up to this version. need to keep tf<=1.10 because 1.11 errs.
+    "tensorflow>=1.4,<=1.10",  # if you run into errors here, make sure your Python version is supported
+    "pytorch",
+    "torchvision",
     "h5py",
     "scikit-learn",
     "scikit-image",
