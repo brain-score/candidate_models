@@ -3,18 +3,21 @@ import os
 import sys
 
 import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
 from tqdm import tqdm
 
 _logger = logging.getLogger(__name__)
 
-default_bucket = 'brain-score-models'
-default_region = 'us-east-1'
+_DEFAULT_BUCKET = 'brain-score-models'
+_DEFAULT_REGION = 'us-east-1'
+_NO_SIGNATURE = Config(signature_version=UNSIGNED)
 
 
-def download_folder(folder_key, target_directory, bucket=default_bucket, region=default_region):
+def download_folder(folder_key, target_directory, bucket=_DEFAULT_BUCKET, region=_DEFAULT_REGION):
     if not folder_key.endswith('/'):
         folder_key = folder_key + '/'
-    s3 = boto3.resource('s3', region_name=region)
+    s3 = boto3.resource('s3', region_name=region, config=_NO_SIGNATURE)
     bucket = s3.Bucket(bucket)
     bucket_contents = list(bucket.objects.all())
     files = [obj.key for obj in bucket_contents if obj.key.startswith(folder_key)]
@@ -28,8 +31,8 @@ def download_folder(folder_key, target_directory, bucket=default_bucket, region=
         os.rename(temp_path, target_path)
 
 
-def download_file(key, target_path, bucket=default_bucket, region=default_region):
-    s3 = boto3.resource('s3', region_name=region)
+def download_file(key, target_path, bucket=_DEFAULT_BUCKET, region=_DEFAULT_REGION):
+    s3 = boto3.resource('s3', region_name=region, config=_NO_SIGNATURE)
     obj = s3.Object(bucket, key)
     # show progress. see https://gist.github.com/wy193777/e7607d12fad13459e8992d4f69b53586
     with tqdm(total=obj.content_length, unit='B', unit_scale=True, desc=key, file=sys.stdout) as progress_bar:
