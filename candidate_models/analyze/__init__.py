@@ -89,8 +89,11 @@ class DataCollector(object):
                     argmax = group.sel(aggregation='center').argmax('layer')
                     return group[:, argmax.values]
 
-                score = score.groupby('region').apply(best_layer)
-                self._parse_score(score, data)
+                max_score = score.groupby('region').apply(best_layer)
+                region_layers = [score['layer'][(score == max_score).sel(aggregation='center', region=region)].values[0]
+                                 for region in score['region']]
+                max_score['layer'] = 'region', region_layers
+                self._parse_score(max_score, data)
 
             return pd.DataFrame(data)
 
@@ -99,9 +102,11 @@ class DataCollector(object):
 
         def _set_score(self, target, label, score):
             center, err = score.sel(aggregation='center').values, score.sel(aggregation='error').values
+            layer = score['layer'].values
             assert center.size == err.size == 1
             target[label].append(center.tolist())
             target[f"{label}-error"].append(err.tolist())
+            target[f"{label}-layer"].append(layer)
 
     class DicarloMajaj2015Parser(ScoreParser):
         def __init__(self):
@@ -148,8 +153,12 @@ class DataCollector(object):
         return np.mean(global_scores, axis=1)
 
 
-def filter_basenets(data):
-    return data[[is_basenet(row['model']) for _, row in data.iterrows()]]
+def filter_basenets(data, include=True):
+    basenet_filter = [is_basenet(row['model']) for _, row in data.iterrows()]
+    if include:
+        return data[basenet_filter]
+    else:
+        return data[[not basenet for basenet in basenet_filter]]
 
 
 def is_basenet(model_name):
