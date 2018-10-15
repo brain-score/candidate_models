@@ -11,8 +11,8 @@ requirements = [
     "numpy",
     "keras==2.2.0",  # keras_squeezenet only works up to this version. need to keep tf<=1.10 because 1.11 errs.
     "tensorflow>=1.4,<=1.10",  # if you run into errors here, make sure your Python version is supported
-    "pytorch",
-    "torchvision",
+    # "pytorch",  # see README for troubleshooting
+    # "torchvision",
     "h5py",
     "scikit-learn",
     "scikit-image",

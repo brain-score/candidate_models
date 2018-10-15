@@ -9,12 +9,13 @@ Brain recordings are packaged in [Brain-Score](https://github.com/dicarlolab/bra
 Recommended for most users. Use as a library.
 
 ```
+# PyTorch -- current version has trouble when installed through pip. Install by hand, e.g. use the following for Python3.6-cpu or conda.
+pip install http://download.pytorch.org/whl/cpu/torch-0.4.1-cp36-cp36m-linux_x86_64.whl
+pip install torchvision
 # Brain-Score and Candidate-Models (this framework)
 pip install --process-dependency-links git+https://github.com/dicarlolab/brain-score
 pip install --process-dependency-links git+https://github.com/dicarlolab/candidate_models
 ```
-
-During first-time use, ImageNet validation images (9.8 GB) will be downloaded, so give it a couple of minutes.
 
 To contribute code to this framework, see the [Development Setup](#development-setup).
 
@@ -23,6 +24,8 @@ To contribute code to this framework, see the [Development Setup](#development-s
 ```bash
 PYTHONPATH=. python candidate_models --model alexnet
 ```
+
+During first-time use, ImageNet validation images (9.8 GB) will be downloaded, so give it a couple of minutes.
 
 See the [examples](examples/) for more elaborate examples.
 
@@ -94,6 +97,6 @@ To fix, `pip install keras==2.2.0`.
 <details>
 <summary>tensorflow.python.framework.errors_impl.FailedPreconditionError: Error while reading resource variable</summary>
 
-If this happened when runing a keras model, your tensorflow and keras versions are probably incompatible.
+If this happened when running a keras model, your tensorflow and keras versions are probably incompatible.
 See the setup.py for which versions are supported.
 </details>
