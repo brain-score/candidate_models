@@ -12,7 +12,8 @@ def create_fixture(data=None):
     data = data or DataCollector()()
     data = data.dropna()
     fields = {'brain_score': 'brain-score', 'name': 'model', 'imagenet_top1': 'performance',
-              'v4': 'V4', 'it': 'IT', 'behavior': 'behavior',
+              'V4': 'V4', 'IT': 'IT', 'behavior': 'behavior',
+              'V4_layer': 'V4-layer', 'IT_layer': 'IT-layer', 'behavior_layer': 'behavior-layer',
               'paper_link': 'link', 'paper_identifier': 'identifier'}
 
     def parse_bib(bibtex_str):
@@ -63,3 +64,7 @@ def create_latex_table(data=None):
                                   'performance': 'ImageNet top-1', 'behavior': 'Behavior'})
     table = table.apply(highlight_max)
     table.to_latex('data.tex', escape=False, index=False)
+
+
+if __name__ == '__main__':
+    create_fixture()

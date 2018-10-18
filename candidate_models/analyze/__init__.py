@@ -10,7 +10,7 @@ import seaborn
 from matplotlib import pyplot
 
 from result_caching import cache
-from candidate_models import score_model
+from candidate_models import score_model, model_layers
 
 
 def shaded_errorbar(x, y, error, ax=None, alpha=0.4, **kwargs):
@@ -37,6 +37,7 @@ class DataCollector(object):
         model_meta = model_meta[['model', 'behavior', 'performance', 'link', 'bibtex']]
         data = data.merge(model_meta, on='model')
         data['performance'] = 100 * data['performance']
+        data['behavior-layer'] = self._get_behavioral_layers(data['model'])
         # brain-score
         data['brain-score'] = self.compute_brainscore(data)
         # rank
@@ -140,6 +141,9 @@ class DataCollector(object):
 
         data.to_csv(savepath)
         return data
+
+    def _get_behavioral_layers(self, model_names):
+        return [model_layers[model][-1] for model in model_names]
 
     def compute_brainscore(self, data):
         # method 1: mean everything
