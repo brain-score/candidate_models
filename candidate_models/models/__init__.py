@@ -103,7 +103,8 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_i
                       image_size=DeepModelDefaults.image_size, pca_components=DeepModelDefaults.pca_components,
                       batch_size=DeepModelDefaults.batch_size):
     if isinstance(model, str):
-        assert model_identifier is None, "already got model string"
+        assert model_identifier is None or model_identifier == model, \
+            f"model identifier {model_identifier} does not match model string {model}"
         model_identifier = model
         _logger.info('Creating model')
         model_ctr = functools.partial(create_model, model=model)
