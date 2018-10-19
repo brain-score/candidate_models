@@ -105,13 +105,15 @@ class TestModels:
 class TestAutomaticWeights:
     def test_download(self):
         model = 'mobilenet_v1_0.25_128'
-        model_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'model-weights', 'slim', model)
-        if os.path.isdir(model_path):
-            shutil.rmtree(model_path)  # ensure weights haven't been downloaded yet
 
         class SelfMock(object):
             def __init__(self):
                 self._logger = logging.getLogger(TensorflowSlimPredefinedModel.__name__)
+
+        restore_path = TensorflowSlimPredefinedModel._find_model_weights(self=SelfMock(), model_name=model)
+        model_path = os.path.dirname(restore_path)
+        assert os.path.isdir(model_path)  # at the very least, weights now need to be there
+        shutil.rmtree(model_path)  # delete to re-test from scratch
 
         TensorflowSlimPredefinedModel._find_model_weights(self=SelfMock(), model_name=model)
         assert len(os.listdir(model_path)) == 7
