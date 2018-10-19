@@ -17,6 +17,9 @@ pip install --process-dependency-links git+https://github.com/dicarlolab/brain-s
 pip install --process-dependency-links git+https://github.com/dicarlolab/candidate_models
 ```
 
+To use the predefined TensorFlow models, you will have to install https://github.com/tensorflow/models/tree/master/research/slim.
+See [here](#installing-the-tf-slim-image-models-library) for quick instructions.
+
 To contribute code to this framework, see the [Development Setup](#development-setup).
 
 
@@ -38,6 +41,20 @@ Environment variables are prefixed with `CM_`.
 | CM_HOME                | path to framework root                                       |
 | CM_IMAGENET_PATH       | path to ImageNet file containing the validation image set    |
 | CM_TSLIM_WEIGHTS_DIR   | path to stored weights for TensorFlow/research/slim models   |
+
+
+## Installing the TF-slim image models library
+
+TensorFlow does unfortunately not provide an actual pip-installable library here, instead we have to download the code and make it available.
+
+```bash
+git clone https://github.com/tensorflow/models/ tf-models
+export PYTHONPATH="$PYTHONPATH:$(pwd)/tf-models/research/slim"
+# verify
+python -c "from nets import cifarnet; mynet = cifarnet.cifarnet"
+```
+
+Alternatively, you can also move/symlink these packages to your site-packages.
 
 
 ## Development setup
