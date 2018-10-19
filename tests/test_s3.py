@@ -17,7 +17,7 @@ class TestDownloadFolder:
             downloaded_files = os.listdir(target_path)
             expected_suffixes = ['.ckpt.data-00000-of-00001', '.ckpt.index', '.ckpt.meta', '.tflite',
                                  '_eval.pbtxt', '_frozen.pb', '_info.txt']
-            assert downloaded_files == [model + suffix for suffix in expected_suffixes]
+            assert set(downloaded_files) == set([model + suffix for suffix in expected_suffixes])
 
 
 class TestDownloadFile:
