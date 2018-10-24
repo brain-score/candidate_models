@@ -89,7 +89,8 @@ class BrainScore:
         def best_score(score):
             argmax = score.sel(aggregation='center').argmax('layer')  # choose best layer
             best_layer = score['layer'][argmax.values]
-            score = score.sel(layer=best_layer)
+            score = score.sel(layer=best_layer, select_raw=False)
+            del score['layer']
             return score
 
         scores = [best_score(score) for score in scores]

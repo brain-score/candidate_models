@@ -50,6 +50,10 @@ class TestNewModel:
 
 
 class TestMajaj2015:
+    def test_alexnet_brainscore(self):
+        score = score_model(model='alexnet')
+        assert score == approx(0.610, rel=0.005)
+
     def test_alexnet_V4(self):
         score = score_model(model='alexnet', benchmark='dicarlo.Majaj2015.V4')
         assert score.sel(aggregation='center').max() == approx(0.631, rel=0.005)
