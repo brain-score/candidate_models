@@ -4,6 +4,17 @@ from pytest import approx
 from candidate_models import score_model
 
 
+class TestBrainScore:
+    def test_alexnet(self):
+        score = score_model(model='alexnet')
+        assert score == approx(0.610, rel=0.005)
+        raw_values = score.attrs['raw']
+        assert len(raw_values['layer']) == 7
+        assert len(raw_values['benchmark']) == 2
+        assert len(raw_values['split']) == 10
+        assert len(raw_values['neuroid']) == 256
+
+
 class TestNewModel:
     def test_pytorch(self):
         import torch
