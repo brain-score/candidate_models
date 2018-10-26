@@ -1,6 +1,8 @@
 import numpy as np
 from pytest import approx
 
+from brainscore.metrics.neural_predictivity import PlsPredictivity
+from brainscore.metrics.transformations import CrossValidation
 from candidate_models import score_model
 
 
@@ -8,11 +10,29 @@ class TestBrainScore:
     def test_alexnet(self):
         score = score_model(model='alexnet')
         assert score == approx(0.610, rel=0.005)
+
+    def test_raw_dimensions(self):
+        score = score_model(model='alexnet')
         raw_values = score.attrs['raw']
         assert len(raw_values['layer']) == 7
         assert len(raw_values['benchmark']) == 2
         assert len(raw_values['split']) == 10
         assert len(raw_values['neuroid']) == 256
+
+    def test_raw_aggregate(self):
+        score = score_model(model='alexnet')
+        raw_values = score.attrs['raw']
+
+        neuroid_aggregate = PlsPredictivity()._predictor.aggregate
+        split_aggregate = CrossValidation().aggregate
+
+        layer_benchmark_scores = neuroid_aggregate(raw_values)
+        layer_benchmark_scores = split_aggregate(layer_benchmark_scores)
+        assert len(layer_benchmark_scores['aggregation']) == 2
+        assert len(layer_benchmark_scores['benchmark']) == 2
+        assert len(layer_benchmark_scores['layer']) == 7
+        assert layer_benchmark_scores.sel(aggregation='center', benchmark='dicarlo.Majaj2015.IT', layer='features.12') \
+               == approx(.589, abs=0.005)
 
 
 class TestNewModel:
@@ -56,8 +76,12 @@ class TestNewModel:
         score = score_model(model=MyModelWrapper, model_identifier='test_pytorch',
                             benchmark='brain-score',
                             layers=['linear', 'relu2'], weights=None, pca_components=None)
-        assert score.attrs['raw'].sel(aggregation='center', benchmark='dicarlo.Majaj2015.V4') == approx(.305, abs=.005)
-        assert score.attrs['raw'].sel(aggregation='center', benchmark='dicarlo.Majaj2015.IT') == approx(.189, abs=.005)
+        raw_scores = score.attrs['raw']
+        neuroid_aggregate = PlsPredictivity()._predictor.aggregate
+        split_aggregate = CrossValidation().aggregate
+        raw_scores = split_aggregate(neuroid_aggregate(raw_scores))
+        assert raw_scores.sel(aggregation='center', benchmark='dicarlo.Majaj2015.V4').max() == approx(.305, abs=.005)
+        assert raw_scores.sel(aggregation='center', benchmark='dicarlo.Majaj2015.IT').max() == approx(.189, abs=.005)
 
 
 class TestMajaj2015:
