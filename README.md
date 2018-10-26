@@ -117,3 +117,10 @@ To fix, `pip install keras==2.2.0`.
 If this happened when running a keras model, your tensorflow and keras versions are probably incompatible.
 See the setup.py for which versions are supported.
 </details>
+
+<details>
+<summary>Restoring from checkpoint failed. (...) Assign requires shapes of both tensors to match.</summary>
+
+Most likely your passed image_size does not match up with the image size the model expects (e.g. inception_v{3,4} expect 299 insead of 224).
+Either let the framework infer what image_size the model needs (run without `--image_size`) or set the correct image_size yourself.
+</details>
