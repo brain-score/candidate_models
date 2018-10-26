@@ -1,19 +1,13 @@
 import argparse
 import logging
-import os
 import sys
 
-import numpy as np
-import pandas as pd
-
 from candidate_models import score_model, Defaults
-from candidate_models.models import models
+from candidate_models.models import models, infer_image_size
 from candidate_models.models.implementations import Defaults as DeepModelDefaults
 from candidate_models.models.implementations import model_layers
 
 logger = logging.getLogger(__name__)
-
-model_meta = pd.read_csv(os.path.join(os.path.dirname(__file__), 'models', 'implementations', 'models.csv'))
 
 
 def main():
@@ -25,16 +19,12 @@ def main():
                         help='Number of components to reduce the flattened features to')
     parser.add_argument('--no-pca', action='store_const', const=None, dest='pca')
     parser.add_argument('--benchmark', type=str, default=Defaults.benchmark)
-    parser.add_argument('--image_size', type=int, default=DeepModelDefaults.image_size)
+    parser.add_argument('--image_size', type=int, default='from_model')
     parser.add_argument('--log_level', type=str, default='INFO')
     args = parser.parse_args()
     print(args.model)
-    meta = model_meta[model_meta['model'] == args.model]
-    image_size = meta['image_size']
-    if len(image_size) == 1 and not np.isnan(image_size.values[0]):
-        args.image_size = int(image_size.values[0])
-    else:
-        logger.warning("Could not lookup image size")
+    if args.image_size == 'from_model':
+        args.image_size = infer_image_size(args.model)
     args.layers = args.layers or model_layers[args.model]
     logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level))
     logging.getLogger("peewee").setLevel(logging.WARNING)

@@ -162,3 +162,11 @@ def load_model_meta():
 
 models_meta = load_model_meta()
 models = load_model_definitions()
+
+
+def infer_image_size(model):
+    meta = models_meta[models_meta['model'] == model]
+    image_size = meta['image_size']
+    if len(image_size) != 1 or np.isnan(image_size.values[0]):
+        raise ValueError("Could not lookup image size")
+    return int(image_size.values[0])
