@@ -19,11 +19,13 @@ def main():
                         help='Number of components to reduce the flattened features to')
     parser.add_argument('--no-pca', action='store_const', const=None, dest='pca')
     parser.add_argument('--benchmark', type=str, default=Defaults.benchmark)
-    parser.add_argument('--image_size', type=int, default='from_model')
+    parser.add_argument('--image_size', type=int, default=-1,
+                        help='size of the image (same value is used for width and height). '
+                             '-1 (default) to infer from model')
     parser.add_argument('--log_level', type=str, default='INFO')
     args = parser.parse_args()
     print(args.model)
-    if args.image_size == 'from_model':
+    if args.image_size == -1:
         args.image_size = infer_image_size(args.model)
     args.layers = args.layers or model_layers[args.model]
     logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level))
