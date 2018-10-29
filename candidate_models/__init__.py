@@ -78,28 +78,27 @@ class BrainScore:
     def __call__(self, model: Union[str, object], model_identifier=None, layers=None,
                  weights=DeepModelDefaults.weights,
                  pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size):
-        scores = []
+        benchmark_scores = []
         for benchmark in self._benchmark_identifiers:
             self._logger.info(f"Running benchmark {benchmark}")
             score = score_model(model=model, model_identifier=model_identifier, layers=layers,
                                 benchmark=benchmark,
                                 weights=weights, pca_components=pca_components, image_size=image_size)
-            scores.append(score)
+            score = score.expand_dims('benchmark')
+            score['benchmark'] = [benchmark]
+            benchmark_scores.append(score)
 
         def best_score(score):
-            argmax = score.sel(aggregation='center').argmax('layer')  # choose best layer
+            argmax = score.sel(aggregation='center', _select_raw=False).argmax('layer')  # choose best layer
             best_layer = score['layer'][argmax.values]
-            score = score.sel(layer=best_layer, select_raw=False)
+            score = score.sel(layer=best_layer)
             del score['layer']
             return score
 
-        scores = [best_score(score) for score in scores]
-        scores = [score.expand_dims('benchmark') for score in scores]
-        for score, benchmark in zip(scores, self._benchmark_identifiers):
-            score['benchmark'] = [benchmark]
-        raw_values = merge_data_arrays([score.attrs[Score.RAW_VALUES_KEY] for score in scores])
-        scores = merge_data_arrays(scores)
-        brain_score = scores.sel(aggregation='center').mean()
+        scores = [best_score(score) for score in benchmark_scores]
+        scores = Score.merge(*scores)
+        benchmark_scores = Score.merge(*benchmark_scores)
+        brain_score = scores.sel(aggregation='center', _select_raw=False).mean()
         score = Score([brain_score.values], coords={'aggregation': ['center']}, dims=['aggregation'])
-        score.attrs[Score.RAW_VALUES_KEY] = raw_values
+        score.attrs[Score.RAW_VALUES_KEY] = benchmark_scores
         return score
