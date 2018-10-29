@@ -37,17 +37,17 @@ def main():
                         pca_components=args.pca, image_size=args.image_size,
                         benchmark=args.benchmark)
     if args.benchmark == 'brain-score':
-        score = score.values.sel(benchmark='dicarlo.Majaj2015')
-        for region in score['region'].values:
-            print(region)
-            region_score = score.sel(region=region)
-            best_value = region_score.sel(aggregation='center').values == \
-                         region_score.sel(aggregation='center').values.max()
+        benchmark_values = score.attrs['raw']
+        for benchmark in benchmark_values['benchmark'].values:
+            print(f"# {benchmark}")
+            benchmark_score = benchmark_values.sel(benchmark=benchmark)
+            best_value = benchmark_score.sel(aggregation='center').values.max()
+            is_best_value = benchmark_score.sel(aggregation='center').values == best_value
             print("\n".join([f"{layer}: {center:.3f}+-{error:.3f} {best}" for layer, center, error, best in zip(
-                region_score['layer'].values.tolist(),
-                region_score.sel(aggregation='center').values.tolist(),
-                region_score.sel(aggregation='error').values.tolist(),
-                [["", "[best]"][is_best] for is_best in best_value])]))
+                benchmark_score['layer'].values.tolist(),
+                benchmark_score.sel(aggregation='center').values.tolist(),
+                benchmark_score.sel(aggregation='error').values.tolist(),
+                [["", "[best]"][is_best] for is_best in is_best_value])]))
             print()
 
 
