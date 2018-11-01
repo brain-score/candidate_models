@@ -18,26 +18,20 @@ def main(model, benchmark, image_sizes=(48, 96, 128, 224, 320)):
         score['image_size'] = [image_size]
         scores.append(score)
     scores = Score.merge(*scores)
-    layers = {}
-
-    def best_layer(score):
-        argmax = score.sel(aggregation='center', _apply_raw=False).argmax('layer')  # choose best layer
-        best_layer = score['layer'][argmax.values]
-        score = score.sel(layer=best_layer)
-        layers[score['image_size'].values.tolist()] = best_layer.values.tolist()
-        return score
-
-    scores = scores.groupby('image_size').apply(best_layer)
-    x = scores['image_size'].values
-    y = scores.sel(aggregation='center').values
-    error = scores.sel(aggregation='error').values
 
     fig, ax = pyplot.subplots()
-    shaded_errorbar(x, y, error, ax=ax)
-    for _x, _y in zip(x, y):
-        pyplot.text(x=_x, y=_y, s=layers[_x])
+    for image_size in scores['image_size'].values:
+        size_scores = scores.sel(image_size=image_size)
+        x = size_scores['layer'].values
+        y = size_scores.sel(aggregation='center').values
+        error = size_scores.sel(aggregation='error').values
+
+        shaded_errorbar(x, y, error, ax=ax, label=image_size)
+    pyplot.legend(scores['image_size'].values)
     pyplot.xlabel('image size')
     pyplot.ylabel('best r')
+    pyplot.xticks(scores['layer'].values, rotation=45)
+    pyplot.tight_layout()
     pyplot.savefig(f'results/image_size-{benchmark}-{model}.png')
     return fig
 
