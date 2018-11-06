@@ -30,6 +30,8 @@ def main():
         args.image_size = infer_image_size(args.model)
     log_level = logging.getLevelName(args.log_level)
     logging.basicConfig(stream=sys.stdout, level=log_level)
+    for disable_logger in ['s3transfer', 'botocore', 'boto3', 'urllib3']:
+        logging.getLogger(disable_logger).setLevel(logging.WARNING)
     _logger.info("Running with args %s", vars(args))
 
     model_activations(model=args.model, layers=args.layers, image_size=args.image_size,

@@ -14,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True, choices=models.keys())
     parser.add_argument('--model_weights', type=str, default=DeepModelDefaults.weights)
+    parser.add_argument('--no-model_weights', action='store_const', const=None, dest='model_weights')
     parser.add_argument('--layers', type=str, nargs='+', default=None)
     parser.add_argument('--pca', type=int, default=DeepModelDefaults.pca_components,
                         help='Number of components to reduce the flattened features to')
@@ -29,6 +30,8 @@ def main():
         args.image_size = infer_image_size(args.model)
     args.layers = args.layers or model_layers[args.model]
     logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level))
+    for disable_logger in ['s3transfer', 'botocore', 'boto3', 'urllib3']:
+        logging.getLogger(disable_logger).setLevel(logging.WARNING)
     logging.getLogger("peewee").setLevel(logging.WARNING)
     logger.info("Running with args %s", vars(args))
 
