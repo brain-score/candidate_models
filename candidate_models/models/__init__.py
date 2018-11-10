@@ -122,7 +122,7 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_i
               combine_fields={'layers': 'layer'})
 def _model_activations(model_identifier, model_ctr, layers, stimulus_set, weights,
                        image_size, pca_components, batch_size):
-    from candidate_models import load_stimulus_set
+    from candidate_models.assemblies import load_stimulus_set
     _logger.info('Loading stimuli')
     stimulus_set = load_stimulus_set(stimulus_set)
     stimuli_paths = list(map(stimulus_set.get_image, stimulus_set['image_id']))
@@ -141,6 +141,11 @@ def create_model(model, *args, **kwargs):
     return models[model](*args, **kwargs)
 
 
+def cornet_s(*args, **kwargs):
+    from candidate_models.models.implementations.cornet.cornet_s import CORNetWrapper
+    return CORNetWrapper(*args, **kwargs)
+
+
 def load_model_definitions():
     models = {}
     for _, row in models_meta.iterrows():
@@ -152,6 +157,7 @@ def load_model_definitions():
                      'slim': TensorflowSlimPredefinedModel}[framework]
         model = row['model']
         models[model] = functools.partial(framework, model_name=model)
+    models['cornet_s'] = cornet_s
     return models
 
 

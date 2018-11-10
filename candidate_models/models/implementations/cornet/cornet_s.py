@@ -10,7 +10,6 @@ import shlex
 import subprocess
 import time
 
-import fire
 import numpy as np
 import pandas
 import torch
@@ -226,9 +225,9 @@ class CORNet(nn.Module):
 class CORNetWrapper(TemporalPytorchModel):
     def __init__(self, weights=Defaults.weights, batch_size=Defaults.batch_size,
                  image_size=Defaults.image_size):
-        super().__init__('cornet', weights, batch_size, image_size)
+        super().__init__(weights=weights, batch_size=batch_size, image_size=image_size)
 
-    def _create_model(self, model_name, weights):
+    def _create_model(self, weights):
         model = CORNet([2, 4, 2])
         assert weights in [None, 'imagenet']
         if weights == 'imagenet':
@@ -726,4 +725,5 @@ class ImageNet(torch.utils.data.Dataset):
 
 
 if __name__ == '__main__':
+    import fire
     fire.Fire()
