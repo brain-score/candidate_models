@@ -2,9 +2,9 @@ import argparse
 import logging
 import sys
 
-from candidate_models import model_activations, model_layers
+from candidate_models.models import model_activations
 from candidate_models.models import models, Defaults, infer_image_size
-from candidate_models.models.implementations import Defaults as DeepModelDefaults
+from candidate_models.models.implementations import Defaults as DeepModelDefaults, model_layers
 
 _logger = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ def main():
     parser.add_argument('--weights', type=str, default=DeepModelDefaults.weights)
     parser.add_argument('--no-model_weights', action='store_const', const=None, dest='model_weights')
     parser.add_argument('--layers', nargs='+', default=None)
+    parser.add_argument('--last_layer_only', action='store_true', default=False)
     parser.add_argument('--pca', type=int, default=DeepModelDefaults.pca_components,
                         help='Number of components to reduce the flattened features to')
     parser.add_argument('--no-pca', action='store_const', const=None, dest='pca')
@@ -25,6 +26,9 @@ def main():
     parser.add_argument('--batch_size', type=int, default=DeepModelDefaults.batch_size)
     parser.add_argument('--log_level', type=str, default='INFO')
     args = parser.parse_args()
+    if args.last_layer_only:
+        assert not args.layers
+        args.layers = model_layers[args.model][-1:]
     args.layers = args.layers or model_layers[args.model]
     if args.image_size == -1:
         args.image_size = infer_image_size(args.model)
