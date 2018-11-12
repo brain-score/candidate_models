@@ -1,3 +1,4 @@
+import itertools
 import os
 import re
 from collections import defaultdict
@@ -73,25 +74,40 @@ class DataCollector:
 
             data = defaultdict(list)
             for model in models:
-                data['model'].append(model)
                 score = score_model(model=model, benchmark=self._benchmark)
-
-                argmax = score.sel(aggregation='center').argmax('layer')
-                max_score = score[{'layer': argmax.values}]
-
-                data['score'].append(max_score.sel(aggregation='center').values)
-                data['error'].append(max_score.sel(aggregation='error').values)
-                data['layer'].append(max_score['layer'].values)
+                self.append_score(data, score, model)
 
             data['benchmark'] = [self._benchmark] * len(data['score'])
             return pd.DataFrame(data)
+
+        def append_score(self, data, score, model):
+            data['model'].append(model)
+            argmax = score.sel(aggregation='center').argmax('layer')
+            max_score = score[{'layer': argmax.values}]
+            data['score'].append(max_score.sel(aggregation='center').values)
+            data['error'].append(max_score.sel(aggregation='error').values)
+            data['layer'].append(max_score['layer'].values)
 
         def _find_models(self, storage_path):
             file_glob = os.path.join(storage_path, f'*benchmark_identifier={self._benchmark},*.pkl')
             models = list(glob(file_glob))
             models = [re.search('model_identifier=([^,]*)', file) for file in models]
             models = [match.group(1) for match in models if match]
-            return models
+            return set(models)
+
+    class DividingScoreParser(ScoreParser):
+        def __init__(self, *args, dividers, **kwargs):
+            super(DataCollector.DividingScoreParser, self).__init__(*args, **kwargs)
+            self._dividers = dividers if (isinstance(dividers, list) or isinstance(dividers, tuple)) else [dividers]
+
+        def append_score(self, data, score, model):
+            divider_values = {divider: np.unique(score[divider]) for divider in self._dividers}
+            for key_values in (dict(zip(divider_values.keys(), values))
+                               for values in itertools.product(*divider_values.values())):
+                divided_score = score.sel(**key_values)
+                super(DataCollector.DividingScoreParser, self).append_score(data=data, score=divided_score, model=model)
+                for key, value in key_values.items():
+                    data[key].append(value)
 
     def parse_neural_scores(self):
         savepath = os.path.join(os.path.dirname(__file__), 'neural.csv')
@@ -103,7 +119,8 @@ class DataCollector:
             DataCollector.ScoreParser('movshon.FreemanZiemba2013.V1'),
             DataCollector.ScoreParser('movshon.FreemanZiemba2013.V2'),
             DataCollector.ScoreParser('dicarlo.Majaj2015.V4'),
-            DataCollector.ScoreParser('dicarlo.Majaj2015.IT')
+            DataCollector.ScoreParser('dicarlo.Majaj2015.IT'),
+            DataCollector.DividingScoreParser('dicarlo.Majaj2015.earlylate', dividers=['region', 'time_bin_start']),
         ]
         data = None
         for parser in benchmark_parsers:
