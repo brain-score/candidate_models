@@ -1,4 +1,3 @@
-import glob
 import os
 import re
 from collections import defaultdict
@@ -25,23 +24,33 @@ def clean_axis(ax):
     seaborn.despine(right=True)
 
 
-class DataCollector(object):
+class DataCollector:
     @cache()
     def __call__(self):
-        models = self.get_models()
-
         # neural scores
-        data = self.parse_neural_scores(models)
-        # merge with behavior, performance and meta
+        data = self.parse_neural_scores()
+        # concat behavior, performance
         model_meta = self._get_models_meta()
-        model_meta = model_meta[['model', 'behavior', 'performance', 'link', 'bibtex']]
-        data = data.merge(model_meta, on='model')
-        data['performance'] = 100 * data['performance']
-        data['behavior-layer'] = self._get_behavioral_layers(data['model'])
+        for score_field, benchmark in [('performance', 'ImageNet'), ('behavior', 'dicarlo.Rajalingham2018')]:
+            benchmark_data = model_meta[['model', score_field]]
+            benchmark_data.rename(columns={score_field: 'score'}, inplace=True)
+            benchmark_data['error'] = [0] * len(benchmark_data)
+            benchmark_data['benchmark'] = [benchmark] * len(benchmark_data)
+            data = pd.concat([data, benchmark_data])
+        # manual edits
+        data['score'][data['benchmark'] == 'ImageNet'] = 100 * data['score'][data['benchmark'] == 'ImageNet']
+        data['layer'][data['benchmark'] == 'dicarlo.Rajalingham2018'] = \
+            self._get_behavioral_layers(data['model'][data['benchmark'] == 'dicarlo.Rajalingham2018'])
         # brain-score
-        data['brain-score'] = self.compute_brainscore(data)
+        brain_score = self.compute_brainscore(data)
+        brain_score['benchmark'] = ['Brain-Score'] * len(brain_score)
+        data = pd.concat([data, brain_score])
+        # attach meta
+        model_meta = model_meta[['model', 'link', 'bibtex']]
+        data = data.merge(model_meta, on='model')
         # rank
-        data['rank'] = data['brain-score'].rank(ascending=False)
+        for benchmark in np.unique(data['benchmark']):
+            data['rank'] = data['score'][data['benchmark'] == benchmark].rank(ascending=False)
         return data
 
     def _get_models_meta(self):
@@ -54,107 +63,78 @@ class DataCollector(object):
         model_meta = pd.concat([model_meta, basenet_meta])
         return model_meta
 
-    def get_models(self):
-        models = [file for file in glob(os.path.join(os.path.dirname(__file__), '..', '..',
-                                                     'output', 'brainscore.benchmarks.DicarloMajaj2015._call', '*'))]
-        models = [re.match('.*/identifier=(.*)\.pkl', file) for file in models]
-        models = [match.group(1) for match in models if match]
-        models = np.unique(models)
-
-        # check if all models were run
-        all_models = self._get_models_meta()['model'].values
-        missing_models = set(all_models) - set(models)
-        print("Missing basenets:", " ".join([model for model in missing_models if model.startswith('basenet')]))
-        print("Missing non-basenets:", " ".join([model for model in missing_models if not model.startswith('basenet')]))
-
-        # remove models without metadata / broken models
-        nometa_models = [model for model in models if model not in all_models]
-        print("Removing models without metadata: ", " ".join(nometa_models))
-        models = list(set(models) - set(nometa_models))
-        potentially_broken_models = ['resnet-50_v1', 'resnet-101_v1', 'resnet-152_v1']
-        models = [model for model in models if model not in potentially_broken_models]
-        return models
-
-    class ScoreParser(object):
+    class ScoreParser:
         def __init__(self, benchmark):
             self._benchmark = benchmark
 
-        def __call__(self, models):
+        def __call__(self, storage_path=os.path.join(os.path.dirname(__file__), '..', '..',
+                                                     'output', 'candidate_models._score_model')):
+            models = self._find_models(storage_path)
+
             data = defaultdict(list)
             for model in models:
                 data['model'].append(model)
                 score = score_model(model=model, benchmark=self._benchmark)
-                score = score.aggregation
 
-                def best_layer(group):
-                    argmax = group.sel(aggregation='center').argmax('layer')
-                    return group[:, argmax.values]
+                argmax = score.sel(aggregation='center').argmax('layer')
+                max_score = score[{'layer': argmax.values}]
 
-                max_score = score.groupby('region').apply(best_layer)
-                region_layers = [score['layer'][(score == max_score).sel(aggregation='center', region=region)].values[0]
-                                 for region in score['region']]
-                max_score['layer'] = 'region', region_layers
-                self._parse_score(max_score, data)
+                data['score'].append(max_score.sel(aggregation='center').values)
+                data['error'].append(max_score.sel(aggregation='error').values)
+                data['layer'].append(max_score['layer'].values)
 
+            data['benchmark'] = [self._benchmark] * len(data['score'])
             return pd.DataFrame(data)
 
-        def _parse_score(self, model, target):
-            raise NotImplementedError()
+        def _find_models(self, storage_path):
+            file_glob = os.path.join(storage_path, f'*benchmark_identifier={self._benchmark},*.pkl')
+            models = list(glob(file_glob))
+            models = [re.search('model_identifier=([^,]*)', file) for file in models]
+            models = [match.group(1) for match in models if match]
+            return models
 
-        def _set_score(self, target, label, score):
-            center, err = score.sel(aggregation='center').values, score.sel(aggregation='error').values
-            layer = score['layer'].values
-            assert center.size == err.size == 1
-            target[label].append(center.tolist())
-            target[f"{label}-error"].append(err.tolist())
-            target[f"{label}-layer"].append(layer)
-
-    class DicarloMajaj2015Parser(ScoreParser):
-        def __init__(self):
-            super(DataCollector.DicarloMajaj2015Parser, self).__init__('dicarlo.Majaj2015')
-
-        def _parse_score(self, score, target):
-            for region in np.unique(score['region']):
-                region_score = score.sel(region=region)
-                self._set_score(target, region, score=region_score)
-
-    class ToliasCadena2017Parser(ScoreParser):
-        def __init__(self):
-            super(DataCollector.ToliasCadena2017Parser, self).__init__('tolias.Cadena2017')
-
-        def _parse_score(self, score, target):
-            self._set_score(target, 'V1', score)
-
-    def parse_neural_scores(self, models):
+    def parse_neural_scores(self):
         savepath = os.path.join(os.path.dirname(__file__), 'neural.csv')
         if os.path.isfile(savepath):
             return pd.read_csv(savepath)
 
-        benchmarks = {
-            'dicarlo.Majaj2015': DataCollector.DicarloMajaj2015Parser(),
-            # 'tolias.Cadena2017': DataCollector.ToliasCadena2017Parser()
-        }
+        benchmark_parsers = [
+            DataCollector.ScoreParser('tolias.Cadena2017'),
+            DataCollector.ScoreParser('movshon.FreemanZiemba2013.V1'),
+            DataCollector.ScoreParser('movshon.FreemanZiemba2013.V2'),
+            DataCollector.ScoreParser('dicarlo.Majaj2015.V4'),
+            DataCollector.ScoreParser('dicarlo.Majaj2015.IT')
+        ]
         data = None
-        for benchmark, parser in benchmarks.items():
-            benchmark_data = parser(models)
-            data = benchmark_data if data is None else data.merge(benchmark_data, on='model')
+        for parser in benchmark_parsers:
+            benchmark_data = parser()
+            data = benchmark_data if data is None else pd.concat([data, benchmark_data])
 
-        data.to_csv(savepath)
+        data.to_csv(savepath, index=False)
         return data
 
     def _get_behavioral_layers(self, model_names):
         return [model_layers[model][-1] for model in model_names]
 
     def compute_brainscore(self, data):
-        # method 1: mean everything
-        global_scores = [[row['V4'], row['IT'], row['behavior']] for _, row in data.iterrows()]
-        return np.mean(global_scores, axis=1)
-        # method 2: mean(mean(v4, it), behavior)
-        neural_scores = [[row['V4'], row['IT']] for _, row in data.iterrows()]
-        neural_scores = np.mean(neural_scores, axis=1)
-        global_scores = [[neural_score, row['behavior']] for (_, row), neural_score in
-                         zip(data.iterrows(), neural_scores)]
-        return np.mean(global_scores, axis=1)
+        def compute(model_rows):
+            benchmarks = ['dicarlo.Majaj2015.V4', 'dicarlo.Majaj2015.IT', 'dicarlo.Rajalingham2018']
+            occurrences = model_rows['benchmark'].value_counts()
+            if not all(benchmark in occurrences for benchmark in benchmarks):
+                return np.nan
+            assert all(occurrences[benchmark] == 1 for benchmark in benchmarks)
+            # method 1: mean everything
+            brain_score = np.mean([data['score'][data['benchmark'] == benchmark] for benchmark in benchmarks])
+            return np.mean(brain_score)
+            # method 2: mean(mean(v4, it), behavior)
+            neural_scores = [[row['V4'], row['IT']] for _, row in data.iterrows()]
+            neural_scores = np.mean(neural_scores, axis=1)
+            brain_score = [[neural_score, row['behavior']] for (_, row), neural_score in
+                           zip(data.iterrows(), neural_scores)]
+            return np.mean(brain_score, axis=1)
+
+        brainscores = data.groupby('model').apply(compute)
+        return pd.DataFrame({'model': brainscores.index.values, 'score': brainscores.values})
 
 
 def filter_basenets(data, include=True):
