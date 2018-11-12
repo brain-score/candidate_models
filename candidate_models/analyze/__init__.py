@@ -49,6 +49,9 @@ class DataCollector:
         # attach meta
         model_meta = model_meta[['model', 'link', 'bibtex']]
         data = data.merge(model_meta, on='model')
+        # filter broken
+        potentially_broken_models = ['resnet-50_v1', 'resnet-101_v1', 'resnet-152_v1']
+        data = data[not data['model'].isin(potentially_broken_models)]
         # rank
         for benchmark in np.unique(data['benchmark']):
             data['rank'] = data['score'][data['benchmark'] == benchmark].rank(ascending=False)
