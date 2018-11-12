@@ -141,9 +141,9 @@ def create_model(model, *args, **kwargs):
     return models[model](*args, **kwargs)
 
 
-def cornet_s(*args, **kwargs):
-    from candidate_models.models.implementations.cornet.cornet_s import CORNetWrapper
-    return CORNetWrapper(*args, **kwargs)
+def cornet(*args, cornet_type, **kwargs):
+    from candidate_models.models.implementations.cornet import CORNetWrapper
+    return CORNetWrapper(*args, cornet_type=cornet_type, **kwargs)
 
 
 def load_model_definitions():
@@ -157,7 +157,8 @@ def load_model_definitions():
                      'slim': TensorflowSlimPredefinedModel}[framework]
         model = row['model']
         models[model] = functools.partial(framework, model_name=model)
-    models['cornet_s'] = cornet_s
+    for cornet_type in ['Z', 'R', 'S']:
+        models[f'cornet_{cornet_type.lower()}'] = functools.partial(cornet, cornet_type=cornet_type)
     return models
 
 

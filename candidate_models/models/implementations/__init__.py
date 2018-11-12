@@ -370,11 +370,14 @@ class ModelLayers(dict):
             ['layer_1'] + ['layer_{}/output'.format(i + 1) for i in range(1, 18)] + ['global_pool']
         self['basenet'] = \
             ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait']
-        self['cornet_s'] = ['conv1-t0', 'conv2-t0'] + \
-                           [f'blocks.{block}.last_relu-t{timestep}'
-                            for block, timesteps in [(0, (0, 1)), (1, (0, 1, 2, 3)), (2, (0, 1))] for timestep in
-                            timesteps] + \
-                           ['avgpool-t0']
+        self['cornet_z'] = ['V1.output-t0', 'V2.output-t0', 'V4.output-t0', 'IT.output-t0', 'decoder.avgpool-t0']
+        self['cornet_r'] = [f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
+                            range(5)] + ['decoder.avgpool-t0']
+        self['cornet_s'] = ['V1.output-t0'] + \
+                           [f'{area}.output-t{timestep}' for area, timesteps in
+                            [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]
+                            for timestep in timesteps] + \
+                           ['decoder.avgpool-t0']
         """
         the last layer in each of the model's layer lists is supposed to always be the last feature layer, 
         i.e. the last layer before readout.

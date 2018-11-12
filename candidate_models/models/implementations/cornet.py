@@ -1,5 +1,10 @@
+import importlib
+import os
 import re
 from collections import defaultdict
+
+import torch
+from torch.nn import Module
 
 from candidate_models.models.implementations.pytorch import PytorchModel
 
@@ -33,3 +38,34 @@ class TemporalPytorchModel(PytorchModel):
         layer_name = self._strip_layer_timestep(layer_name)
         layer_results[f"{layer_name}-t{self._layer_counter[layer_name]}"] = output.cpu().data.numpy()
         self._layer_counter[layer_name] += 1
+
+
+class CORNetWrapper(TemporalPytorchModel):
+    WEIGHT_MAPPING = {
+        'Z': 'cornet_z_epoch25.pth.tar',
+        'R': 'cornet_r_epoch25.pth.tar',
+        'S': 'cornet_s_epoch43.pth.tar'
+    }
+
+    def __init__(self, *args, cornet_type, **kwargs):
+        self._cornet_type = cornet_type
+        mod = importlib.import_module(f'cornet.cornet_{cornet_type.lower()}')
+        self._model_ctr = getattr(mod, f'CORnet_{cornet_type.upper()}')
+        super(CORNetWrapper, self).__init__(*args, **kwargs)
+
+    def _create_model(self, weights):
+        model = self._model_ctr()
+        assert weights in [None, 'imagenet']
+        if weights == 'imagenet':
+            class Wrapper(Module):
+                def __init__(self, model):
+                    super(Wrapper, self).__init__()
+                    self.module = model
+
+            model = Wrapper(model)  # model was wrapped with DataParallel, so weights require `module.` prefix
+            checkpoint = torch.load(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'model-weights',
+                                                 'cornet', self.WEIGHT_MAPPING[self._cornet_type.upper()]),
+                                    map_location=lambda storage, loc: storage)  # map onto cpu
+            model.load_state_dict(checkpoint['state_dict'])
+            model = model.module  # unwrap
+        return model
