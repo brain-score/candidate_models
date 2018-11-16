@@ -63,7 +63,7 @@ class CORNetWrapper(TemporalPytorchModel):
                     self.module = model
 
             model = Wrapper(model)  # model was wrapped with DataParallel, so weights require `module.` prefix
-            checkpoint = torch.load(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'model-weights',
+            checkpoint = torch.load(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'model-weights',
                                                  'cornet', self.WEIGHT_MAPPING[self._cornet_type.upper()]),
                                     map_location=lambda storage, loc: storage)  # map onto cpu
             model.load_state_dict(checkpoint['state_dict'])

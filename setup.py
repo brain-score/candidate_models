@@ -18,6 +18,7 @@ requirements = [
     "scikit-image",
     "result_caching",
     "keras-squeezenet",
+    "CORnet",
     "pillow",
     "llist",
     "networkx",
@@ -39,6 +40,7 @@ dependency_links = [
     # "https://github.com/dicarlolab/brain-score/master/tarball",
     "https://github.com/mschrimpf/result_caching/master/tarball",
     "https://github.com/rcmalli/keras-squeezenet/master/tarball",
+    "https://github.com/dicarlolab/CORnet/master/tarball",
 ]
 
 setup(
