@@ -1,36 +1,41 @@
 import logging
 import sys
 
+import seaborn
+
+seaborn.set()
 from matplotlib import pyplot
 
-from candidate_models.analyze import DataCollector
+from candidate_models.analyze import DataCollector, align
 
 
-def main():
-    data = DataCollector()()
-    data = data[data['benchmark'] == 'dicarlo.Majaj2015.earlylate']
-
+def plot(data, early, late):
+    early_scores = data[data['time_bin_start'] == early[0]]
+    late_scores = data[data['time_bin_start'] == late[0]]
     fig, axes = pyplot.subplots(ncols=2)
     for region, ax in zip(['V4', 'IT'], axes):
-        early_scores = data[(data['region'] == region) & (data['time_bin_start'] == 90)]
-        late_scores = data[(data['region'] == region) & (data['time_bin_start'] == 190)]
-        late_scores = _align(late_scores, early_scores, on='model')
-        x, xerr = early_scores['score'], early_scores['error']
-        y, yerr = late_scores['score'], late_scores['error']
-        colors = ['b' if model != 'cornet_s' else 'r' for model in early_scores['model']]
+        region_early_scores = early_scores[data['region'] == region]
+        region_late_scores = late_scores[data['region'] == region]
+        region_late_scores = align(region_late_scores, region_early_scores, on='model')
+        x, xerr = region_early_scores['score'], region_early_scores['error']
+        y, yerr = region_late_scores['score'], region_late_scores['error']
+        colors = ['b' if not model.startswith('cornet') else 'r' for model in region_early_scores['model']]
         ax.errorbar(x=x, xerr=xerr, y=y, yerr=yerr, linestyle=' ', marker='.', ecolor=colors)
-        ax.set_xlabel('early (90-110)')
-        ax.set_ylabel('late (190-210)')
+        ax.set_xlabel(f'early {early}')
+        ax.set_ylabel(f'late {late}')
+        if region == 'IT':
+            ax.yaxis.set_label_position('right')
+            ax.yaxis.tick_right()
         ax.set_title(region)
-    pyplot.savefig('results/earlylate.png')
-
-
-def _align(data1, data2, on):
-    data1 = data1[data1[on].isin(data2[on])]
-    data1 = data1.set_index(on).reindex(index=data2[on]).reset_index()
-    return data1
+    pyplot.tight_layout()
+    pyplot.savefig(f'results/earlylate-{early}-{late}.png')
 
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    main()
+
+    data = DataCollector()()
+
+    plot(data[data['benchmark'] == 'dicarlo.Majaj2015.earlylate'], early=(90, 110), late=(190, 210))
+    plot(data[data['benchmark'] == 'dicarlo.Majaj2015.earlylate-alternatives'], early=(70, 90), late=(170, 190))
+    plot(data[data['benchmark'] == 'dicarlo.Majaj2015.earlylate-alternatives'], early=(70, 90), late=(150, 250))
