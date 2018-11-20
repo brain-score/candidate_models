@@ -79,27 +79,32 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
         from preprocessing import inception_preprocessing, vgg_preprocessing
         model_properties = self._get_model_properties(self._model_name)
         inputs = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size, image_size, 3])
-        preprocess_image = vgg_preprocessing.preprocess_image if model_properties['preprocessing'] == 'vgg' \
-            else inception_preprocessing.preprocess_image
-        return tf.map_fn(lambda image: preprocess_image(tf.image.convert_image_dtype(image, dtype=tf.uint8),
-                                                        image_size, image_size), inputs)
+        
+        if model_properties['preprocessing'] == 'vgg':
+            preprocess_image = tf.map_fn(
+                lambda image: vgg_preprocessing.preprocess_image(
+                    tf.image.convert_image_dtype(image, dtype=tf.uint8),
+                    image_size, image_size, resize_side_min=image_size),
+                inputs)
+        elif model_properties['preprocessing'] == 'inception':
+            preprocess_image = tf.map_fn(
+                lambda image: inception_preprocessing.preprocess_for_eval(
+                    tf.image.convert_image_dtype(image, dtype=tf.uint8),
+                    image_size, image_size, central_fraction=1.),
+                inputs)
+            
+        return preprocess_image
 
     def _create_model(self, inputs):
         from nets import nets_factory
         model_properties = self._get_model_properties(self._model_name)
-        call = model_properties['callable']
-        arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0.)
-        kwargs = {}
-        if self._model_name.startswith('mobilenet_v2') or self._model_name.startswith('mobilenet_v1'):
-            arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0., is_training=False)
-            kwargs = {'depth_multiplier': model_properties['depth_multiplier']}
-        model = nets_factory.networks_map[call]
-        with tf.contrib.slim.arg_scope(arg_scope):
-            logits, endpoints = model(inputs,
-                                      num_classes=1001 - int(model_properties['labels_offset']),
-                                      is_training=False,
-                                      **kwargs)
-            return logits, endpoints
+        name = model_properties['model']
+        if name.startswith('mobilenet'):  # strip image size from mobilenet name
+            name = '_'.join(name.split('_')[:-1])
+        model = nets_factory.get_network_fn(name,
+                                            num_classes=1001 - int(model_properties['labels_offset']),
+                                            is_training=False)
+        return model(inputs)
 
     def _get_model_properties(self, model_name):
         _model_properties = slim_models[slim_models['model'] == model_name]
