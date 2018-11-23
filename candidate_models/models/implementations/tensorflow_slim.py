@@ -23,8 +23,8 @@ class TensorflowSlimModel(DeepModel):
     def __init__(self, weights=Defaults.weights,
                  batch_size=Defaults.batch_size, image_size=Defaults.image_size):
         super().__init__(batch_size=batch_size, image_size=image_size)
-        self.inputs = self._create_inputs(batch_size, image_size)
-        self._logits, self.endpoints = self._create_model(self.inputs)
+        self._placeholder, model_inputs = self._create_inputs(batch_size, image_size)
+        self._logits, self.endpoints = self._create_model(model_inputs)
         self._sess = tf.Session()
         self._restore(weights)
 
@@ -37,28 +37,26 @@ class TensorflowSlimModel(DeepModel):
     def _restore(self, weights):
         raise NotImplementedError()
 
+    def _load_images(self, image_filepaths, image_size):
+        return image_filepaths
+
     def _load_image(self, image_filepath):
-        image = skimage.io.imread(image_filepath)
+        image = tf.read_file(image_filepath)
+        image = tf.image.decode_png(image, channels=3)
         return image
 
     def _preprocess_images(self, images, image_size):
-        images = [self._preprocess_image(image, image_size) for image in images]
-        return np.array(images)
+        return images
 
     def _preprocess_image(self, image, image_size):
-        if image.ndim == 2:  # binary
-            image = skimage.color.gray2rgb(image)
-        assert image.ndim == 3
-        if image.shape[2] == 4:  # alpha
-            image = image[:, :, :3]
-        image = skimage.transform.resize(image, (image_size, image_size))
-        assert image.min() >= 0
-        assert image.max() <= 1
+        image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+        image = tf.image.resize_images(image, (image_size, image_size))
+        image = tf.image.convert_image_dtype(image, dtype=tf.uint8)
         return image
 
     def _get_activations(self, images, layer_names):
         layer_tensors = OrderedDict((layer, self.endpoints[layer]) for layer in layer_names)
-        layer_outputs = self._sess.run(layer_tensors, feed_dict={self.inputs: images})
+        layer_outputs = self._sess.run(layer_tensors, feed_dict={self._placeholder: images})
         return layer_outputs
 
     def graph(self):
@@ -78,30 +76,31 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
     def _create_inputs(self, batch_size, image_size):
         from preprocessing import inception_preprocessing, vgg_preprocessing
         model_properties = self._get_model_properties(self._model_name)
-        inputs = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size, image_size, 3])
-        
+        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+
+        process_imagepath = lambda image_path: self._preprocess_image(self._load_image(image_path), image_size)
+
+        # we're not using preprocess_factory because we need to restrict inception preprocessing from cropping
         if model_properties['preprocessing'] == 'vgg':
-            preprocess_image = tf.map_fn(
-                lambda image: vgg_preprocessing.preprocess_image(
-                    tf.image.convert_image_dtype(image, dtype=tf.uint8),
-                    image_size, image_size, resize_side_min=image_size),
-                inputs)
+            preprocess_image = lambda image: vgg_preprocessing.preprocess_image(
+                image, image_size, image_size, resize_side_min=image_size)
         elif model_properties['preprocessing'] == 'inception':
-            preprocess_image = tf.map_fn(
-                lambda image: inception_preprocessing.preprocess_for_eval(
-                    tf.image.convert_image_dtype(image, dtype=tf.uint8),
-                    image_size, image_size, central_fraction=1.),
-                inputs)
-            
-        return preprocess_image
+            preprocess_image = lambda image: inception_preprocessing.preprocess_for_eval(
+                image, image_size, image_size, central_fraction=1.)
+        else:
+            raise ValueError(f"unknown preprocessing {model_properties['preprocessing']}")
+        preprocess = lambda image_path: preprocess_image(process_imagepath(image_path))
+
+        preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
+        return placeholder, preprocess
 
     def _create_model(self, inputs):
         from nets import nets_factory
         model_properties = self._get_model_properties(self._model_name)
-        name = model_properties['model']
-        if name.startswith('mobilenet'):  # strip image size from mobilenet name
-            name = '_'.join(name.split('_')[:-1])
-        model = nets_factory.get_network_fn(name,
+        model_identifier = model_properties['callable']
+        if model_identifier.startswith('mobilenet'):  # strip image size from mobilenet name
+            model_identifier = '_'.join(model_identifier.split('_')[:-1])
+        model = nets_factory.get_network_fn(model_identifier,
                                             num_classes=1001 - int(model_properties['labels_offset']),
                                             is_training=False)
         return model(inputs)
