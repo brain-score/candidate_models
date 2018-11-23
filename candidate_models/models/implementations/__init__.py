@@ -181,8 +181,8 @@ class DeepModel(object):
     def _pad(self, batch_images, batch_size):
         if len(batch_images) % batch_size == 0:
             return batch_images, 0
-        num_padding = batch_size - (batch_images.shape[0] % batch_size)
-        padding = np.zeros([num_padding, *batch_images.shape[1:]]).astype(batch_images[0].dtype)
+        num_padding = batch_size - (len(batch_images) % batch_size)
+        padding = np.repeat(batch_images[-1:], repeats=num_padding, axis=0)
         return np.concatenate((batch_images, padding)), num_padding
 
     def _unpad(self, layer_activations, num_padding):
