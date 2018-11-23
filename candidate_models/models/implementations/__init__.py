@@ -18,7 +18,7 @@ from candidate_models import s3
 
 class Defaults(object):
     weights = 'imagenet'
-    image_size = 224
+    image_size = 224  # TODO: remove
     batch_size = 64
     pca_components = 1000
 
@@ -47,7 +47,7 @@ class DeepModel(object):
     that models with the same `pca_components` at least remain comparable.
     """
 
-    def __init__(self, image_size=Defaults.image_size, batch_size=Defaults.batch_size):
+    def __init__(self, image_size, batch_size=Defaults.batch_size):
         # require arguments here to keep the signature of different implementations the same.
         # For instance, batch_size is not required for models other than TF but by requiring it here,
         # we keep the same method signature for the caller to simplify things.
@@ -339,12 +339,12 @@ class ModelLayers(dict):
              'Mixed_5b', 'Mixed_6a', 'Mixed_7a', 'Conv2d_7b_1x1', 'global_pool']
         self['resnet-50_v1'] = \
             ["resnet_v1_50/{}".format(layer) for layer in self._resnet50_layers(1)] + ['global_pool']
-        self['resnet-50_v2'] = \
-            ["resnet_v2_50/{}".format(layer) for layer in self._resnet50_layers(2)] + ['global_pool']
+        self['resnet-50_v2'] = ['resnet_v2_50/block4/unit_1/bottleneck_v2']  # FIXME
+            # ["resnet_v2_50/{}".format(layer) for layer in self._resnet50_layers(2)] + ['global_pool']
         self['resnet-101_v1'] = \
             ["resnet_v1_101/{}".format(layer) for layer in self._resnet101_layers(1)] + ['global_pool']
-        self['resnet-101_v2'] = \
-            ["resnet_v2_101/{}".format(layer) for layer in self._resnet101_layers(2)] + ['global_pool']
+        self['resnet-101_v2'] = ['global_pool']  # FIXME\
+            # ["resnet_v2_101/{}".format(layer) for layer in self._resnet101_layers(2)] + ['global_pool']
         self['resnet-152_v1'] = \
             ["resnet_v1_152/{}".format(layer) for layer in self._resnet152_layers(1)] + ['global_pool']
         self['resnet-152_v2'] = \
@@ -373,11 +373,18 @@ class ModelLayers(dict):
         self['cornet_z'] = ['V1.output-t0', 'V2.output-t0', 'V4.output-t0', 'IT.output-t0', 'decoder.avgpool-t0']
         self['cornet_r'] = [f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
                             range(5)] + ['decoder.avgpool-t0']
-        self['cornet_s'] = ['V1.output-t0'] + \
-                           [f'{area}.output-t{timestep}' for area, timesteps in
-                            [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]
-                            for timestep in timesteps] + \
-                           ['decoder.avgpool-t0']
+        self['cornet_s'] = [f'{area}.output-t{timestep}' for area, timesteps in
+                            [('V4', range(4)), ('IT', range(2))] for timestep in timesteps]  # FIXME
+        # ['V1.output-t0'] + \
+        #                    [f'{area}.output-t{timestep}' for area, timesteps in
+        #                     [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]
+        #                     for timestep in timesteps] + \
+        #                    ['decoder.avgpool-t0']
+        # self['cornet_r2'] = ['maxpool-t0'] + \  # FIXME
+        #                     [f'{area}.relu3-t{timestep}' for area in ['block2', 'block3', 'block4']
+        #                      for timestep in range(5)] + ['avgpool-t0']
+        self['cornet_r2'] = [f'{area}.relu3-t{timestep}' for area in ['block3', 'block4']
+                             for timestep in range(5)]
         """
         the last layer in each of the model's layer lists is supposed to always be the last feature layer, 
         i.e. the last layer before readout.

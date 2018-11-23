@@ -17,7 +17,7 @@ pip install --process-dependency-links git+https://github.com/dicarlolab/brain-s
 pip install --process-dependency-links git+https://github.com/dicarlolab/candidate_models
 ```
 
-To use the predefined TensorFlow models, you will have to install https://github.com/tensorflow/models/tree/master/research/slim.
+To use the predefined TensorFlow models, you will have to install https://github.com/qbilius/models/tree/master/research/slim.
 See [here](#installing-the-tf-slim-image-models-library) for quick instructions.
 
 To contribute code to this framework, see the [Development Setup](#development-setup).
@@ -48,7 +48,7 @@ Environment variables are prefixed with `CM_`.
 TensorFlow does unfortunately not provide an actual pip-installable library here, instead we have to download the code and make it available.
 
 ```bash
-git clone https://github.com/tensorflow/models/ tf-models
+git clone https://github.com/qbilius/models/ tf-models
 export PYTHONPATH="$PYTHONPATH:$(pwd)/tf-models/research/slim"
 # verify
 python -c "from nets import cifarnet; mynet = cifarnet.cifarnet"
@@ -123,4 +123,19 @@ See the setup.py for which versions are supported.
 
 Most likely your passed image_size does not match up with the image size the model expects (e.g. inception_v{3,4} expect 299 insead of 224).
 Either let the framework infer what image_size the model needs (run without `--image_size`) or set the correct image_size yourself.
+</details>
+
+<details>
+<summary>MobileNet weight loading failed.</summary>
+
+Error message e.g. `Assign requires shapes of both tensors to match. lhs shape= [1,1,240,960] rhs shape= [1,1,240,1280]`.
+
+There is an error in the MobileNet implementation which causes the multiplier to not be applied properly:
+the number of channels sometimes go beyond what they ought to be (e.g. for the last layer).
+The [line in question](https://github.com/tensorflow/models/blob/628b970a3d7c59a3b65220e24972f9987e879bca/research/slim/nets/mobilenet/mobilenet.py#L250) needs to be prefixed with a conditional:
+```
+if i != len(conv_defs['spec']) - 1 or multiplier >= 1:
+    opdef.multiplier_func(params, multiplier)
+```
+This is already done in [@qbilius' fork of tensorflow/models](https://github.com/qbilius/models).
 </details>

@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 
+from brainscore.metrics.transformations import CrossValidation
 from candidate_models import score_model, Defaults
 from candidate_models.models import models, infer_image_size
 from candidate_models.models.implementations import Defaults as DeepModelDefaults
@@ -52,6 +53,27 @@ def main():
                 benchmark_score.sel(aggregation='error').values.tolist(),
                 [["", "[best]"][is_best] for is_best in is_best_value])]))
             print()
+    if args.benchmark == 'dicarlo.Majaj2015.temporal.IT':
+        from brainscore import benchmarks
+        benchmark = benchmarks.load(args.benchmark)
+
+        # ceiling
+        ceiling = benchmark.ceiling
+        average_ceiling = ceiling.mean('time_bin')
+        center, error = average_ceiling.sel(aggregation='center'), average_ceiling.sel(aggregation='error')
+        print(f"Ceiling: {center.values:.2f}+-{error.values:.2f}")
+        for time_bin in ceiling['time_bin'].values:
+            time_ceiling = ceiling.sel(time_bin=time_bin)
+            center, error = time_ceiling.sel(aggregation='center'), time_ceiling.sel(aggregation='error')
+            print(f"  > time {time_bin}: {center.values:.2f}+-{error.values:.2f}")
+        # scores
+        average_score = score.mean('time_slice')
+        center, error = average_score.sel(aggregation='center'), average_score.sel(aggregation='error')
+        print(f"model score: {center.values:.2f}+-{error.values:.2f}")
+        for time_slice in score['time_slice'].values:
+            region_time_score = score.sel(time_slice=time_slice)
+            center, error = region_time_score.sel(aggregation='center'), region_time_score.sel(aggregation='error')
+            print(f"  > time {time_slice}: {center.values:.2f}+-{error.values:.2f}")
 
 
 main()

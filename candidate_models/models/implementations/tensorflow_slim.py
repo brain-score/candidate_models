@@ -4,10 +4,7 @@ import os
 from collections import OrderedDict
 
 import networkx as nx
-import numpy as np
 import pandas as pd
-import skimage.io
-import skimage.transform
 import tensorflow as tf
 
 from candidate_models import s3
@@ -117,7 +114,8 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
         assert weights == 'imagenet'
         var_list = None
         if self._model_name.startswith('mobilenet'):
-            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy
+            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy according to
+            # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
         restorer = tf.train.Saver(var_list)

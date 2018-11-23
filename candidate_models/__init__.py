@@ -2,14 +2,11 @@ import logging
 from typing import Union
 
 from brainscore import benchmarks
-from brainscore.assemblies import merge_data_arrays
 from brainscore.metrics import Score
 from brainscore.metrics.transformations import CartesianProduct
 from brainscore.utils import fullname
 from candidate_models import models
-from candidate_models.assemblies import load_neural_benchmark, load_stimulus_set
-from candidate_models.models import model_activations, model_multi_activations, combine_layers_xarray, \
-    split_layers_xarray
+from candidate_models.models import model_multi_activations, infer_image_size
 from candidate_models.models.graph import combine_graph, cut_graph
 from candidate_models.models.implementations import Defaults as DeepModelDefaults
 from candidate_models.models.implementations import model_layers
@@ -24,7 +21,7 @@ class Defaults(object):
 
 def score_model(model: Union[str, object], model_identifier=None, layers=None,
                 weights=DeepModelDefaults.weights,
-                pca_components=DeepModelDefaults.pca_components, image_size=DeepModelDefaults.image_size,
+                pca_components=DeepModelDefaults.pca_components, image_size=None,
                 benchmark=Defaults.benchmark, benchmark_identifier=None):
     if layers is None:
         assert isinstance(model, str), "need either known model string or list of layers"
@@ -37,6 +34,8 @@ def score_model(model: Union[str, object], model_identifier=None, layers=None,
         "need either known benchmark string or benchmark_identifier"
     benchmark_identifier = benchmark_identifier or benchmark
 
+    image_size = image_size or infer_image_size(model_identifier)
+
     if benchmark_identifier == 'brain-score':  # Brain-Score does not return layers and would thus fail storing xarray
         return BrainScore()(model=model, model_identifier=model_identifier, layers=layers,
                             weights=weights, pca_components=pca_components, image_size=image_size)
@@ -46,7 +45,7 @@ def score_model(model: Union[str, object], model_identifier=None, layers=None,
                         weights=weights, pca_components=pca_components, image_size=image_size)
 
 
-@store_xarray(combine_fields={'layers': 'layer'}, identifier_ignore=['model', 'layers', 'benchmark'])
+@store_xarray(combine_fields=[], identifier_ignore=['model', 'layers', 'benchmark'])
 def _score_model(model, model_identifier=None, layers=None,
                  benchmark=Defaults.benchmark, benchmark_identifier=Defaults.benchmark,
                  weights=DeepModelDefaults.weights,
@@ -63,6 +62,8 @@ def _score_model(model, model_identifier=None, layers=None,
 
     logger.info(f'Scoring {model_identifier} on {benchmark_identifier}')
     cross_layer = CartesianProduct(dividers=['layer'])
+    if 'temporal' in benchmark_identifier:
+        return benchmark(model_assembly)
     score = cross_layer(model_assembly, apply=benchmark)
     return score
 

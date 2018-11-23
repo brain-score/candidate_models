@@ -13,10 +13,11 @@ from result_caching import cache
 from candidate_models import score_model, model_layers
 
 
-def shaded_errorbar(x, y, error, ax=None, alpha=0.4, **kwargs):
+def shaded_errorbar(x, y, error, ax=None, alpha=0.4, shaded_kwargs=None, **kwargs):
+    shaded_kwargs = shaded_kwargs or {}
     ax = ax or pyplot.gca()
     line = ax.plot(x, y, **kwargs)
-    ax.fill_between(x, y - error, y + error, alpha=alpha, **kwargs)
+    ax.fill_between(x, y - error, y + error, alpha=alpha, **shaded_kwargs)
     return line
 
 
@@ -51,7 +52,7 @@ class DataCollector:
         data = data.merge(model_meta, on='model')
         # filter broken
         potentially_broken_models = ['resnet-50_v1', 'resnet-101_v1', 'resnet-152_v1']
-        data = data[not data['model'].isin(potentially_broken_models)]
+        data = data[~data['model'].isin(potentially_broken_models)]
         # rank
         for benchmark in np.unique(data['benchmark']):
             data['rank'] = data['score'][data['benchmark'] == benchmark].rank(ascending=False)
@@ -96,6 +97,9 @@ class DataCollector:
             models = list(glob(file_glob))
             models = [re.search('model_identifier=([^,]*)', file) for file in models]
             models = [match.group(1) for match in models if match]
+
+            missing_models = set(models) - set(model_layers.keys())
+            print(f"missing from {self._benchmark}: {missing_models}")
             return set(models)
 
     class DividingScoreParser(ScoreParser):
@@ -112,6 +116,20 @@ class DataCollector:
                 for key, value in key_values.items():
                     data[key].append(value)
 
+    class TemporalScoreParser(DividingScoreParser):
+        def append_score(self, data, score, model):
+            divider_values = {divider: np.unique(score[divider]) for divider in self._dividers}
+            for key_values in (dict(zip(divider_values.keys(), values))
+                               for values in itertools.product(*divider_values.values())):
+                divided_score = score.sel(**key_values)
+
+                divided_score = divided_score.expand_dims('layer')
+                divided_score['layer'] = ["IT-layer"]
+
+                super(DataCollector.DividingScoreParser, self).append_score(data=data, score=divided_score, model=model)
+                for key, value in key_values.items():
+                    data[key].append(value)
+
     def parse_neural_scores(self):
         savepath = os.path.join(os.path.dirname(__file__), 'neural.csv')
         if os.path.isfile(savepath):
@@ -124,6 +142,12 @@ class DataCollector:
             DataCollector.ScoreParser('dicarlo.Majaj2015.V4'),
             DataCollector.ScoreParser('dicarlo.Majaj2015.IT'),
             DataCollector.DividingScoreParser('dicarlo.Majaj2015.earlylate', dividers=['region', 'time_bin_start']),
+            DataCollector.DividingScoreParser('dicarlo.Majaj2015.earlylate-alternatives', dividers=[
+                'region', 'time_bin_start']),
+            DataCollector.ScoreParser('dicarlo.Kar2018coco'),
+            DataCollector.ScoreParser('dicarlo.Kar2018hvm'),
+            DataCollector.TemporalScoreParser('dicarlo.Majaj2015.temporal-mean.IT', dividers=['time_slice']),
+            DataCollector.TemporalScoreParser('dicarlo.Majaj2015.temporal.IT', dividers=['time_bin']),
         ]
         data = None
         for parser in benchmark_parsers:
@@ -167,3 +191,9 @@ def filter_basenets(data, include=True):
 
 def is_basenet(model_name):
     return model_name.startswith('basenet')
+
+
+def align(data1, data2, on):
+    data1 = data1[data1[on].isin(data2[on])]
+    data1 = data1.set_index(on).reindex(index=data2[on]).reset_index()
+    return data1

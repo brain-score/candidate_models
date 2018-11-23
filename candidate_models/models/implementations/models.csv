@@ -28,6 +28,12 @@ author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and
 year = {2018},
 }
 ",,,,,224,,,,,,,,,,
+pytorch,cornet_r2,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
+title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
+author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
+year = {2018},
+}
+",,,,,224,,,,,,,,,,
 pytorch,squeezenet1_0,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Author = {Forrest N. Iandola and Song Han and Matthew W. Moskewicz and Khalid Ashraf and William J. Dally and Kurt Keutzer},
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
@@ -97,7 +103,7 @@ keras,densenet-201,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:42:40 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HuangLW16a},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",densenet,DenseNet201,avg_pool,,224,,,,200,133936548,65523848,0.77,0.933,0.367812844,200
+}",densenet,DenseNet201,avg_pool,,224,,,,200,133936548,65523848,0.772,0.933,0.367812844,200
 slim,inception_v1,https://arxiv.org/abs/1409.4842,"@article{DBLP:journals/corr/SzegedyLJSRAEVR14,
   author    = {Christian Szegedy and
                Wei Liu and
@@ -200,7 +206,7 @@ pytorch,resnet-18,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,,,,224,,,,18,1800000000,,0.6976,0.8908,0.363837784429276,
+}",,,,,224,,,,18,1800000000,,0.6976,0.8908,0.363837784,
 pytorch,resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
@@ -216,7 +222,7 @@ pytorch,resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,,,,224,,,,34,3600000000,,0.733,0.9142,0.37787025989965767,
+}",,,,,224,,,,34,3600000000,,0.733,0.9142,0.37787026,
 slim,resnet-50_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
@@ -296,7 +302,7 @@ slim,resnet-101_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,resnet_v2_101,global_pool,inception,299,resnet_v2_101_2017_04_14.tar.gz,,0,105,2.68E+11,44579945,0.77,0.937,0.389477175,100
+}",,resnet_v2_101,global_pool,inception,299,resnet_v2_101_2017_04_14.tar.gz,,0,105,2.68E+11,44579945,0.7737,0.937,0.389477175,100
 slim,resnet-152_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and

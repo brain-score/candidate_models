@@ -19,9 +19,6 @@ class ResidualNeuralFit(NeuralFit):
         residuals = DataAssembly(residuals, coords=coords, dims=target.dims)
         return residuals
 
-    def aggregate(self, residuals):
-        return residuals
-
 
 class ResidualBenchmark(DicarloMajaj2015):
     def __init__(self):
@@ -30,13 +27,13 @@ class ResidualBenchmark(DicarloMajaj2015):
         self._metric = ResidualNeuralFit()
 
 
-def run(model, layers=None, neural_data=Defaults.neural_data):
+def run(model, layers=None, neural_data=Defaults.benchmark):
     layers = layers or model_layers[model]
     return _run(model=model, layers=layers, neural_data=neural_data)
 
 
 @store_xarray(combine_fields={'layers': 'layer'}, identifier_ignore=['layers'])
-def _run(model, layers, neural_data=Defaults.neural_data):
+def _run(model, layers, neural_data=Defaults.benchmark):
     assert neural_data == 'dicarlo.Majaj2015'
     _logger.info('Computing activations')
     model_assembly = model_multi_activations(model=model, multi_layers=layers, stimulus_set=neural_data)
@@ -44,7 +41,7 @@ def _run(model, layers, neural_data=Defaults.neural_data):
     benchmark = ResidualBenchmark()
     _logger.info('Computing residuals')
     residuals = benchmark(model_assembly, source_splits=['layer'])
-    residuals = residuals.aggregation.sel(aggregation='center')
+    residuals = residuals.sel(aggregation='center')
     return residuals
 
 
