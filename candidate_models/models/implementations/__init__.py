@@ -8,6 +8,8 @@ from collections import OrderedDict
 import h5py
 import numpy as np
 from multiprocessing.pool import ThreadPool
+
+from PIL import Image
 from sklearn.decomposition import PCA
 from tqdm import tqdm
 
@@ -47,7 +49,7 @@ class DeepModel(object):
     that models with the same `pca_components` at least remain comparable.
     """
 
-    def __init__(self, image_size=Defaults.image_size, batch_size=Defaults.batch_size):
+    def __init__(self, image_size, batch_size=Defaults.batch_size):
         # require arguments here to keep the signature of different implementations the same.
         # For instance, batch_size is not required for models other than TF but by requiring it here,
         # we keep the same method signature for the caller to simplify things.
@@ -58,18 +60,16 @@ class DeepModel(object):
     def get_activations(self, stimuli_paths, layers,
                         pca_components=Defaults.pca_components):
         # PCA
-        get_activations = functools.partial(self._get_activations_batched, layers=layers, batch_size=self._batch_size)
+        def get_activations(inputs, reduce_dimensionality):
+            load_inputs = functools.partial(self._load_images, image_size=self._image_size)
+            return self._get_activations_batched(TransformGenerator(inputs, load_inputs),
+                                                 layers=layers, batch_size=self._batch_size,
+                                                 reduce_dimensionality=reduce_dimensionality)
 
-        def get_image_activations_preprocessed(inputs, *args, **kwargs):
-            inputs = TransformGenerator(inputs, functools.partial(self._preprocess_images, image_size=self._image_size))
-            return get_activations(inputs, *args, **kwargs)
-
-        reduce_dimensionality = self._initialize_dimensionality_reduction(pca_components,
-                                                                          get_image_activations_preprocessed)
+        reduce_dimensionality = self._initialize_dimensionality_reduction(pca_components, get_activations)
         # actual stimuli
         self._logger.info('Running stimuli')
-        inputs = TransformGenerator(stimuli_paths, functools.partial(self._load_images, image_size=self._image_size))
-        layer_activations = get_activations(inputs, reduce_dimensionality=reduce_dimensionality)
+        layer_activations = get_activations(stimuli_paths, reduce_dimensionality=reduce_dimensionality)
 
         self._logger.info('Packaging into assembly')
         return self._package(layer_activations, stimuli_paths)
@@ -99,8 +99,8 @@ class DeepModel(object):
 
         self._logger.info('Pre-computing principal components')
         self._logger.debug('Retrieving ImageNet activations')
-        imagenet_images = self._get_imagenet_val(pca_components)
-        imagenet_activations = get_image_activations(imagenet_images, reduce_dimensionality=flatten)
+        imagenet_paths = self._get_imagenet_val(pca_components)
+        imagenet_activations = get_image_activations(imagenet_paths, reduce_dimensionality=flatten)
 
         self._logger.debug('Computing ImageNet principal components')
         progress = tqdm(total=len(imagenet_activations), desc="layer principal components")
@@ -142,13 +142,24 @@ class DeepModel(object):
 
         framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
         imagenet_filepath = os.getenv('CM_IMAGENET_PATH', os.path.join(framework_home, 'imagenet2012.hdf5'))
+        imagenet_dir = f"{imagenet_filepath}-files"
+        os.makedirs(imagenet_dir, exist_ok=True)
+
         if not os.path.isfile(imagenet_filepath):
             os.makedirs(os.path.dirname(imagenet_filepath), exist_ok=True)
             self._logger.debug(f"Downloading ImageNet validation to {imagenet_filepath}")
             s3.download_file("imagenet2012-val.hdf5", imagenet_filepath)
+
+        filepaths = []
         with h5py.File(imagenet_filepath, 'r') as f:
-            images = np.array([f['val/images'][i] for i in indices])
-        return images
+            for index in indices:
+                imagepath = os.path.join(imagenet_dir, f"{index}.png")
+                if not os.path.isfile(imagepath):
+                    image = np.array(f['val/images'][index])
+                    Image.fromarray(image).save(imagepath)
+                filepaths.append(imagepath)
+
+        return filepaths
 
     def _get_batch_activations(self, images, layer_names, batch_size):
         images, num_padding = self._pad(images, batch_size)
@@ -179,10 +190,11 @@ class DeepModel(object):
         return model_assembly
 
     def _pad(self, batch_images, batch_size):
-        if len(batch_images) % batch_size == 0:
+        num_images = len(batch_images)
+        if num_images % batch_size == 0:
             return batch_images, 0
-        num_padding = batch_size - (batch_images.shape[0] % batch_size)
-        padding = np.zeros([num_padding, *batch_images.shape[1:]]).astype(batch_images[0].dtype)
+        num_padding = batch_size - (num_images % batch_size)
+        padding = np.repeat(batch_images[-1:], repeats=num_padding, axis=0)
         return np.concatenate((batch_images, padding)), num_padding
 
     def _unpad(self, layer_activations, num_padding):
@@ -373,6 +385,9 @@ class ModelLayers(dict):
         self['cornet_z'] = ['V1.output-t0', 'V2.output-t0', 'V4.output-t0', 'IT.output-t0', 'decoder.avgpool-t0']
         self['cornet_r'] = [f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
                             range(5)] + ['decoder.avgpool-t0']
+        self['cornet_r2'] = ['maxpool-t0'] + \
+                            [f'{area}.relu3-t{timestep}' for area in ['block2', 'block3', 'block4']
+                             for timestep in range(5)] + ['avgpool-t0']
         self['cornet_s'] = ['V1.output-t0'] + \
                            [f'{area}.output-t{timestep}' for area, timesteps in
                             [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]

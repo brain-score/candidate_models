@@ -4,10 +4,7 @@ import os
 from collections import OrderedDict
 
 import networkx as nx
-import numpy as np
 import pandas as pd
-import skimage.io
-import skimage.transform
 import tensorflow as tf
 
 from candidate_models import s3
@@ -23,8 +20,8 @@ class TensorflowSlimModel(DeepModel):
     def __init__(self, weights=Defaults.weights,
                  batch_size=Defaults.batch_size, image_size=Defaults.image_size):
         super().__init__(batch_size=batch_size, image_size=image_size)
-        self.inputs = self._create_inputs(batch_size, image_size)
-        self._logits, self.endpoints = self._create_model(self.inputs)
+        self._placeholder, model_inputs = self._create_inputs(batch_size, image_size)
+        self._logits, self.endpoints = self._create_model(model_inputs)
         self._sess = tf.Session()
         self._restore(weights)
 
@@ -37,28 +34,26 @@ class TensorflowSlimModel(DeepModel):
     def _restore(self, weights):
         raise NotImplementedError()
 
+    def _load_images(self, image_filepaths, image_size):
+        return image_filepaths
+
     def _load_image(self, image_filepath):
-        image = skimage.io.imread(image_filepath)
+        image = tf.read_file(image_filepath)
+        image = tf.image.decode_png(image, channels=3)
         return image
 
     def _preprocess_images(self, images, image_size):
-        images = [self._preprocess_image(image, image_size) for image in images]
-        return np.array(images)
+        return images
 
     def _preprocess_image(self, image, image_size):
-        if image.ndim == 2:  # binary
-            image = skimage.color.gray2rgb(image)
-        assert image.ndim == 3
-        if image.shape[2] == 4:  # alpha
-            image = image[:, :, :3]
-        image = skimage.transform.resize(image, (image_size, image_size))
-        assert image.min() >= 0
-        assert image.max() <= 1
+        image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+        image = tf.image.resize_images(image, (image_size, image_size))
+        image = tf.image.convert_image_dtype(image, dtype=tf.uint8)
         return image
 
     def _get_activations(self, images, layer_names):
         layer_tensors = OrderedDict((layer, self.endpoints[layer]) for layer in layer_names)
-        layer_outputs = self._sess.run(layer_tensors, feed_dict={self.inputs: images})
+        layer_outputs = self._sess.run(layer_tensors, feed_dict={self._placeholder: images})
         return layer_outputs
 
     def graph(self):
@@ -78,28 +73,32 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
     def _create_inputs(self, batch_size, image_size):
         from preprocessing import inception_preprocessing, vgg_preprocessing
         model_properties = self._get_model_properties(self._model_name)
-        inputs = tf.placeholder(dtype=tf.float32, shape=[batch_size, image_size, image_size, 3])
-        preprocess_image = vgg_preprocessing.preprocess_image if model_properties['preprocessing'] == 'vgg' \
-            else inception_preprocessing.preprocess_image
-        return tf.map_fn(lambda image: preprocess_image(tf.image.convert_image_dtype(image, dtype=tf.uint8),
-                                                        image_size, image_size), inputs)
+        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+
+        process_imagepath = lambda image_path: self._preprocess_image(self._load_image(image_path), image_size)
+
+        # we're not using preprocess_factory because we need to restrict inception preprocessing from cropping
+        if model_properties['preprocessing'] == 'vgg':
+            preprocess_image = lambda image: vgg_preprocessing.preprocess_image(
+                image, image_size, image_size, resize_side_min=image_size)
+        elif model_properties['preprocessing'] == 'inception':
+            preprocess_image = lambda image: inception_preprocessing.preprocess_for_eval(
+                image, image_size, image_size, central_fraction=1.)
+        else:
+            raise ValueError(f"unknown preprocessing {model_properties['preprocessing']}")
+        preprocess = lambda image_path: preprocess_image(process_imagepath(image_path))
+
+        preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
+        return placeholder, preprocess
 
     def _create_model(self, inputs):
         from nets import nets_factory
         model_properties = self._get_model_properties(self._model_name)
-        call = model_properties['callable']
-        arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0.)
-        kwargs = {}
-        if self._model_name.startswith('mobilenet_v2') or self._model_name.startswith('mobilenet_v1'):
-            arg_scope = nets_factory.arg_scopes_map[call](weight_decay=0., is_training=False)
-            kwargs = {'depth_multiplier': model_properties['depth_multiplier']}
-        model = nets_factory.networks_map[call]
-        with tf.contrib.slim.arg_scope(arg_scope):
-            logits, endpoints = model(inputs,
-                                      num_classes=1001 - int(model_properties['labels_offset']),
-                                      is_training=False,
-                                      **kwargs)
-            return logits, endpoints
+        model_identifier = model_properties['callable']
+        model = nets_factory.get_network_fn(model_identifier,
+                                            num_classes=1001 - int(model_properties['labels_offset']),
+                                            is_training=False)
+        return model(inputs)
 
     def _get_model_properties(self, model_name):
         _model_properties = slim_models[slim_models['model'] == model_name]
@@ -113,7 +112,8 @@ class TensorflowSlimPredefinedModel(TensorflowSlimModel):
         assert weights == 'imagenet'
         var_list = None
         if self._model_name.startswith('mobilenet'):
-            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy
+            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy according to
+            # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
         restorer = tf.train.Saver(var_list)
