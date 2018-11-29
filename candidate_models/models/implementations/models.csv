@@ -22,6 +22,12 @@ author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and
 year = {2018},
 }
 ",,,,,224,,,,,,,,,,
+pytorch,cornet_r2,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
+title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
+author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
+year = {2018},
+}
+",,,,,224,,,,,,,,,,
 pytorch,cornet_z,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
 title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
