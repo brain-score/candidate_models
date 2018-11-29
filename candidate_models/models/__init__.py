@@ -51,6 +51,9 @@ def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_
                                                  model_identifier=model_identifier, weights=weights,
                                                  image_size=image_size, pca_components=pca_components,
                                                  batch_size=batch_size)
+    multi_layer_necessary = any(not isinstance(layer, str) for layer in multi_layers)
+    if not multi_layer_necessary:
+        return single_layer_activations
 
     multi_layer_activations = []
     for layers in multi_layers:
@@ -75,7 +78,7 @@ def model_multi_activations(model, multi_layers, stimulus_set=Defaults.stimulus_
 
         multi_layer_activations.append(layers_activations)
     multi_layer_activations = merge_data_arrays(multi_layer_activations)
-    multi_layer_activations.name = model
+    multi_layer_activations.name = single_layer_activations.name
     return multi_layer_activations
 
 
@@ -100,7 +103,7 @@ def package_stimulus_coords(assembly, stimulus_set):
 
 def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_identifier=None,
                       weights=DeepModelDefaults.weights,
-                      image_size=DeepModelDefaults.image_size, pca_components=DeepModelDefaults.pca_components,
+                      image_size=None, pca_components=DeepModelDefaults.pca_components,
                       batch_size=DeepModelDefaults.batch_size):
     if isinstance(model, str):
         assert model_identifier is None or model_identifier == model, \
@@ -112,6 +115,8 @@ def model_activations(model, layers, stimulus_set=Defaults.stimulus_set, model_i
         assert model_identifier is not None, "need model_identifier to save activations"
         _logger.debug('Using passed model constructor')
         model_ctr = model
+
+    image_size = image_size or infer_image_size(model_identifier)
 
     return _model_activations(model_ctr=model_ctr, layers=layers, stimulus_set=stimulus_set,
                               model_identifier=model_identifier, weights=weights,
@@ -157,7 +162,7 @@ def load_model_definitions():
                      'slim': TensorflowSlimPredefinedModel}[framework]
         model = row['model']
         models[model] = functools.partial(framework, model_name=model)
-    for cornet_type in ['Z', 'R', 'S']:
+    for cornet_type in ['Z', 'R', 'R2', 'S']:
         models[f'cornet_{cornet_type.lower()}'] = functools.partial(cornet, cornet_type=cornet_type)
     return models
 
