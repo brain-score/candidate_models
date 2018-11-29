@@ -1,6 +1,8 @@
 import itertools
 import os
+import pickle
 import re
+import sys
 from collections import defaultdict
 from glob import glob
 
@@ -9,6 +11,7 @@ import pandas as pd
 import seaborn
 from matplotlib import pyplot
 
+from brainscore.assemblies import merge_data_arrays
 from result_caching import cache
 from candidate_models import score_model, model_layers
 
@@ -31,18 +34,21 @@ class DataCollector:
     def __call__(self):
         # neural scores
         data = self.parse_neural_scores()
-        # concat behavior, performance
+        data = data[~data['model'].isin(['cornet_z', 'cornet_r', 'cornet_r2'])]
+        # concat ImageNet performance
         model_meta = self._get_models_meta()
-        for score_field, benchmark in [('performance', 'ImageNet'), ('behavior', 'dicarlo.Rajalingham2018')]:
+        for score_field, benchmark in [('performance', 'ImageNet')]:
             benchmark_data = model_meta[['model', score_field]]
             benchmark_data.rename(columns={score_field: 'score'}, inplace=True)
-            benchmark_data['error'] = [0] * len(benchmark_data)
             benchmark_data['benchmark'] = [benchmark] * len(benchmark_data)
             data = pd.concat([data, benchmark_data])
-        # manual edits
         data['score'][data['benchmark'] == 'ImageNet'] = 100 * data['score'][data['benchmark'] == 'ImageNet']
-        data['layer'][data['benchmark'] == 'dicarlo.Rajalingham2018'] = \
-            self._get_behavioral_layers(data['model'][data['benchmark'] == 'dicarlo.Rajalingham2018'])
+        # basenets
+        basenets = self._get_basenets()
+        data = pd.concat([data, basenets])
+        # behavior
+        behavior = self._get_behavior()
+        data = pd.concat([data, behavior])
         # brain-score
         brain_score = self.compute_brainscore(data)
         brain_score['benchmark'] = ['Brain-Score'] * len(brain_score)
@@ -67,6 +73,54 @@ class DataCollector:
         basenet_meta = basenet_meta[['model', 'behavior', 'performance']]
         model_meta = pd.concat([model_meta, basenet_meta])
         return model_meta
+
+    def _get_behavior(self):
+        filepath = os.path.join(os.path.dirname(__file__), '..', 'models', 'implementations', 'behavior.csv')
+        behavior = pd.read_csv(filepath)
+        behavior = behavior[['model', 'benchmark', 'score']]
+        behavior['layer'] = self._get_behavioral_layers(behavior['model'])
+        return behavior
+
+    def _get_basenets(self):
+        results = []
+        for filepath in glob(os.path.join(os.path.dirname(__file__), '..', '..',
+                                          'output', 'backup', 'neurality.score_physiology', '*.pkl')):
+            model = re.search(r'model=([^,]+),', filepath)
+            assert model
+            model = model.group(1)
+            if not model.startswith('basenet'):
+                continue  # reject
+            with open(filepath, 'rb') as f:
+                score = pickle.load(f)
+            score = score['data']
+            center, error = score.center, score.error
+            center = center.expand_dims('aggregation')
+            center['aggregation'] = ['center']
+            error = error.expand_dims('aggregation')
+            error['aggregation'] = ['error']
+            score = merge_data_arrays([center, error])
+            for region in ['V4', 'IT']:
+                region_score = score.sel(region=region)
+                argmax = region_score.sel(aggregation='center').argmax('layer')
+                region_score = region_score[{'layer': argmax.values}]
+
+                results.append({'model': model,
+                                'benchmark': f'dicarlo.Majaj2015.{region}',
+                                'score': region_score.sel(aggregation='center').values,
+                                'error': region_score.sel(aggregation='error').values,
+                                })
+        results = pd.DataFrame(results)
+
+        behavior = pd.read_pickle(os.path.join(os.path.dirname(__file__), 'basenets_correct.pkl'))
+        assert all([model.startswith('basenet') for model in behavior['model']])
+        behavior = behavior.rename(columns={'r': 'score'})
+        behavior['benchmark'] = 'dicarlo.Rajalingham2018'
+        behavior = behavior[['model', 'benchmark', 'score']]
+        behavior['layer'] = self._get_behavioral_layers(behavior['model'])
+        results = pd.concat([results, behavior])
+
+        results.to_csv(os.path.join(os.path.dirname(__file__), 'basenets.csv'))
+        return results
 
     class ScoreParser:
         def __init__(self, benchmark):
@@ -145,6 +199,7 @@ class DataCollector:
             DataCollector.DividingScoreParser('dicarlo.Majaj2015.earlylate-alternatives', dividers=[
                 'region', 'time_bin_start']),
             DataCollector.ScoreParser('dicarlo.Kar2018coco'),
+            DataCollector.ScoreParser('dicarlo.Kar2018hvm'),
             DataCollector.TemporalScoreParser('dicarlo.Majaj2015.temporal-mean.IT', dividers=['time_slice']),
         ]
         data = None
@@ -166,8 +221,9 @@ class DataCollector:
                 return np.nan
             assert all(occurrences[benchmark] == 1 for benchmark in benchmarks)
             # method 1: mean everything
-            brain_score = np.mean([data['score'][data['benchmark'] == benchmark] for benchmark in benchmarks])
-            return np.mean(brain_score)
+            brain_score = np.mean([model_rows['score'][model_rows['benchmark'] == benchmark].values
+                                   for benchmark in benchmarks])
+            return brain_score
             # method 2: mean(mean(v4, it), behavior)
             neural_scores = [[row['V4'], row['IT']] for _, row in data.iterrows()]
             neural_scores = np.mean(neural_scores, axis=1)
@@ -176,6 +232,7 @@ class DataCollector:
             return np.mean(brain_score, axis=1)
 
         brainscores = data.groupby('model').apply(compute)
+        brainscores = brainscores.dropna()
         return pd.DataFrame({'model': brainscores.index.values, 'score': brainscores.values})
 
 

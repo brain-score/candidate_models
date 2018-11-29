@@ -1,17 +1,18 @@
 import logging
-import os
 import sys
 
+import fire
 import numpy as np
 import scipy
 from matplotlib import pyplot
 from scipy.optimize import OptimizeWarning
 
-from result_caching import store, cache
 from brainscore import benchmarks
 from brainscore.assemblies import merge_data_arrays
 from brainscore.benchmarks import metrics
 from brainscore.metrics.ceiling import ceilings
+from brainscore.metrics.transformations import CrossValidation
+from result_caching import store, cache
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -74,7 +75,6 @@ def compute_ceilings(assembly_name, metric_name, ceiling, train_size=default_siz
         _logger.debug("dividers {}/{}: region={}".format(i + 1, len(dividers), region))
         score = compute_ceiling(assembly_name, metric_name, ceiling=ceiling, region=region,
                                 train_size=train_size, test_size=test_size)
-        score = score.aggregation
         score = score.expand_dims('region')
         score['region'] = [region]
         scores.append(score)
@@ -100,11 +100,22 @@ def instantiate_benchmark(data, metric):
     return data, metric, assembly_loader.average_repetition
 
 
+def per_neuroid_ceiling(assembly_name='dicarlo.Kar2018coco'):
+    benchmark = benchmarks.load(assembly_name)
+    ceiling = benchmark.ceiling.raw
+    ceiling = CrossValidation().aggregate(ceiling)
+    x, y, err = ceiling['neuroid_id'], ceiling.sel(aggregation='center'), ceiling.sel(aggregation='error')
+    threshold = .9
+    pass_threshold = y >= threshold
+    pass_threshold = sum(pass_threshold)
+    print(f"pass threshold {threshold}: {pass_threshold.values}")
+
+    pyplot.errorbar(x, y, yerr=err, fmt='o')
+    pyplot.plot(pyplot.xlim(), [threshold, threshold], 'g--')
+    pyplot.xlabel('neuroid_id')
+    pyplot.ylabel('internal consistency (spearman-brown corrected pearson)')
+    pyplot.savefig(f'results/neuroid_ceiling-{assembly_name}.png')
+
+
 if __name__ == '__main__':
-    for ceiling in ['splitrep', 'cons']:
-        for size_label in ['train_size', 'test_size']:
-            plot(ceiling=ceiling, size_label=size_label)
-            savepath = os.path.join(os.path.dirname(__file__), '..', '..', 'results',
-                                    'ceiling.{}-{}.png'.format(size_label, ceiling))
-            _logger.info("saving to {}".format(savepath))
-            pyplot.savefig(savepath)
+    fire.Fire()

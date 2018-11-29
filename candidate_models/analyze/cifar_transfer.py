@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import pandas
 import scipy.stats
+import seaborn
 import sklearn.linear_model
 import sklearn.preprocessing
 from matplotlib import pyplot
@@ -80,53 +81,61 @@ def test(model, best_c, cifar=10):
 
 def get_cifar_scores(cifar=100):
     result = []
-    for model in ["cornet_z", "cornet_r", "cornet_r2", "cornet_s",
-                  "alexnet",
-                  # "squeezenet1_0", "squeezenet1_1",
-                  "xception",
-                  "densenet-121", "densenet-169", "densenet-201",
-                  "inception_v1", "inception_v2", #"inception_v3", "inception_v4",
-                  # "inception_resnet_v2",
-                  "resnet-18", "resnet-34", "resnet-50_v2", "resnet-101_v2", "resnet-152_v2",
-                  "vgg-16", "vgg-19",
-                  "nasnet_mobile", "nasnet_large", "pnasnet_large",
-                  "mobilenet_v1_1.0_224", "mobilenet_v1_1.0_192", "mobilenet_v1_1.0_160", "mobilenet_v1_1.0_128",
-                  "mobilenet_v1_0.75_224", "mobilenet_v1_0.75_192", "mobilenet_v1_0.75_160", "mobilenet_v1_0.75_128",
-                  "mobilenet_v1_0.5_224", "mobilenet_v1_0.5_192", "mobilenet_v1_0.5_160", "mobilenet_v1_0.5_128",
-                  "mobilenet_v1_0.25_224", "mobilenet_v1_0.25_192", "mobilenet_v1_0.25_160", "mobilenet_v1_0.25_128",
-                  # "mobilenet_v2_1.4_224", "mobilenet_v2_1.3_224", "mobilenet_v2_1.0_224", "mobilenet_v2_1.0_192",
-                  # "mobilenet_v2_1.0_160", "mobilenet_v2_1.0_128", "mobilenet_v2_1.0_96", "mobilenet_v2_0.75_224",
-                  # "mobilenet_v2_0.75_192", "mobilenet_v2_0.75_160", "mobilenet_v2_0.75_128", "mobilenet_v2_0.75_96",
-                  # "mobilenet_v2_0.5_224", "mobilenet_v2_0.5_192", "mobilenet_v2_0.5_160", "mobilenet_v2_0.5_128",
-                  # "mobilenet_v2_0.5_96", "mobilenet_v2_0.35_224", "mobilenet_v2_0.35_192", "mobilenet_v2_0.35_160",
-                  # "mobilenet_v2_0.35_128", "mobilenet_v2_0.35_96"
-                  ]:
+    for model in [
+        # "cornet_z", "cornet_r", "cornet_r2",
+        "cornet_s",
+        "alexnet",
+        # "squeezenet1_0", "squeezenet1_1",
+        "xception",
+        "densenet-121", "densenet-169", "densenet-201",
+        "inception_v1", "inception_v2",  "inception_v3", "inception_v4",
+        "inception_resnet_v2",
+        "resnet-18", "resnet-34", "resnet-50_v2", "resnet-101_v2",  "resnet-152_v2",
+        # "vgg-16", "vgg-19",  # appear wrong
+        # "nasnet_mobile",  # appear wrong
+        "nasnet_large", "pnasnet_large",
+        "mobilenet_v1_1.0_224", "mobilenet_v1_1.0_192", "mobilenet_v1_1.0_160", "mobilenet_v1_1.0_128",
+        "mobilenet_v1_0.75_224", "mobilenet_v1_0.75_192", "mobilenet_v1_0.75_160", "mobilenet_v1_0.75_128",
+        "mobilenet_v1_0.5_224", "mobilenet_v1_0.5_192", "mobilenet_v1_0.5_160", "mobilenet_v1_0.5_128",
+        "mobilenet_v1_0.25_224", "mobilenet_v1_0.25_192", "mobilenet_v1_0.25_160", "mobilenet_v1_0.25_128",
+        # "mobilenet_v2_1.4_224", "mobilenet_v2_1.3_224", "mobilenet_v2_1.0_224", "mobilenet_v2_1.0_192",
+        # "mobilenet_v2_1.0_160", "mobilenet_v2_1.0_128", "mobilenet_v2_1.0_96", "mobilenet_v2_0.75_224",
+        # "mobilenet_v2_0.75_192", "mobilenet_v2_0.75_160", "mobilenet_v2_0.75_128", "mobilenet_v2_0.75_96",
+        # "mobilenet_v2_0.5_224", "mobilenet_v2_0.5_192", "mobilenet_v2_0.5_160", "mobilenet_v2_0.5_128",
+        # "mobilenet_v2_0.5_96", "mobilenet_v2_0.35_224", "mobilenet_v2_0.35_192", "mobilenet_v2_0.35_160",
+        # "mobilenet_v2_0.35_128", "mobilenet_v2_0.35_96"
+    ]:
         c_values = train(model, cifar=cifar)
         best_c = c_values.loc[c_values['acc'].idxmax()]['c']
         acc = test(model, cifar=cifar, best_c=best_c)
-        result.append({'model': model, 'score': acc, 'benchmark': f"cifar-{cifar}"})
+        result.append({'model': model, 'score': acc, 'benchmark': f"cifar-{cifar}", 'c': best_c})
     result = pd.DataFrame(result)
+    result.to_csv('results/supplement/cifar.csv')
     return result
 
 
-def plot():
+def plot(save=False):
     cifar_scores = get_cifar_scores()
     brain_scores = DataCollector()()
     brain_scores = brain_scores[brain_scores['benchmark'] == 'Brain-Score']
     brain_scores = align(brain_scores, cifar_scores, on='model')
     x, y = brain_scores['score'], cifar_scores['score']
-    colors = ['r' if model.startswith('cornet') else 'b' for model in brain_scores['model'].values]
+    colors = ['#D4145A' if model.startswith('cornet') else '#808080' for model in brain_scores['model'].values]
     x, y, colors = zip(*[(_x, _y, color) for _x, _y, color in zip(x, y, colors)
                          if not np.isnan(_x) and not np.isnan(_y)])
-    pyplot.scatter(x, y, color=colors)
+    fig, ax = pyplot.subplots()
+    ax.scatter(x, y, color=colors, s=80)
 
     r, p = scipy.stats.pearsonr(x, y)
     assert p <= .05
-    pyplot.text(pyplot.xlim()[1] - .01, pyplot.ylim()[0], f"r={r:.2f}")
+    ax.text(pyplot.xlim()[1] - .02, pyplot.ylim()[0] + .01, f"r={r:.2f}")
 
-    pyplot.xlabel("Brain-Score")
-    pyplot.ylabel("CIFAR-100 Accuracy")
-    pyplot.savefig('results/cifar-100.png')
+    ax.set_xlabel("Brain-Score", fontsize=16)
+    ax.set_ylabel("CIFAR-100 Accuracy", fontsize=16)
+    seaborn.despine(ax=ax, right=True, top=True)
+    if save:
+        pyplot.savefig('results/cifar-100.png')
+    return fig
 
 
 if __name__ == '__main__':
@@ -140,11 +149,11 @@ if __name__ == '__main__':
     logging.getLogger(__name__).info(f"Running with args: {args}")
 
     if args.plot:
-        plot()
+        plot(save=True)
         sys.exit(0)
 
     c_values = train(args.model, cifar=args.cifar)
     best_c = c_values.loc[c_values['acc'].idxmax()]['c']
     # best_c = .005
     acc = test(args.model, cifar=args.cifar, best_c=best_c)
-    print(f"{args.model} on {args.cifar} -> {acc} (c={best_c}")
+    print(f"{args.model} on {args.cifar} -> {acc} (c={best_c})")
