@@ -7,18 +7,18 @@ with open('README.md') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    # "brain-score",  # see dependency_links for error handling
+    "brain-score @ git+https://github.com/brain-score/brain-score",
+    "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
-    "keras==2.2.0",  # keras_squeezenet only works up to this version. need to keep tf<=1.10 because 1.11 errs.
+    "keras",
     "tensorflow>=1.4,<=1.10",  # if you run into errors here, make sure your Python version is supported
     # "pytorch",  # see README for troubleshooting
     # "torchvision",
     "h5py",
     "scikit-learn",
     "scikit-image",
-    "result_caching",
-    "keras-squeezenet",
-    "CORnet",
+    "result_caching @ git+https://github.com/mschrimpf/result_caching",
+    "CORnet @ git+https://github.com/dicarlolab/CORnet",
     "pillow",
     "llist",
     "networkx",
@@ -29,20 +29,6 @@ requirements = [
     "jupyter",
 ]
 
-test_requirements = [
-    "pytest",
-    "pytest-mock",
-]
-
-dependency_links = [
-    # install brain-score by hand as long as it is private (pip has trouble otherwise):
-    # pip install https://github.com/dicarlolab/brain-score.git
-    # "https://github.com/dicarlolab/brain-score/master/tarball",
-    "https://github.com/mschrimpf/result_caching/master/tarball",
-    "https://github.com/rcmalli/keras-squeezenet/master/tarball",
-    "https://github.com/dicarlolab/CORnet/master/tarball",
-]
-
 setup(
     name='candidate-models',
     version='0.1.0',
@@ -50,11 +36,10 @@ setup(
     long_description=readme,
     author="Martin Schrimpf",
     author_email='msch@mit.edu',
-    url='https://github.com/dicarlolab/candidate-models',
+    url='https://github.com/brain-score/candidate-models',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     install_requires=requirements,
-    dependency_links=dependency_links,
     license="MIT license",
     zip_safe=False,
     keywords='candidate-models brain-score',
@@ -67,5 +52,4 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     test_suite='tests',
-    tests_require=test_requirements
 )

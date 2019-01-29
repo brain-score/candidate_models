@@ -12,15 +12,12 @@ Recommended for most users. Use as a library.
 # PyTorch -- current version has trouble when installed through pip. Install by hand, e.g. use the following for Python3.6-cpu or conda.
 pip install http://download.pytorch.org/whl/cpu/torch-0.4.1-cp36-cp36m-linux_x86_64.whl
 pip install torchvision
-# Brain-Score and Candidate-Models (this framework)
-pip install --process-dependency-links git+https://github.com/dicarlolab/brain-score
-pip install --process-dependency-links git+https://github.com/dicarlolab/candidate_models
+# Candidate-Models (this framework)
+pip install "candidate_models @ git+https://github.com/brain-score/candidate_models"
 ```
 
 To use the predefined TensorFlow models, you will have to install https://github.com/qbilius/models/tree/master/research/slim.
 See [here](#installing-the-tf-slim-image-models-library) for quick instructions.
-
-To contribute code to this framework, see the [Development Setup](#development-setup).
 
 
 ## Usage
@@ -55,18 +52,6 @@ python -c "from nets import cifarnet; mynet = cifarnet.cifarnet"
 ```
 
 Alternatively, you can also move/symlink these packages to your site-packages.
-
-
-## Development setup
-
-Only necessary if you plan to change code.
-
-1. Clone the Git repository to wherever you keep repositories:
-    * `cd ~/dev`
-    * `git clone git@github.com:dicarlolab/candidate_models.git`
-3. Create and activate a Conda environment with relevant packages:
-    * `conda env create -f environment.yml`
-    * `conda activate candidate-models`
 
 
 ## Troubleshooting

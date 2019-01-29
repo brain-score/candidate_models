@@ -7,4 +7,5 @@ recursive-exclude * *.py[co]
 
 recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
 
-include candidate_models/models/implementations/models.csv
+include candidate_models/base_models/models.csv
+include candidate_models/base_models/basenets-meta.pkl

@@ -1,41 +1,74 @@
+import functools
 import numpy as np
 from pytest import approx
 
-from candidate_models import score_model
+from candidate_models import score_model, map_and_score_model
+from candidate_models.base_models import base_model_pool
+from model_tools.activations import PytorchWrapper
+from model_tools.activations.pca import LayerPCA
+from model_tools.multilayer_mapping import LayerSelection
 
 
-class TestBrainScore:
-    def test_alexnet(self):
-        score = score_model(model='alexnet')
-        assert score == approx(0.610, rel=0.005)
+class TestMajaj2015Regressing:
+    def layer_candidate(self, model_name, layer, pca_components=1000):
+        activations_model = base_model_pool[model_name]
+        if pca_components:
+            LayerPCA.hook(activations_model, n_components=pca_components)
 
-    def test_raw_dimensions(self):
-        score = score_model(model='alexnet')
-        raw_values = score.attrs['raw']
-        assert {'benchmark', 'layer', 'aggregation'} == set(raw_values.dims)
-        assert len(raw_values['layer']) == 7
-        assert len(raw_values['benchmark']) == 2
-        assert len(raw_values['aggregation']) == 2
+        def get_activations(stimulus_set):
+            return activations_model.from_stimulus_set(stimulus_set, layers=[layer])
 
-    def test_raw_aggregate(self):
-        score = score_model(model='alexnet')
-        raw_values = score.attrs['raw']
-        assert raw_values.sel(aggregation='center', benchmark='dicarlo.Majaj2015.IT', layer='features.12') == \
-               approx(.589, abs=0.005)
+        return get_activations
 
-    def test_raw_raw(self):
-        score = score_model(model='alexnet')
-        benchmark_values = score.attrs['raw']
-        raw_values = benchmark_values.attrs['raw']
-        assert {'benchmark', 'layer', 'split', 'neuroid'} == set(raw_values.dims)
-        assert len(raw_values['benchmark']) == 2
+    def test_alexnet_conv2_V4(self):
+        model = self.layer_candidate('alexnet', 'features.5')
+        score = score_model(model_identifier='alexnet-f5', model=model,
+                            benchmark_identifier='dicarlo.Majaj2015.V4-regressing')
+        assert score.raw.sel(aggregation='center').max() == approx(0.631, rel=0.005)
+
+    def test_alexnet_conv5_V4(self):
+        model = self.layer_candidate('alexnet', 'features.12')
+        score = score_model(model_identifier='alexnet-f12', model=model,
+                            benchmark_identifier='dicarlo.Majaj2015.V4-regressing')
+        assert score.raw.sel(aggregation='center') == approx(0.491, rel=0.005)
+
+    def test_alexnet_conv5_IT(self):
+        model = self.layer_candidate('alexnet', 'features.12')
+        score = score_model(model_identifier='alexnet-f12', model=model,
+                            benchmark_identifier='dicarlo.Majaj2015.IT-regressing')
+        assert score.raw.sel(aggregation='center') == approx(0.589, rel=0.005)
+
+    def test_repeat_same_result(self):
+        model = self.layer_candidate('alexnet', 'features.12')
+        score1 = score_model(model_identifier='alexnet-f12', model=model,
+                             benchmark_identifier='dicarlo.Majaj2015.IT-regressing')
+        score2 = score_model(model_identifier='alexnet-f12', model=model,
+                             benchmark_identifier='dicarlo.Majaj2015.IT-regressing')
+        assert (score1 == score2).all()
 
 
-class TestNewModel:
-    def test_pytorch(self):
+class TestMajaj2015NonRegressing:
+    def test_alexnet_V4(self):
+        ceiled_score = map_and_score_model(model_identifier='alexnet', benchmark_identifier='dicarlo.Majaj2015.V4')
+        score = ceiled_score.raw
+        assert score.sel(aggregation='center').max() == approx(0.622373, rel=0.001)
+
+    def test_alexnet_IT(self):
+        ceiled_score = map_and_score_model(model_identifier='alexnet', benchmark_identifier='dicarlo.Majaj2015.IT')
+        score = ceiled_score.raw
+        assert score.sel(aggregation='center').max() == approx(0.574252, rel=0.001)
+
+    def test_alexnet_IT_single_layer(self):
+        model = LayerSelection('alexnet', activations_model=base_model_pool['alexnet'], layers=['features.12'])
+        ceiled_score = map_and_score_model(model_identifier='alexnet-f12', model=model,
+                                           benchmark_identifier='dicarlo.Majaj2015.IT')
+        score = ceiled_score.raw
+        assert score.sel(aggregation='center').max() == approx(0.574252, rel=0.001)
+
+    def test_newmodel_pytorch(self):
         import torch
         from torch import nn
-        from candidate_models.models.implementations.pytorch import PytorchModel
+        from model_tools.activations.pytorch import load_preprocess_images
 
         class MyModel(nn.Module):
             def __init__(self):
@@ -60,41 +93,13 @@ class TestNewModel:
                 x = self.relu2(x)
                 return x
 
-        class MyModelWrapper(PytorchModel):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-            def _create_model(self, weights):
-                my_model = MyModel()
-                assert weights is None  # weight loading would go here
-                return my_model
-
-        score = score_model(model=MyModelWrapper, model_identifier='test_pytorch',
-                            benchmark='brain-score',
-                            layers=['linear', 'relu2'], weights=None, pca_components=None)
-        raw_scores = score.attrs['raw']
-        assert raw_scores.sel(benchmark='dicarlo.Majaj2015.V4').max() == approx(.305, abs=.005)
-        assert raw_scores.sel(benchmark='dicarlo.Majaj2015.IT').max() == approx(.189, abs=.005)
-
-
-class TestMajaj2015:
-    def test_alexnet_V4(self):
-        score = score_model(model='alexnet', benchmark='dicarlo.Majaj2015.V4')
-        assert score.sel(aggregation='center').max() == approx(0.631, rel=0.005)
-
-    def test_alexnet_IT(self):
-        score = score_model(model='alexnet', benchmark='dicarlo.Majaj2015.IT')
-        assert score.sel(aggregation='center').max() == approx(0.589, rel=0.005)
-
-    def test_same_result(self):
-        score1 = score_model(model='alexnet', benchmark='dicarlo.Majaj2015.IT')
-        score2 = score_model(model='alexnet', benchmark='dicarlo.Majaj2015.IT')
-        assert (score1 == score2).all()
-
-    def test_alexnet_conv5_V4(self):
-        score = score_model(model='alexnet', layers=['features.12'], benchmark='dicarlo.Majaj2015.V4')
-        assert score.sel(aggregation='center') == approx(0.486, rel=0.005)
-
-    def test_alexnet_conv5_IT(self):
-        score = score_model(model='alexnet', layers=['features.12'], benchmark='dicarlo.Majaj2015.IT')
-        assert score.sel(aggregation='center') == approx(0.589, rel=0.005)
+        preprocessing = functools.partial(load_preprocess_images, image_size=224)
+        model_id = 'new_pytorch'
+        activations_model = PytorchWrapper(model=MyModel(), preprocessing=preprocessing, identifier=model_id)
+        model = LayerSelection(model_id, activations_model=activations_model, layers=['linear', 'relu2'])
+        map_and_score_model(model_identifier='alexnet-f12', model=model,
+                            benchmark_identifier='dicarlo.Majaj2015.IT')
+        ceiled_score = map_and_score_model(model_identifier=model_id, model=model,
+                                           benchmark_identifier='dicarlo.Majaj2015.IT')
+        score = ceiled_score.raw
+        assert score.sel(aggregation='center') == approx(.054498, abs=.001)
