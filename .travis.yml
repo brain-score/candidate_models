@@ -1,11 +1,22 @@
 language: python
 python:
   - 3.6
-matrix:  # python 3.7 workaround: https://github.com/travis-ci/travis-ci/issues/9815
-  include:
-    - python: 3.7
-      dist: xenial
-      sudo: true
+before_install:
+  # the following is taken from https://github.com/pytorch/vision/blob/master/.travis.yml
+  - sudo apt-get update
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a # Useful for debugging any issues with conda
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+  - source activate test-environment
+
+  - conda install pytorch torchvision -c pytorch # install pytorch manually to avoid pip installation errors
+  - git clone https://github.com/qbilius/models/ tf-models
+  - export PYTHONPATH="$PYTHONPATH:$(pwd)/tf-models/research/slim"
 install:
   - pip install .
   - pip install pytest pytest-mock
