@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/brain-score/candidate_models.svg?token=vqt7d2yhhpLGwHsiTZvT&branch=master)](https://travis-ci.com/brain-score/candidate_models)
+
 # Candidate Models for Brain-Score: Which Artificial Neural Network is most Brain-Like?
 
 Candidate models to evaluate on brain measurements, i.e. neural and behavioral recordings.
