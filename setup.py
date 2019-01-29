@@ -12,15 +12,9 @@ requirements = [
     "numpy",
     "keras",
     "tensorflow>=1.4,<=1.10",  # if you run into errors here, make sure your Python version is supported
-    # "pytorch",  # see README for troubleshooting
-    # "torchvision",
-    "h5py",
-    "scikit-learn",
-    "scikit-image",
+    # "pytorch", "torchvision", # see README for troubleshooting
     "result_caching @ git+https://github.com/mschrimpf/result_caching",
     "CORnet @ git+https://github.com/dicarlolab/CORnet",
-    "pillow",
-    "llist",
     "networkx",
     "boto3",
     "tqdm",
@@ -32,10 +26,10 @@ requirements = [
 setup(
     name='candidate-models',
     version='0.1.0',
-    description="A framework of candidate models tested on brain data",
+    description="A framework of candidate models to test on brain data",
     long_description=readme,
     author="Martin Schrimpf",
-    author_email='msch@mit.edu',
+    author_email='mschrimpf@mit.edu',
     url='https://github.com/brain-score/candidate-models',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
@@ -49,7 +43,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
     ],
     test_suite='tests',
 )
