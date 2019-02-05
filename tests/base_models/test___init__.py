@@ -18,3 +18,13 @@ def test_run_logits(model_name):
         # reset graph to get variable names back
         import tensorflow as tf
         tf.reset_default_graph()
+
+
+@pytest.mark.parametrize(['model_name', 'expected_identifier'], [
+    ('alexnet', 'alexnet'),
+    ('resnet-34', 'resnet34'),
+    ('densenet-169', 'densenet169'),
+])
+def test_identifier(model_name, expected_identifier):
+    model = base_model_pool[model_name]
+    assert model.identifier == expected_identifier

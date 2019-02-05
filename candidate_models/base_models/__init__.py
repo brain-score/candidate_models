@@ -17,7 +17,7 @@ def pytorch_model(function, image_size):
     model_ctr = getattr(module, function)
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
-    return PytorchWrapper(model_ctr(pretrained=True), preprocessing)
+    return PytorchWrapper(identifier=function, model=model_ctr(pretrained=True), preprocessing=preprocessing)
 
 
 def keras_model(module, model_function, image_size):
