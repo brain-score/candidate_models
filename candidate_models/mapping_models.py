@@ -7,10 +7,10 @@ from model_tools.activations.pca import LayerPCA
 from model_tools.multilayer_mapping import LayerSelection
 
 
-class MappingModelPool(UniqueKeyDict):
+class ModelLayers(UniqueKeyDict):
     def __init__(self):
-        super(MappingModelPool, self).__init__()
-        model_layers = {
+        super(ModelLayers, self).__init__()
+        layers = {
             'alexnet':
                 [  # conv-relu-[pool]{1,2,3,4,5}
                     'features.2', 'features.5', 'features.7', 'features.9', 'features.12',
@@ -130,6 +130,52 @@ class MappingModelPool(UniqueKeyDict):
             'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
             'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
         }
+        for basemodel_key, default_layers in layers.items():
+            self[basemodel_key] = default_layers
+
+    @staticmethod
+    def _resnet50_layers(bottleneck_version):
+        return ModelLayers._resnet_layers(bottleneck_version=bottleneck_version, units=[3, 4, 6, 3])
+
+    @staticmethod
+    def _resnet101_layers(bottleneck_version):
+        return ModelLayers._resnet_layers(bottleneck_version=bottleneck_version, units=[3, 4, 23, 3])
+
+    @staticmethod
+    def _resnet152_layers(bottleneck_version):
+        return ModelLayers._resnet_layers(bottleneck_version=bottleneck_version, units=[3, 8, 36, 3])
+
+    @staticmethod
+    def _resnet_layers(bottleneck_version, units):
+        return ['conv1'] + \
+               [f"block{block + 1}/unit_{unit + 1}/bottleneck_v{bottleneck_version}"
+                for block, block_units in enumerate(units) for unit in range(block_units)]
+
+
+model_layers = ModelLayers()
+
+
+class ModelLayersPool(UniqueKeyDict):
+    def __init__(self):
+        super(ModelLayersPool, self).__init__()
+        for basemodel_key, layers in model_layers.items():
+            # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
+            def load(basemodel_key=basemodel_key, layers=layers):
+                activations_model = base_model_pool[basemodel_key]
+                pca_components = 1000
+                LayerPCA.hook(activations_model, n_components=pca_components)
+                activations_model.layers = layers  # just attach layers meta for now
+                return activations_model
+
+            self[basemodel_key] = LazyLoad(load)
+
+
+model_layers_pool = ModelLayersPool()
+
+
+class MappingModelPool(UniqueKeyDict):
+    def __init__(self):
+        super(MappingModelPool, self).__init__()
         for basemodel_key, default_layers in model_layers.items():
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
             def load(basemodel_key=basemodel_key, default_layers=default_layers):
@@ -140,24 +186,6 @@ class MappingModelPool(UniqueKeyDict):
                                       activations_model=activations_model, layers=default_layers)
 
             self[basemodel_key] = LazyLoad(load)
-
-    @staticmethod
-    def _resnet50_layers(bottleneck_version):
-        return MappingModelPool._resnet_layers(bottleneck_version=bottleneck_version, units=[3, 4, 6, 3])
-
-    @staticmethod
-    def _resnet101_layers(bottleneck_version):
-        return MappingModelPool._resnet_layers(bottleneck_version=bottleneck_version, units=[3, 4, 23, 3])
-
-    @staticmethod
-    def _resnet152_layers(bottleneck_version):
-        return MappingModelPool._resnet_layers(bottleneck_version=bottleneck_version, units=[3, 8, 36, 3])
-
-    @staticmethod
-    def _resnet_layers(bottleneck_version, units):
-        return ['conv1'] + \
-               [f"block{block + 1}/unit_{unit + 1}/bottleneck_v{bottleneck_version}"
-                for block, block_units in enumerate(units) for unit in range(block_units)]
 
 
 mapping_model_pool = MappingModelPool()
