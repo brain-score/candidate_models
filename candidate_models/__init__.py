@@ -37,10 +37,9 @@ def score_model(model_identifier, benchmark_identifier, model, benchmark=None):
     return score
 
 
-@store(identifier_ignore=['model', 'benchmark'])
-def score_layers(model_identifier, benchmark_identifier, model, benchmark=None):
+@store(identifier_ignore=['model', 'benchmark', 'layers'])
+def score_layers(model_identifier, benchmark_identifier, model, layers, benchmark=None):
     assert model is not None
-    assert hasattr(model, 'layers')
     if benchmark is None:
         _logger.debug("retrieving benchmark")
         benchmark = benchmark_pool[benchmark_identifier]
@@ -48,12 +47,12 @@ def score_layers(model_identifier, benchmark_identifier, model, benchmark=None):
     def get_activations(stimulus_set, layer):
         # for efficiency, we compute activations for all the layers (which will be stored on disk),
         # then select only the current layer
-        all_layers = model.from_stimulus_set(stimulus_set, layers=model.layers)
+        all_layers = model.from_stimulus_set(stimulus_set, layers=layers)
         activations = all_layers.sel(layer=layer)
         return activations.stack(neuroid=['neuroid_id'])
 
     layer_scores = []
-    for layer in tqdm(model.layers):
+    for layer in tqdm(layers):
         _logger.debug(f"scoring {model_identifier}, layer {layer}")
         layer_activations = functools.partial(get_activations, layer=layer)
         score = benchmark(layer_activations)

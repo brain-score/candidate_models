@@ -160,14 +160,13 @@ class ModelLayersPool(UniqueKeyDict):
         super(ModelLayersPool, self).__init__()
         for basemodel_key, layers in model_layers.items():
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(basemodel_key=basemodel_key, layers=layers):
+            def load(basemodel_key=basemodel_key):
                 activations_model = base_model_pool[basemodel_key]
                 pca_components = 1000
                 LayerPCA.hook(activations_model, n_components=pca_components)
-                activations_model.layers = layers  # just attach layers meta for now
                 return activations_model
 
-            self[basemodel_key] = LazyLoad(load)
+            self[basemodel_key] = {'model': LazyLoad(load), 'layers': layers}
 
 
 model_layers_pool = ModelLayersPool()

@@ -29,7 +29,10 @@ def main():
     score_function = score_functions[args.scoring_type]
     score_pool = model_pools[args.scoring_type]
     model = score_pool[args.model]
-    score = score_function(args.model, model=model, benchmark_identifier=args.benchmark)
+    if not isinstance(model, dict):
+        score = score_function(args.model, model=model, benchmark_identifier=args.benchmark)
+    else:
+        score = score_function(args.model, **model, benchmark_identifier=args.benchmark)
     print(score)
 
 
