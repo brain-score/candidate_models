@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from brainscore.benchmarks import benchmark_pool
 from brainscore.metrics import Score
-from candidate_models.mapping_models import mapping_model_pool
+from candidate_models.model_commitments import mapping_model_pool
 from result_caching import store
 
 _logger = logging.getLogger(__name__)

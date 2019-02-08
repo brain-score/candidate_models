@@ -4,7 +4,7 @@ import sys
 import argparse
 
 from candidate_models import score_layers, map_and_score_model
-from candidate_models.mapping_models import model_layers_pool, mapping_model_pool
+from candidate_models.model_commitments import model_layers_pool, mapping_model_pool
 
 logger = logging.getLogger(__name__)
 
