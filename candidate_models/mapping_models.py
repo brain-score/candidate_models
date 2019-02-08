@@ -46,7 +46,7 @@ class ModelLayers(UniqueKeyDict):
                 [f'conv4_block{i + 1}_concat' for i in range(48)] + ['pool4_pool'] +
                 [f'conv5_block{i + 1}_concat' for i in range(32)] + ['avg_pool'],
             'xception':
-                ['block1_conv{i + 1}_act' for i in range(2)] +
+                [f'block1_conv{i + 1}_act' for i in range(2)] +
                 ['block2_sepconv2_act'] +
                 [f'block3_sepconv{i + 1}_act' for i in range(2)] +
                 [f'block4_sepconv{i + 1}_act' for i in range(2)] +
