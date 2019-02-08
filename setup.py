@@ -10,11 +10,7 @@ requirements = [
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
-    "keras",
-    "tensorflow>=1.4,<=1.10",  # if you run into errors here, make sure your Python version is supported
-    # "pytorch", "torchvision", # see README for troubleshooting
     "result_caching @ git+https://github.com/mschrimpf/result_caching",
-    "CORnet @ git+https://github.com/dicarlolab/CORnet",
     "networkx",
     "boto3",
     "tqdm",
