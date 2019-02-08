@@ -8,17 +8,16 @@ Brain recordings are packaged in [Brain-Score](https://github.com/dicarlolab/bra
 
 ## Quick setup
 
-Recommended for most users. Use as a library.
-
 ```
-# PyTorch -- current version has trouble when installed through pip. Install by hand, e.g. use the following for Python3.6-cpu or conda.
-pip install http://download.pytorch.org/whl/cpu/torch-0.4.1-cp36-cp36m-linux_x86_64.whl
-pip install torchvision
-# Candidate-Models (this framework)
 pip install "candidate_models @ git+https://github.com/brain-score/candidate_models"
 ```
 
-To use the predefined TensorFlow models, you will have to install https://github.com/qbilius/models/tree/master/research/slim.
+The above command will not install ML frameworks such as Pytorch, TensorFlow or Keras.
+
+You can install them yourself or using the following commands (in a conda environment):
+* Pytorch: `conda install pytorch torchvision -c pytorch`
+* Keras: `conda install keras`
+* TensorFlow: `conda install tensorflow`. To use the predefined TensorFlow models, you will have to install the [TF-slim library](https://github.com/qbilius/models/tree/master/research/slim).
 See [here](#installing-the-tf-slim-image-models-library) for quick instructions.
 
 
@@ -33,18 +32,21 @@ See the [examples](examples/) for more elaborate examples.
 
 
 ### Environment variables
-Environment variables are prefixed with `CM_`.
+Environment variables are prefixed with `CM_` for this framework. 
+Environment variables from [brain-score](https://github.com/brain-score/brain-score) 
+and [model-tools](https://github.com/brain-score/model-tools) might also be useful.
 
 | Variable               | Description                                                  |
 |------------------------|--------------------------------------------------------------|
 | CM_HOME                | path to framework root                                       |
-| CM_IMAGENET_PATH       | path to ImageNet file containing the validation image set    |
 | CM_TSLIM_WEIGHTS_DIR   | path to stored weights for TensorFlow/research/slim models   |
+| MT_IMAGENET_PATH       | path to ImageNet file containing the validation image set    |
+| RESULTCACHING_HOME     | directory to cache results (benchmark ceilings) in, `~/.result_caching` by default (see https://github.com/mschrimpf/result_caching) |
 
 
 ## Installing the TF-slim image models library
 
-TensorFlow does unfortunately not provide an actual pip-installable library here, instead we have to download the code and make it available.
+TensorFlow-slim does unfortunately not provide an actual pip-installable library here, instead we have to download the code and make it available.
 
 ```bash
 git clone https://github.com/qbilius/models/ tf-models
