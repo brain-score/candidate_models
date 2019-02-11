@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from brainscore.benchmarks import benchmark_pool
 from brainscore.metrics import Score
-from candidate_models.model_commitments import mapping_model_pool
+from candidate_models.model_commitments import brain_translated_pool
 from result_caching import store
 
 _logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 def map_and_score_model(model_identifier, benchmark_identifier, model=None, benchmark=None):
     if model is None:
         _logger.debug("retrieving model")
-        model = mapping_model_pool[model_identifier]
+        model = brain_translated_pool[model_identifier]
     if benchmark is None:
         _logger.debug("retrieving benchmark")
         benchmark = benchmark_pool[benchmark_identifier]

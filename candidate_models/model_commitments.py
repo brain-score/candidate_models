@@ -4,7 +4,8 @@ from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
-from model_tools.multilayer_mapping import LayerSelection
+from model_tools.brain_transformation import ModelCommitment
+from model_tools.brain_transformation.data import v4_translation_data, it_translation_data
 
 
 class ModelLayers(UniqueKeyDict):
@@ -172,19 +173,28 @@ class ModelLayersPool(UniqueKeyDict):
 model_layers_pool = ModelLayersPool()
 
 
-class MappingModelPool(UniqueKeyDict):
+class BrainTranslatedPool(UniqueKeyDict):
     def __init__(self):
-        super(MappingModelPool, self).__init__()
+        super(BrainTranslatedPool, self).__init__()
+
+        commitment_data = {
+            'V4': LazyLoad(v4_translation_data),
+            'IT': LazyLoad(it_translation_data),
+        }
+
         for basemodel_key, default_layers in model_layers.items():
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
             def load(basemodel_key=basemodel_key, default_layers=default_layers):
-                activations_model = base_model_pool[basemodel_key]
                 pca_components = 1000
+                activations_model = base_model_pool[basemodel_key]
                 LayerPCA.hook(activations_model, n_components=pca_components)
-                return LayerSelection(model_identifier=f"{activations_model.identifier}-pca_{pca_components}",
-                                      activations_model=activations_model, layers=default_layers)
+                brain_model = ModelCommitment(identifier=f"{activations_model.identifier}-pca_{pca_components}",
+                                              base_model=activations_model, layers=default_layers)
+                for region, data in commitment_data.items():
+                    brain_model.commit_region(region, data)
+                return brain_model
 
             self[basemodel_key] = LazyLoad(load)
 
 
-mapping_model_pool = MappingModelPool()
+brain_translated_pool = BrainTranslatedPool()

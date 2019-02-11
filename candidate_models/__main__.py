@@ -3,19 +3,19 @@ import sys
 
 import argparse
 
-from candidate_models import score_layers, map_and_score_model
-from candidate_models.model_commitments import model_layers_pool, mapping_model_pool
+from candidate_models import score_layers, score_model
+from candidate_models.model_commitments import model_layers_pool, brain_translated_pool
 
 logger = logging.getLogger(__name__)
 
 
 def main():
-    score_functions = {'score_layers': score_layers, 'map_and_score': map_and_score_model}
-    model_pools = {'score_layers': model_layers_pool, 'map_and_score': mapping_model_pool}
+    score_functions = {'score_layers': score_layers, 'score': score_model}
+    model_pools = {'score_layers': model_layers_pool, 'score': brain_translated_pool}
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True)
-    parser.add_argument('--scoring_type', type=str, choices=score_functions.keys(), default='score_layers')
+    parser.add_argument('--scoring_type', type=str, choices=score_functions.keys(), default='score')
     parser.add_argument('--benchmark', type=str, required=True)
     parser.add_argument('--log_level', type=str, default='INFO')
     args = parser.parse_args()
