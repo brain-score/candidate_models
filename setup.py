@@ -12,11 +12,7 @@ requirements = [
     "numpy",
     "result_caching @ git+https://github.com/mschrimpf/result_caching",
     "networkx",
-    "boto3",
     "tqdm",
-    "matplotlib",
-    "seaborn",
-    "jupyter",
 ]
 
 setup(
