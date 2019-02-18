@@ -1,11 +1,14 @@
+import logging
+
 import itertools
 
+from brainscore.benchmarks.loaders import load_assembly
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment
-from model_tools.brain_transformation.data import v4_translation_data, it_translation_data
+from model_tools.utils import fullname
 
 
 class ModelLayers(UniqueKeyDict):
@@ -131,8 +134,8 @@ class ModelLayers(UniqueKeyDict):
             'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
             'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
         }
-        for basemodel_key, default_layers in layers.items():
-            self[basemodel_key] = default_layers
+        for basemodel_identifier, default_layers in layers.items():
+            self[basemodel_identifier] = default_layers
 
     @staticmethod
     def _resnet50_layers(bottleneck_version):
@@ -159,15 +162,15 @@ model_layers = ModelLayers()
 class ModelLayersPool(UniqueKeyDict):
     def __init__(self):
         super(ModelLayersPool, self).__init__()
-        for basemodel_key, layers in model_layers.items():
+        for basemodel_identifier, layers in model_layers.items():
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(basemodel_key=basemodel_key):
-                activations_model = base_model_pool[basemodel_key]
+            def load(basemodel_identifier=basemodel_identifier):
+                activations_model = base_model_pool[basemodel_identifier]
                 pca_components = 1000
                 LayerPCA.hook(activations_model, n_components=pca_components)
                 return activations_model
 
-            self[basemodel_key] = {'model': LazyLoad(load), 'layers': layers}
+            self[basemodel_identifier] = {'model': LazyLoad(load), 'layers': layers}
 
 
 model_layers_pool = ModelLayersPool()
@@ -176,25 +179,29 @@ model_layers_pool = ModelLayersPool()
 class BrainTranslatedPool(UniqueKeyDict):
     def __init__(self):
         super(BrainTranslatedPool, self).__init__()
+        logger = logging.getLogger(fullname(self))
 
-        commitment_data = {
-            'V4': LazyLoad(v4_translation_data),
-            'IT': LazyLoad(it_translation_data),
+        commitment_assemblies = {
+            'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.V1', average_repetition=False)),
+            'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.V2', average_repetition=False)),
+            'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.V4', average_repetition=False)),
+            'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.IT', average_repetition=False)),
         }
 
-        for basemodel_key, default_layers in model_layers.items():
+        for basemodel_identifier, default_layers in model_layers.items():
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(basemodel_key=basemodel_key, default_layers=default_layers):
+            def load(basemodel_identifier=basemodel_identifier, default_layers=default_layers):
                 pca_components = 1000
-                activations_model = base_model_pool[basemodel_key]
+                activations_model = base_model_pool[basemodel_identifier]
                 LayerPCA.hook(activations_model, n_components=pca_components)
                 brain_model = ModelCommitment(identifier=f"{activations_model.identifier}-pca_{pca_components}",
                                               base_model=activations_model, layers=default_layers)
-                for region, data in commitment_data.items():
-                    brain_model.commit_region(region, data)
+                for region, assembly in commitment_assemblies.items():
+                    logger.debug(f"Committing region {region}")
+                    brain_model.commit_region(region, assembly)
                 return brain_model
 
-            self[basemodel_key] = LazyLoad(load)
+            self[basemodel_identifier] = LazyLoad(load)
 
 
 brain_translated_pool = BrainTranslatedPool()
