@@ -30,7 +30,8 @@ def keras_model(module, model_function, image_size):
 
 class TFSlimModel:
     @staticmethod
-    def init(identifier, preprocessing_type, image_size, net_name=None, labels_offset=1, batch_size=64):
+    def init(identifier, preprocessing_type, image_size, net_name=None, labels_offset=1, batch_size=64,
+             model_ctr_kwargs=None):
         import tensorflow as tf
         from nets import nets_factory
 
@@ -39,11 +40,14 @@ class TFSlimModel:
 
         net_name = net_name or identifier
         model_ctr = nets_factory.get_network_fn(net_name, num_classes=labels_offset + 1000, is_training=False)
-        logits, endpoints = model_ctr(preprocess)
+        logits, endpoints = model_ctr(preprocess, **(model_ctr_kwargs or {}))
+        if 'Logits' in endpoints:  # unify capitalization
+            endpoints['logits'] = endpoints['Logits']
+            del endpoints['Logits']
 
         session = tf.Session()
         TFSlimModel._restore_imagenet_weights(identifier, session)
-        return TensorflowSlimWrapper(identifier=identifier, endpoints=endpoints, logits=logits, inputs=placeholder,
+        return TensorflowSlimWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder,
                                      session=session, batch_size=batch_size, labels_offset=labels_offset)
 
     @staticmethod
@@ -88,7 +92,7 @@ class TFSlimModel:
             os.makedirs(model_path)
             s3.download_folder(f"slim/{model_name}", model_path)
         fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
-        assert len(fnames) > 0
+        assert len(fnames) > 0, f"no checkpoint found in {model_path}"
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
         return restore_path
 
@@ -119,15 +123,15 @@ _key_functions = {
     'inception_v4': lambda: TFSlimModel.init('inception_v4', preprocessing_type='inception', image_size=299),
     'inception_resnet_v2': lambda: TFSlimModel.init('inception_resnet_v2', preprocessing_type='inception',
                                                     image_size=299),
-    'resnet-50_v1': lambda: TFSlimModel.init('resnet_v1_50', preprocessing_type='vgg',
+    'resnet-50_v1': lambda: TFSlimModel.init('resnet-50_v1', net_name='resnet_v1_50', preprocessing_type='vgg',
                                              image_size=224, labels_offset=0),
-    'resnet-101_v1': lambda: TFSlimModel.init('resnet_v1_101', preprocessing_type='vgg',
+    'resnet-101_v1': lambda: TFSlimModel.init('resnet-101_v1', net_name='resnet_v1_101', preprocessing_type='vgg',
                                               image_size=224, labels_offset=0),
-    'resnet-152_v1': lambda: TFSlimModel.init('resnet_v1_152', preprocessing_type='vgg',
+    'resnet-152_v1': lambda: TFSlimModel.init('resnet-152_v1', net_name='resnet_v1_152', preprocessing_type='vgg',
                                               image_size=224, labels_offset=0),
-    'resnet-50_v2': lambda: TFSlimModel.init('resnet_v2_50', preprocessing_type='inception', image_size=299),
-    'resnet-101_v2': lambda: TFSlimModel.init('resnet_v2_101', preprocessing_type='inception', image_size=299),
-    'resnet-152_v2': lambda: TFSlimModel.init('resnet_v2_152', preprocessing_type='inception', image_size=299),
+    'resnet-50_v2': lambda: TFSlimModel.init('resnet-50_v2', net_name='resnet_v2_50', preprocessing_type='inception', image_size=299),
+    'resnet-101_v2': lambda: TFSlimModel.init('resnet-101_v2', net_name='resnet_v2_101', preprocessing_type='inception', image_size=299),
+    'resnet-152_v2': lambda: TFSlimModel.init('resnet-152_v2', net_name='resnet_v2_152', preprocessing_type='inception', image_size=299),
     'nasnet_mobile': lambda: TFSlimModel.init('nasnet_mobile', preprocessing_type='inception', image_size=331),
     'nasnet_large': lambda: TFSlimModel.init('nasnet_large', preprocessing_type='inception', image_size=331),
     'pnasnet_large': lambda: TFSlimModel.init('pnasnet_large', preprocessing_type='inception', image_size=331),
@@ -152,7 +156,8 @@ for version, multiplier, image_size in [
     else:
         net_name = f"mobilenet_v{version}"
     _key_functions[identifier] = lambda: TFSlimModel.init(
-        identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name)
+        identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
+        model_ctr_kwargs={'depth_multiplier': multiplier})
 for key, function in _key_functions.items():
     # function=function default value enforces closure:
     # https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result

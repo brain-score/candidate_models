@@ -7,8 +7,6 @@ from candidate_models.base_models import base_model_pool
 
 @pytest.mark.parametrize('model_name', list(base_model_pool.keys()))
 def test_run_logits(model_name):
-    if not model_name.startswith('mobilenet'):
-        return
     base_model = base_model_pool[model_name]
     try:
         # up until here, the model is just a LazyLoad object that is only initialized upon attribute access.
@@ -16,6 +14,8 @@ def test_run_logits(model_name):
         assert activations is not None
     finally:
         # reset graph to get variable names back
+        import keras
+        keras.backend.clear_session()
         import tensorflow as tf
         tf.reset_default_graph()
 
