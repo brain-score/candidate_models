@@ -7,6 +7,7 @@ import functools
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
+from candidate_models.base_models.cornet import cornet
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
@@ -129,13 +130,17 @@ _key_functions = {
                                               image_size=224, labels_offset=0),
     'resnet-152_v1': lambda: TFSlimModel.init('resnet-152_v1', net_name='resnet_v1_152', preprocessing_type='vgg',
                                               image_size=224, labels_offset=0),
-    'resnet-50_v2': lambda: TFSlimModel.init('resnet-50_v2', net_name='resnet_v2_50', preprocessing_type='inception', image_size=299),
-    'resnet-101_v2': lambda: TFSlimModel.init('resnet-101_v2', net_name='resnet_v2_101', preprocessing_type='inception', image_size=299),
-    'resnet-152_v2': lambda: TFSlimModel.init('resnet-152_v2', net_name='resnet_v2_152', preprocessing_type='inception', image_size=299),
+    'resnet-50_v2': lambda: TFSlimModel.init('resnet-50_v2', net_name='resnet_v2_50', preprocessing_type='inception',
+                                             image_size=299),
+    'resnet-101_v2': lambda: TFSlimModel.init('resnet-101_v2', net_name='resnet_v2_101', preprocessing_type='inception',
+                                              image_size=299),
+    'resnet-152_v2': lambda: TFSlimModel.init('resnet-152_v2', net_name='resnet_v2_152', preprocessing_type='inception',
+                                              image_size=299),
     'nasnet_mobile': lambda: TFSlimModel.init('nasnet_mobile', preprocessing_type='inception', image_size=331),
     'nasnet_large': lambda: TFSlimModel.init('nasnet_large', preprocessing_type='inception', image_size=331),
     'pnasnet_large': lambda: TFSlimModel.init('pnasnet_large', preprocessing_type='inception', image_size=331),
 }
+# MobileNets
 for version, multiplier, image_size in [
     # v1
     (1, 1.0, 224), (1, 1.0, 192), (1, 1.0, 160), (1, 1.0, 128),
@@ -152,13 +157,20 @@ for version, multiplier, image_size in [
 ]:
     identifier = f"mobilenet_v{version}_{multiplier}_{image_size}"
     if (version == 1 and multiplier in [.75, .5, .25]) or (version == 2 and multiplier == 1.4):
-        net_name = f"mobilenet_v{version}_{multiplier * 100:03}"
+        net_name = f"mobilenet_v{version}_{multiplier * 100:03.0f}"
     else:
         net_name = f"mobilenet_v{version}"
-    _key_functions[identifier] = lambda: TFSlimModel.init(
-        identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
-        model_ctr_kwargs={'depth_multiplier': multiplier})
-for key, function in _key_functions.items():
-    # function=function default value enforces closure:
+    # arg=arg default value enforces closure:
     # https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
-    base_model_pool[key] = LazyLoad(lambda function=function: function())
+    _key_functions[identifier] = \
+        lambda identifier=identifier, image_size=image_size, net_name=net_name, multiplier=multiplier: TFSlimModel.init(
+            identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
+            model_ctr_kwargs={'depth_multiplier': multiplier})
+# CORnets
+for cornet_type in ['Z', 'R', 'R2', 'S']:
+    identifier = f"CORnet-{cornet_type}"
+    _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
+
+# instantiate models with LazyLoad wrapper
+for identifier, function in _key_functions.items():
+    base_model_pool[identifier] = LazyLoad(function)

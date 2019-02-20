@@ -1,10 +1,12 @@
 import logging
+import warnings
 
 import itertools
 
 from brainscore.benchmarks.loaders import load_assembly
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
+from candidate_models.base_models.cornet import CORnetCommitment
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment
@@ -132,6 +134,17 @@ class ModelLayers(UniqueKeyDict):
                     *[[f'Conv2d_{i + 1}_depthwise', f'Conv2d_{i + 1}_pointwise'] for i in range(13)])) +
                 ['AvgPool_1a'],
             'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
+            'CORnet-Z': ['V1.output-t0', 'V2.output-t0', 'V4.output-t0', 'IT.output-t0', 'decoder.avgpool-t0'],
+            'CORnet-R': [f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
+                         range(5)] + ['decoder.avgpool-t0'],
+            'CORnet-R2': ['maxpool-t0'] + \
+                         [f'{area}.relu3-t{timestep}' for area in ['block2', 'block3', 'block4']
+                          for timestep in range(5)] + ['avgpool-t0'],
+            'CORnet-S': ['V1.output-t0'] + \
+                        [f'{area}.output-t{timestep}'
+                         for area, timesteps in [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]
+                         for timestep in timesteps] + \
+                        ['decoder.avgpool-t0'],
             'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
         }
         for basemodel_identifier, default_layers in layers.items():
@@ -155,6 +168,18 @@ class ModelLayers(UniqueKeyDict):
                [f"block{block + 1}/unit_{unit + 1}/bottleneck_v{bottleneck_version}"
                 for block, block_units in enumerate(units) for unit in range(block_units)]
 
+    @staticmethod
+    def _item(item):
+        if item.startswith('mobilenet'):
+            return "_".join(item.split("_")[:2])
+        return item
+
+    def __getitem__(self, item):
+        return super(ModelLayers, self).__getitem__(self._item(item))
+
+    def __contains__(self, item):
+        return super(ModelLayers, self).__contains__(self._item(item))
+
 
 model_layers = ModelLayers()
 
@@ -162,10 +187,14 @@ model_layers = ModelLayers()
 class ModelLayersPool(UniqueKeyDict):
     def __init__(self):
         super(ModelLayersPool, self).__init__()
-        for basemodel_identifier, layers in model_layers.items():
+        for basemodel_identifier, activations_model in base_model_pool.items():
+            if basemodel_identifier not in model_layers:
+                warnings.warn(f"{basemodel_identifier} not found in model_layers")
+                continue
+            layers = model_layers[basemodel_identifier]
+
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(basemodel_identifier=basemodel_identifier):
-                activations_model = base_model_pool[basemodel_identifier]
+            def load(activations_model=activations_model):
                 pca_components = 1000
                 LayerPCA.hook(activations_model, n_components=pca_components)
                 return activations_model
@@ -188,14 +217,18 @@ class BrainTranslatedPool(UniqueKeyDict):
             'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.IT', average_repetition=False)),
         }
 
-        for basemodel_identifier, default_layers in model_layers.items():
+        for basemodel_identifier in base_model_pool:
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(basemodel_identifier=basemodel_identifier, default_layers=default_layers):
-                pca_components = 1000
+            def load(basemodel_identifier=basemodel_identifier):
                 activations_model = base_model_pool[basemodel_identifier]
-                LayerPCA.hook(activations_model, n_components=pca_components)
-                brain_model = ModelCommitment(identifier=f"{activations_model.identifier}-pca_{pca_components}",
-                                              base_model=activations_model, layers=default_layers)
+                if basemodel_identifier not in model_layers:
+                    warnings.warn(f"{basemodel_identifier} not found in model_layers")
+                layers = model_layers[basemodel_identifier]
+                pca_components = 1000
+                pca_handle = LayerPCA.hook(activations_model, n_components=pca_components)
+                brain_model_ctr = CORnetCommitment if basemodel_identifier.startswith('CORnet') else ModelCommitment
+                brain_model = brain_model_ctr(identifier=f"{activations_model.identifier}-pca_{pca_components}",
+                                              base_model=activations_model, layers=layers)
                 for region, assembly in commitment_assemblies.items():
                     logger.debug(f"Committing region {region}")
                     brain_model.commit_region(region, assembly)
