@@ -98,6 +98,15 @@ class TFSlimModel:
         return restore_path
 
 
+def bagnet(function):
+    module = import_module(f'bagnets.pytorch')
+    model_ctr = getattr(module, function)
+    model = model_ctr(pretrained=True)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=224)
+    return PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+
+
 base_model_pool = UniqueKeyDict()
 """
 Provides a set of standard models.
@@ -139,6 +148,9 @@ _key_functions = {
     'nasnet_mobile': lambda: TFSlimModel.init('nasnet_mobile', preprocessing_type='inception', image_size=331),
     'nasnet_large': lambda: TFSlimModel.init('nasnet_large', preprocessing_type='inception', image_size=331),
     'pnasnet_large': lambda: TFSlimModel.init('pnasnet_large', preprocessing_type='inception', image_size=331),
+    'bagnet9': lambda: bagnet("bagnet9"),
+    'bagnet17': lambda: bagnet("bagnet17"),
+    'bagnet33': lambda: bagnet("bagnet33"),
 }
 # MobileNets
 for version, multiplier, image_size in [

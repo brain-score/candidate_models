@@ -9,11 +9,13 @@ with open('README.md') as readme_file:
 requirements = [
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
-    "cornet @ git+https://github.com/dicarlolab/CORnet",
     "numpy",
     "result_caching @ git+https://github.com/mschrimpf/result_caching",
     "networkx",
     "tqdm",
+
+    "cornet @ git+https://github.com/dicarlolab/CORnet",
+    "bagnet @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
 ]
 
 setup(

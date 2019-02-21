@@ -146,6 +146,10 @@ class ModelLayers(UniqueKeyDict):
                          for timestep in timesteps] + \
                         ['decoder.avgpool-t0'],
             'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
+            'bagnet': ['relu'] +
+                      [f'layer{layer + 1}.{block}.relu' for layer, blocks in
+                       enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
+                      ['avgpool'],
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
@@ -172,6 +176,8 @@ class ModelLayers(UniqueKeyDict):
     def _item(item):
         if item.startswith('mobilenet'):
             return "_".join(item.split("_")[:2])
+        if item.startswith('bagnet'):
+            return 'bagnet'
         return item
 
     def __getitem__(self, item):
