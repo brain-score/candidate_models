@@ -153,6 +153,7 @@ class ModelLayers(UniqueKeyDict):
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
+        self['vggface'] = self['vgg-16']
 
     @staticmethod
     def _resnet50_layers(bottleneck_version):

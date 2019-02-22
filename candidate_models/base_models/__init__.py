@@ -21,12 +21,13 @@ def pytorch_model(function, image_size):
     return PytorchWrapper(identifier=function, model=model_ctr(pretrained=True), preprocessing=preprocessing)
 
 
-def keras_model(module, model_function, image_size):
+def keras_model(module, model_function, image_size, identifier=None, model_kwargs=None):
     module = import_module(f"keras.applications.{module}")
     model_ctr, model_preprocessing = getattr(module, model_function), getattr(module, "preprocess_input")
+    model = model_ctr(**(model_kwargs or {}))
     from model_tools.activations.keras import load_images
     load_preprocess = lambda image_filepaths: model_preprocessing(load_images(image_filepaths, image_size=image_size))
-    return KerasWrapper(model_ctr(), load_preprocess)
+    return KerasWrapper(model, load_preprocess, identifier=identifier)
 
 
 class TFSlimModel:
@@ -107,6 +108,16 @@ def bagnet(function):
     return PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
 
 
+def vggface():
+    import keras
+    weights = keras.utils.get_file(
+        'rcmalli_vggface_tf_vgg16.h5',
+        'https://github.com/rcmalli/keras-vggface/releases/download/v2.0/rcmalli_vggface_tf_vgg16.h5',
+        cache_subdir='models')
+    return keras_model('vgg16', 'VGG16', image_size=224, identifier='vggface',
+                       model_kwargs=dict(weights=weights, classes=2622))
+
+
 base_model_pool = UniqueKeyDict()
 """
 Provides a set of standard models.
@@ -122,6 +133,7 @@ _key_functions = {
 
     'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
     'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),
+    'vggface': vggface,
     'xception': lambda: keras_model('xception', 'Xception', image_size=299),
     'densenet-121': lambda: keras_model('densenet', 'DenseNet121', image_size=224),
     'densenet-169': lambda: keras_model('densenet', 'DenseNet169', image_size=224),
