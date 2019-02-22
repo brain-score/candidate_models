@@ -15,7 +15,7 @@ requirements = [
     "tqdm",
 
     "cornet @ git+https://github.com/dicarlolab/CORnet",
-    "bagnet @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
+    "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
 ]
 
 setup(
