@@ -18,7 +18,9 @@ def pytorch_model(function, image_size):
     model_ctr = getattr(module, function)
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
-    return PytorchWrapper(identifier=function, model=model_ctr(pretrained=True), preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=function, model=model_ctr(pretrained=True), preprocessing=preprocessing)
+    wrapper.image_size = image_size
+    return wrapper
 
 
 def keras_model(module, model_function, image_size, identifier=None, model_kwargs=None):
@@ -27,7 +29,9 @@ def keras_model(module, model_function, image_size, identifier=None, model_kwarg
     model = model_ctr(**(model_kwargs or {}))
     from model_tools.activations.keras import load_images
     load_preprocess = lambda image_filepaths: model_preprocessing(load_images(image_filepaths, image_size=image_size))
-    return KerasWrapper(model, load_preprocess, identifier=identifier)
+    wrapper = KerasWrapper(model, load_preprocess, identifier=identifier)
+    wrapper.image_size = image_size
+    return wrapper
 
 
 class TFSlimModel:
@@ -49,8 +53,10 @@ class TFSlimModel:
 
         session = tf.Session()
         TFSlimModel._restore_imagenet_weights(identifier, session)
-        return TensorflowSlimWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder,
-                                     session=session, batch_size=batch_size, labels_offset=labels_offset)
+        wrapper = TensorflowSlimWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
+                                        batch_size=batch_size, labels_offset=labels_offset)
+        wrapper.image_size = image_size
+        return wrapper
 
     @staticmethod
     def _init_preprocessing(placeholder, preprocessing_type, image_size):
@@ -105,7 +111,9 @@ def bagnet(function):
     model = model_ctr(pretrained=True)
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=224)
-    return PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper.image_size = 224
+    return wrapper
 
 
 def vggface():
@@ -114,8 +122,10 @@ def vggface():
         'rcmalli_vggface_tf_vgg16.h5',
         'https://github.com/rcmalli/keras-vggface/releases/download/v2.0/rcmalli_vggface_tf_vgg16.h5',
         cache_subdir='models')
-    return keras_model('vgg16', 'VGG16', image_size=224, identifier='vggface',
-                       model_kwargs=dict(weights=weights, classes=2622))
+    wrapper = keras_model('vgg16', 'VGG16', image_size=224, identifier='vggface',
+                          model_kwargs=dict(weights=weights, classes=2622))
+    wrapper.image_size = 224
+    return wrapper
 
 
 base_model_pool = UniqueKeyDict()

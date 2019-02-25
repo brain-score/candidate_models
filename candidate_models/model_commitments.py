@@ -9,7 +9,7 @@ from candidate_models.base_models import base_model_pool
 from candidate_models.base_models.cornet import CORnetCommitment
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
-from model_tools.brain_transformation import ModelCommitment
+from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
 from model_tools.utils import fullname
 
 
@@ -194,19 +194,28 @@ model_layers = ModelLayers()
 class ModelLayersPool(UniqueKeyDict):
     def __init__(self):
         super(ModelLayersPool, self).__init__()
+        pca_components = 1000
         for basemodel_identifier, activations_model in base_model_pool.items():
             if basemodel_identifier not in model_layers:
                 warnings.warn(f"{basemodel_identifier} not found in model_layers")
                 continue
             layers = model_layers[basemodel_identifier]
 
+            identifier = f"{basemodel_identifier}-pca_{pca_components}-degrees"
+
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(activations_model=activations_model):
-                pca_components = 1000
-                LayerPCA.hook(activations_model, n_components=pca_components)
+            def load(identifier=identifier, activations_model=activations_model):
+                activations_model.identifier = identifier  # since inputs are different, also change identifier
+                activations_model._extractor.identifier = identifier
+
+                pca_handle = LayerPCA.hook(activations_model, n_components=pca_components)
+
+                model_pixels = activations_model.image_size
+                PixelsToDegrees.hook(activations_model, target_pixels=model_pixels)
+
                 return activations_model
 
-            self[basemodel_identifier] = {'model': LazyLoad(load), 'layers': layers}
+            self[identifier] = {'model': LazyLoad(load), 'layers': layers}
 
 
 model_layers_pool = ModelLayersPool()
@@ -224,24 +233,33 @@ class BrainTranslatedPool(UniqueKeyDict):
             'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.IT', average_repetition=False)),
         }
 
+        pca_components = 1000
         for basemodel_identifier in base_model_pool:
+            identifier = f"{basemodel_identifier}-pca_{pca_components}-degrees"
+
+            if basemodel_identifier not in model_layers:
+                warnings.warn(f"{basemodel_identifier} not found in model_layers")
+            layers = model_layers[basemodel_identifier]
+
             # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(basemodel_identifier=basemodel_identifier):
+            def load(basemodel_identifier=basemodel_identifier, identifier=identifier, layers=layers):
                 activations_model = base_model_pool[basemodel_identifier]
-                if basemodel_identifier not in model_layers:
-                    warnings.warn(f"{basemodel_identifier} not found in model_layers")
-                layers = model_layers[basemodel_identifier]
-                pca_components = 1000
+                activations_model.identifier = identifier  # since inputs are different, also change identifier
+                activations_model._extractor.identifier = identifier
+
                 pca_handle = LayerPCA.hook(activations_model, n_components=pca_components)
+
+                model_pixels = activations_model.image_size
+                PixelsToDegrees.hook(activations_model, target_pixels=model_pixels)
+
                 brain_model_ctr = CORnetCommitment if basemodel_identifier.startswith('CORnet') else ModelCommitment
-                brain_model = brain_model_ctr(identifier=f"{activations_model.identifier}-pca_{pca_components}",
-                                              base_model=activations_model, layers=layers)
+                brain_model = brain_model_ctr(identifier=identifier, base_model=activations_model, layers=layers)
                 for region, assembly in commitment_assemblies.items():
                     logger.debug(f"Committing region {region}")
                     brain_model.commit_region(region, assembly)
                 return brain_model
 
-            self[basemodel_identifier] = LazyLoad(load)
+            self[identifier] = LazyLoad(load)
 
 
 brain_translated_pool = BrainTranslatedPool()

@@ -58,7 +58,7 @@ def cornet(identifier):
         model_ctr = getattr(mod, f'CORnet_{cornet_type.upper()}')
     model = model_ctr()
 
-    WEIGHT_MAPPING = {  # TODO: automatically download
+    WEIGHT_MAPPING = {
         'Z': 'cornet_z_epoch25.pth.tar',
         'R': 'cornet_r_epoch25.pth.tar',
         'S': 'cornet_s_epoch43.pth.tar',
@@ -84,7 +84,9 @@ def cornet(identifier):
 
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=224)
-    return TemporalPytorchWrapper(identifier=identifier, model=model, preprocessing=preprocessing)
+    wrapper = TemporalPytorchWrapper(identifier=identifier, model=model, preprocessing=preprocessing)
+    wrapper.image_size = 224
+    return wrapper
 
 
 class CORnetCommitment(ModelCommitment):
