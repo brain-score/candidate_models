@@ -1,11 +1,8 @@
 import logging
 
-import functools
-from tqdm import tqdm
-
 from brainscore.benchmarks import benchmark_pool
-from brainscore.metrics import Score
 from candidate_models.model_commitments import brain_translated_pool
+from model_tools.brain_transformation import LayerScores
 from result_caching import store
 
 _logger = logging.getLogger(__name__)
@@ -37,27 +34,12 @@ def score_model(model_identifier, benchmark_identifier, model, benchmark=None):
     return score
 
 
-@store(identifier_ignore=['model', 'benchmark', 'layers'])
 def score_layers(model_identifier, benchmark_identifier, model, layers, benchmark=None):
     assert model is not None
     if benchmark is None:
         _logger.debug("retrieving benchmark")
         benchmark = benchmark_pool[benchmark_identifier]
 
-    def get_activations(stimulus_set, layer):
-        # for efficiency, we compute activations for all the layers (which will be stored on disk),
-        # then select only the current layer
-        all_layers = model.from_stimulus_set(stimulus_set, layers=layers)
-        activations = all_layers.sel(layer=layer)
-        return activations.stack(neuroid=['neuroid_id'])
-
-    layer_scores = []
-    for layer in tqdm(layers):
-        _logger.debug(f"scoring {model_identifier}, layer {layer}")
-        layer_activations = functools.partial(get_activations, layer=layer)
-        score = benchmark(layer_activations)
-        score = score.expand_dims('layer')
-        score['layer'] = [layer]
-        layer_scores.append(score)
-    score = Score.merge(*layer_scores)
-    return score
+    scorer = LayerScores(model_identifier=model_identifier, activations_model=model)
+    scores = scorer(benchmark=benchmark, benchmark_identifier=benchmark_identifier, layers=layers)
+    return scores
