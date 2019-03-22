@@ -245,9 +245,11 @@ class BrainTranslatedPool(UniqueKeyDict):
             layers = model_layers[basemodel_identifier]
 
             for hook_identifiers in itertools.chain(
-                    *[itertools.combinations(activation_hooks, n) for n in range(1, len(activation_hooks) + 1)]):
+                    *[itertools.combinations(activation_hooks, n) for n in range(len(activation_hooks) + 1)]):
                 hook_identifiers = list(sorted(hook_identifiers))
-                identifier = basemodel_identifier + self.HOOK_SEPARATOR + "-".join(hook_identifiers)
+                identifier = basemodel_identifier
+                if len(hook_identifiers) > 0:
+                    identifier += self.HOOK_SEPARATOR + "-".join(hook_identifiers)
 
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
                 def load(basemodel_identifier=basemodel_identifier, identifier=identifier, layers=layers,
