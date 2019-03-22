@@ -1,4 +1,3 @@
-import logging
 import warnings
 
 import itertools
@@ -10,7 +9,6 @@ from candidate_models.base_models.cornet import CORnetCommitment
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
-from model_tools.utils import fullname
 
 
 class ModelLayers(UniqueKeyDict):
@@ -222,44 +220,52 @@ model_layers_pool = ModelLayersPool()
 
 
 class BrainTranslatedPool(UniqueKeyDict):
+    HOOK_SEPARATOR = "--"
+
     def __init__(self):
         super(BrainTranslatedPool, self).__init__()
-        logger = logging.getLogger(fullname(self))
 
         commitment_assemblies = {
             'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.V1', average_repetition=False)),
             'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.V2', average_repetition=False)),
-            'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.V4', average_repetition=False)),
-            'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.IT', average_repetition=False)),
+            'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.V4', average_repetition=False)),
+            'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
         }
 
         pca_components = 1000
+        activation_hooks = {
+            f"pca_{pca_components}": lambda activations_model: LayerPCA.hook(
+                activations_model, n_components=pca_components),
+            "degrees": lambda activations_model: PixelsToDegrees.hook(
+                activations_model, target_pixels=activations_model.image_size)}
         for basemodel_identifier in base_model_pool:
-            identifier = f"{basemodel_identifier}-pca_{pca_components}-degrees"
-
             if basemodel_identifier not in model_layers:
                 warnings.warn(f"{basemodel_identifier} not found in model_layers")
+                continue
             layers = model_layers[basemodel_identifier]
 
-            # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(basemodel_identifier=basemodel_identifier, identifier=identifier, layers=layers):
-                activations_model = base_model_pool[basemodel_identifier]
-                activations_model.identifier = identifier  # since inputs are different, also change identifier
-                activations_model._extractor.identifier = identifier
+            for hook_identifiers in itertools.chain(
+                    *[itertools.combinations(activation_hooks, n) for n in range(1, len(activation_hooks) + 1)]):
+                hook_identifiers = list(sorted(hook_identifiers))
+                identifier = basemodel_identifier + self.HOOK_SEPARATOR + "-".join(hook_identifiers)
 
-                pca_handle = LayerPCA.hook(activations_model, n_components=pca_components)
+                # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
+                def load(basemodel_identifier=basemodel_identifier, identifier=identifier, layers=layers,
+                         hook_identifiers=hook_identifiers):
+                    activations_model = base_model_pool[basemodel_identifier]
+                    activations_model.identifier = identifier  # since inputs are different, also change identifier
 
-                model_pixels = activations_model.image_size
-                PixelsToDegrees.hook(activations_model, target_pixels=model_pixels)
+                    for hook in hook_identifiers:
+                        activation_hooks[hook](activations_model)
 
-                brain_model_ctr = CORnetCommitment if basemodel_identifier.startswith('CORnet') else ModelCommitment
-                brain_model = brain_model_ctr(identifier=identifier, base_model=activations_model, layers=layers)
-                for region, assembly in commitment_assemblies.items():
-                    logger.debug(f"Committing region {region}")
-                    brain_model.commit_region(region, assembly)
-                return brain_model
+                    brain_model_ctr = CORnetCommitment if basemodel_identifier.startswith('CORnet') else ModelCommitment
+                    brain_model = brain_model_ctr(identifier=identifier, activations_model=activations_model,
+                                                  layers=layers)
+                    for region, assembly in commitment_assemblies.items():
+                        brain_model.commit_region(region, assembly)
+                    return brain_model
 
-            self[identifier] = LazyLoad(load)
+                self[identifier] = LazyLoad(load)
 
 
 brain_translated_pool = BrainTranslatedPool()

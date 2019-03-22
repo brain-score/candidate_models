@@ -2,6 +2,7 @@ import functools
 import numpy as np
 from pytest import approx
 
+from brainscore.utils import LazyLoad
 from candidate_models import score_model, brain_translated_pool
 from candidate_models.base_models import base_model_pool
 from model_tools.activations import PytorchWrapper
@@ -10,30 +11,33 @@ from model_tools.brain_transformation import LayerModel
 
 
 class TestPreselectedLayer:
-    def layer_candidate(self, model_name, layer, region, pca_components=1000):
-        activations_model = base_model_pool[model_name]
-        if pca_components:
-            LayerPCA.hook(activations_model, n_components=pca_components)
+    def layer_candidate(self, model_name, layer, region):
+        def load(model_name=model_name, layer=layer, region=region):
+            activations_model = base_model_pool[model_name]
+            LayerPCA.hook(activations_model, n_components=1000)
+            model = LayerModel(f"{model_name}-{layer}", activations_model=activations_model)
+            model.commit(region, layer)
+            return model
 
-        return LayerModel(model_name, base_model=activations_model, layer=layer, region=region)
+        return LazyLoad(load)  # lazy-load to avoid loading all models right away
 
     def test_alexnet_conv2_V4(self):
         model = self.layer_candidate('alexnet', layer='features.5', region='V4')
         score = score_model(model_identifier='alexnet-f5', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.V4-regressing')
-        assert score.raw.sel(aggregation='center').max() == approx(0.6508, rel=0.005)
+        assert score.raw.sel(aggregation='center').max() == approx(0.656703, abs=0.005)
 
     def test_alexnet_conv5_V4(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='V4')
         score = score_model(model_identifier='alexnet-f12', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.V4-regressing')
-        assert score.raw.sel(aggregation='center') == approx(0.530405, rel=0.005)
+        assert score.raw.sel(aggregation='center') == approx(0.533175, abs=0.005)
 
     def test_alexnet_conv5_IT(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT')
         score = score_model(model_identifier='alexnet-f12', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.IT-regressing')
-        assert score.raw.sel(aggregation='center') == approx(0.601174, rel=0.005)
+        assert score.raw.sel(aggregation='center') == approx(0.601174, abs=0.005)
 
     def test_repeat_same_result(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT')
@@ -74,7 +78,9 @@ class TestPreselectedLayer:
         preprocessing = functools.partial(load_preprocess_images, image_size=224)
         model_id = 'new_pytorch'
         activations_model = PytorchWrapper(model=MyModel(), preprocessing=preprocessing, identifier=model_id)
-        candidate = LayerModel(model_id, base_model=activations_model, layer='relu2', region='IT')
+        layer = 'relu2'
+        candidate = LayerModel(f"{model_id}-{layer}", activations_model=activations_model)
+        candidate.commit('IT', layer)
 
         ceiled_score = score_model(model_identifier=model_id, model=candidate,
                                    benchmark_identifier='dicarlo.Majaj2015.IT-regressing')
@@ -83,7 +89,20 @@ class TestPreselectedLayer:
 
 
 class TestBrainTranslated:
-    def test_alexnet(self):
-        model = brain_translated_pool['alexnet']
-        score = score_model('alexnet', 'dicarlo.Majaj2015.IT-regressing', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.601174, rel=0.005)
+    def test_alexnet_pca(self):
+        identifier = 'alexnet--pca_1000'
+        model = brain_translated_pool[identifier]
+        score = score_model(identifier, 'dicarlo.Majaj2015.IT-regressing', model=model)
+        assert score.raw.sel(aggregation='center') == approx(0.601174, abs=0.005)
+
+    def test_alexnet_degrees(self):
+        identifier = 'alexnet--degrees'
+        model = brain_translated_pool[identifier]
+        score = score_model(identifier, 'dicarlo.Majaj2015.IT-regressing', model=model)
+        assert score.raw.sel(aggregation='center') == approx(0.560698, abs=0.005)
+
+    def test_alexnet_degrees_pca(self):
+        identifier = 'alexnet--degrees-pca_1000'
+        model = brain_translated_pool[identifier]
+        score = score_model(identifier, 'dicarlo.Majaj2015.IT-regressing', model=model)
+        assert score.raw.sel(aggregation='center') == approx(0.567, abs=0.005)
