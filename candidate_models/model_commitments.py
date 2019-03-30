@@ -11,6 +11,37 @@ from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
 
 
+class Hooks:
+    HOOK_SEPARATOR = "--"
+
+    def __init__(self):
+        pca_components = 1000
+        self.activation_hooks = {
+            f"pca_{pca_components}": lambda activations_model: LayerPCA.hook(
+                activations_model, n_components=pca_components),
+            "degrees": lambda activations_model: PixelsToDegrees.hook(
+                activations_model, target_pixels=activations_model.image_size)}
+
+    def iterate_hooks(self, basemodel_identifier):
+        for hook_identifiers in itertools.chain(
+                *[itertools.combinations(self.activation_hooks, n) for n in range(len(self.activation_hooks) + 1)]):
+            hook_identifiers = list(sorted(hook_identifiers))
+            identifier = basemodel_identifier
+            if len(hook_identifiers) > 0:
+                identifier += self.HOOK_SEPARATOR + "-".join(hook_identifiers)
+
+            # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
+            def load(basemodel_identifier=basemodel_identifier, identifier=identifier,
+                     hook_identifiers=hook_identifiers):
+                activations_model = base_model_pool[basemodel_identifier]
+                activations_model.identifier = identifier  # since inputs are different, also change identifier
+                for hook in hook_identifiers:
+                    self.activation_hooks[hook](activations_model)
+                return activations_model
+
+            yield identifier, LazyLoad(load)
+
+
 class ModelLayers(UniqueKeyDict):
     def __init__(self):
         super(ModelLayers, self).__init__()
@@ -192,35 +223,20 @@ model_layers = ModelLayers()
 class ModelLayersPool(UniqueKeyDict):
     def __init__(self):
         super(ModelLayersPool, self).__init__()
-        pca_components = 1000
         for basemodel_identifier, activations_model in base_model_pool.items():
             if basemodel_identifier not in model_layers:
                 warnings.warn(f"{basemodel_identifier} not found in model_layers")
                 continue
             layers = model_layers[basemodel_identifier]
 
-            identifier = f"{basemodel_identifier}-pca_{pca_components}-degrees"
-
-            # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-            def load(identifier=identifier, activations_model=activations_model):
-                activations_model.identifier = identifier  # since inputs are different, also change identifier
-                activations_model._extractor.identifier = identifier
-
-                pca_handle = LayerPCA.hook(activations_model, n_components=pca_components)
-
-                model_pixels = activations_model.image_size
-                PixelsToDegrees.hook(activations_model, target_pixels=model_pixels)
-
-                return activations_model
-
-            self[identifier] = {'model': LazyLoad(load), 'layers': layers}
+            for identifier, activations_model in Hooks().iterate_hooks(basemodel_identifier):
+                self[identifier] = {'model': activations_model, 'layers': layers}
 
 
 model_layers_pool = ModelLayersPool()
 
 
 class BrainTranslatedPool(UniqueKeyDict):
-    HOOK_SEPARATOR = "--"
 
     def __init__(self):
         super(BrainTranslatedPool, self).__init__()
@@ -232,34 +248,15 @@ class BrainTranslatedPool(UniqueKeyDict):
             'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
         }
 
-        pca_components = 1000
-        activation_hooks = {
-            f"pca_{pca_components}": lambda activations_model: LayerPCA.hook(
-                activations_model, n_components=pca_components),
-            "degrees": lambda activations_model: PixelsToDegrees.hook(
-                activations_model, target_pixels=activations_model.image_size)}
         for basemodel_identifier in base_model_pool:
             if basemodel_identifier not in model_layers:
                 warnings.warn(f"{basemodel_identifier} not found in model_layers")
                 continue
             layers = model_layers[basemodel_identifier]
 
-            for hook_identifiers in itertools.chain(
-                    *[itertools.combinations(activation_hooks, n) for n in range(len(activation_hooks) + 1)]):
-                hook_identifiers = list(sorted(hook_identifiers))
-                identifier = basemodel_identifier
-                if len(hook_identifiers) > 0:
-                    identifier += self.HOOK_SEPARATOR + "-".join(hook_identifiers)
-
+            for identifier, activations_model in Hooks().iterate_hooks(basemodel_identifier):
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-                def load(basemodel_identifier=basemodel_identifier, identifier=identifier, layers=layers,
-                         hook_identifiers=hook_identifiers):
-                    activations_model = base_model_pool[basemodel_identifier]
-                    activations_model.identifier = identifier  # since inputs are different, also change identifier
-
-                    for hook in hook_identifiers:
-                        activation_hooks[hook](activations_model)
-
+                def load(basemodel_identifier=basemodel_identifier, identifier=identifier, layers=layers):
                     brain_model_ctr = CORnetCommitment if basemodel_identifier.startswith('CORnet') else ModelCommitment
                     brain_model = brain_model_ctr(identifier=identifier, activations_model=activations_model,
                                                   layers=layers)
