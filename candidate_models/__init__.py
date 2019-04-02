@@ -1,6 +1,7 @@
 import logging
 
 from brainscore.benchmarks import benchmark_pool
+from brainscore.benchmarks.loaders import load_assembly
 from candidate_models.model_commitments import brain_translated_pool
 from model_tools.brain_transformation import LayerScores
 from result_caching import store
@@ -43,3 +44,9 @@ def score_layers(model_identifier, benchmark_identifier, model, layers, benchmar
     scorer = LayerScores(model_identifier=model_identifier, activations_model=model)
     scores = scorer(benchmark=benchmark, benchmark_identifier=benchmark_identifier, layers=layers)
     return scores
+
+
+def get_activations(model, layers, assembly_identifier):
+    assembly = load_assembly(assembly_identifier)
+    stimuli = assembly.stimulus_set
+    return model(stimuli, layers=layers)
