@@ -12,12 +12,14 @@ logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser()
 parser.add_argument('--log_level', type=str, default='INFO')
 args, _ = parser.parse_known_args()
-logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level))
+logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level),
+                    format='%(asctime)-15s %(levelname)s:%(name)s:%(message)s')
 for disable_logger in ['s3transfer', 'botocore', 'boto3', 'urllib3', 'peewee', 'PIL']:
     logging.getLogger(disable_logger).setLevel(logging.WARNING)
 
 
 def activations(model, assembly, layers=None):
+    logger.info(f"Retrieving activations for {model} using assembly {assembly} and layers {layers} with args {args}")
     if isinstance(layers, str):
         layers = [layers]
     model_layers = model_layers_pool[model]
@@ -28,12 +30,14 @@ def activations(model, assembly, layers=None):
 
 
 def score_model(model, benchmark):
+    logger.info(f"Scoring {model} on benchmark {benchmark} with args {args}")
     model = brain_translated_pool[model]
     result = score_model_function(model_identifier=model, benchmark_identifier=benchmark, model=model)
     print(result)
 
 
 def score_layers(model, benchmark, layers=None):
+    logger.info(f"Scoring {model}'s layers {layers} on benchmark {benchmark} with args {args}")
     if isinstance(layers, str):
         layers = [layers]
     model_layers = model_layers_pool[model]
