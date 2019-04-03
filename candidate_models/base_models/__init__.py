@@ -167,7 +167,7 @@ class TFUtilsModel:
     def _find_model_json(model_name):
         _logger = logging.getLogger(fullname(TFUtilsModel._find_model_json))
         framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
-        json_path = os.getenv('CM_TFUTILS_WEIGHTS_DIR', os.path.join(framework_home, 'model-json', 'tfutils'))
+        json_path = os.getenv('CM_TFUTILS_WEIGHTS_DIR', os.path.join(framework_home, 'model-jsons', 'tfutils'))
         model_path = os.path.join(json_path, model_name)
         fnames = glob.glob(os.path.join(model_path, '*.json*'))
         assert len(fnames) > 0, f"no json found in {model_path}"
