@@ -107,7 +107,7 @@ class TFSlimModel:
 
 class TFUtilsModel:
     @staticmethod
-    def init(model_fn, identifier, preprocessing_type, image_size, image_resize=None, batch_size=64,
+    def init(model_fn, identifier, preprocessing_type, image_size, image_resize=None, batch_size=64, tnn_model=False,
              model_fn_kwargs=None):
         import tensorflow as tf
 
@@ -117,8 +117,9 @@ class TFUtilsModel:
         if model_fn_kwargs is None:
             model_fn_kwargs = {}
 
-        tnn_json = TFUtilsModel._find_model_json(identifier)
-        model_fn_kwargs['tnn_json'] = tnn_json
+        if tnn_model:
+            tnn_json = TFUtilsModel._find_model_json(identifier)
+            model_fn_kwargs['tnn_json'] = tnn_json
         
         endpoints, params = model_fn(preprocess, train=False, **(model_fn_kwargs or {}))
         if not isinstance(endpoints, dict): # single tensor of logits
@@ -299,8 +300,8 @@ class BaseModelPool(UniqueKeyDict):
             _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
 
         # ConvRNNs
-        _key_functions['convrnn_128'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_128', preprocessing_type='convrnn', image_size=224, image_resize=128)
-        _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', preprocessing_type='convrnn', image_size=224, image_resize=None)
+        _key_functions['convrnn_128'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_128', tnn_model=True, preprocessing_type='convrnn', image_size=224, image_resize=128)
+        _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True, preprocessing_type='convrnn', image_size=224, image_resize=None)
 
         # instantiate models with LazyLoad wrapper
         for identifier, function in _key_functions.items():

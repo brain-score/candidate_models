@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tnn import main as tnn_main
 from tnn.reciprocalgaternn import tnn_ReciprocalGateCell
+from median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
 
 dropout10L = {'conv'+str(l):1.0 for l in range(1,11)}
 dropout10L['imnetds'] = 1.0
@@ -58,7 +59,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
              unroll_tf=False, const_pres=False, out_layers='imnetds', base_name='model_jsons/10Lv9_imnet128_res23_rrgctx', 
              times=range(18), image_on=0, image_off=11, delay=10, random_off=None, dropout=dropout10L, 
              edges_arr=[], convrnn_type='recipcell', mem_val=0.0, train_tau_fg=False, apply_bn=False,
-             channel_op='concat', seed=0, min_duration=11, 
+             channel_op='concat', seed=0, min_duration=11, use_legacy_cell=False,
              layer_params={},
              p_edge=1.0,
              decoder_start=18,
@@ -183,7 +184,12 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
             if any(s in memory_param for s in ('gate_filter_size', 'tau_filter_size')):
                 if convrnn_type == 'recipcell':
                     print('using reciprocal gated cell for ', node)
-                    attr['cell'] = tnn_ReciprocalGateCell
+                    if use_legacy_cell:
+                        print('Using legacy cell to preserve scoping to load checkpoint')
+                        attr['cell'] = legacy_tnn_ReciprocalGateCell
+                    else:
+                        attr['cell'] = tnn_ReciprocalGateCell
+
                     recip_cell_params = this_layer_params['cell_params'].copy()
                     assert recip_cell_params is not None
                     for k,v in recip_cell_params.items():
@@ -247,7 +253,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
     return outputs, mo_params
 
 def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, 
-               cell_layers = ['conv' + str(i) for i in range(4, 11)]):
+               cell_layers = ['conv' + str(i) for i in range(4, 11)], use_legacy_cell=True):
 
     model_params = config_dict['model_params']
 
@@ -284,4 +290,6 @@ def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5,
 
     model_params['edges_arr'] = edges_arr
     model_params['base_name'] = tnn_json
+    model_params['use_legacy_cell'] = use_legacy_cell
+
     return tnn_base_edges(inputs, train=train, **model_params)
