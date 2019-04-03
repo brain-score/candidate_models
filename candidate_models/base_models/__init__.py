@@ -8,9 +8,10 @@ import functools
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
+from candidate_models.base_models.convrnn import tnn_base_edges
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
-from model_tools.activations.tensorflow import TensorflowSlimWrapper
+from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
 
 
 def pytorch_model(function, image_size):
@@ -104,6 +105,71 @@ class TFSlimModel:
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
         return restore_path
 
+class TFUtilsModel:
+    @staticmethod
+    def init(model_fn, identifier, preprocessing_type, image_size, image_resize=None, batch_size=64,
+             model_fn_kwargs=None):
+        import tensorflow as tf
+
+        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size, image_resize=image_resize)
+
+        endpoints, params = model_fn(preprocess, train=False, **(model_fn_kwargs or {}))
+        if not isinstance(endpoints, dict): # single tensor of logits
+            new_endpoints = {}
+            new_endpoints['logits'] = endpoints
+            endpoints = new_endpoints
+
+        session = tf.Session()
+        TFUtilsModel._restore_imagenet_weights(identifier, session)
+        wrapper = TensorflowWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
+                                        batch_size=batch_size)
+        wrapper.image_size = image_size
+        return wrapper
+
+    @staticmethod
+    def _init_preprocessing(placeholder, preprocessing_type, image_size, image_resize=None):
+        import tensorflow as tf
+        from model_tools.activations.tensorflow import load_resize_image
+        from model_tools.activations.convrnn_preproc import preprocess_for_eval as convrnn_eval_preproc
+        preprocessing_types = {
+            'convrnn': lambda image: convrnn_eval_preproc(
+                image, image_size, image_resize),
+        }
+        assert preprocessing_type in preprocessing_types
+        preprocess_image = preprocessing_types[preprocessing_type]
+        preprocess = lambda image_path: preprocess_image(load_resize_image(image_path, image_size))
+        preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
+        return preprocess
+
+    @staticmethod
+    def _restore_imagenet_weights(name, session):
+        import tensorflow as tf
+        var_list = None
+        if name.startswith('mobilenet'):
+            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy according to
+            # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
+            ema = tf.train.ExponentialMovingAverage(0.999)
+            var_list = ema.variables_to_restore()
+        restorer = tf.train.Saver(var_list)
+
+        restore_path = TFUtilsModel._find_model_weights(name)
+        restorer.restore(session, restore_path)
+
+    @staticmethod
+    def _find_model_weights(model_name):
+        _logger = logging.getLogger(fullname(TFUtilsModel._find_model_weights))
+        framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+        weights_path = os.getenv('CM_TFUTILS_WEIGHTS_DIR', os.path.join(framework_home, 'model-weights', 'tfutils'))
+        model_path = os.path.join(weights_path, model_name)
+        if not os.path.isdir(model_path):
+            _logger.debug(f"Downloading weights for {model_name} to {model_path}")
+            os.makedirs(model_path)
+            s3.download_folder(f"slim/{model_name}", model_path)
+        fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
+        assert len(fnames) > 0, f"no checkpoint found in {model_path}"
+        restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
+        return restore_path
 
 def bagnet(function):
     module = import_module(f'bagnets.pytorch')
@@ -214,6 +280,10 @@ class BaseModelPool(UniqueKeyDict):
         for cornet_type in ['Z', 'R', 'R2', 'S']:
             identifier = f"CORnet-{cornet_type}"
             _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
+
+        # ConvRNNs
+        _key_functions['convrnn_128'] = lambda: TFUtilsModel.init(tnn_base_edges, 'convrnn_128', preprocessing_type='convrnn', image_size=224, image_resize=128)
+        _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(tnn_base_edges, 'convrnn_224', preprocessing_type='convrnn', image_size=224, image_resize=None)
 
         # instantiate models with LazyLoad wrapper
         for identifier, function in _key_functions.items():
