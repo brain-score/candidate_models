@@ -4,6 +4,55 @@ from tnn.reciprocalgaternn import tnn_ReciprocalGateCell
 
 dropout10L = {'conv'+str(l):1.0 for l in range(1,11)}
 dropout10L['imnetds'] = 1.0
+
+config_dict = {'model_params': {'cell_params': OrderedDict([('tau_depth_separable', True),
+               ('tau_filter_size', 7.0),
+               ('residual_to_out_gate', False),
+               ('feedback_activation',
+                tf.nn.elu),
+               ('residual_to_cell_gate', False),
+               ('out_residual', True),
+               ('feedback_depth_separable', True),
+               ('tau_nonlinearity',
+                tf.nn.sigmoid),
+               ('ff_depth_separable', False),
+               ('gate_nonlinearity',
+                tf.nn.tanh),
+               ('cell_to_out', False),
+               ('input_to_cell', True),
+               ('cell_residual', False),
+               ('in_out_depth_separable', False),
+               ('layer_norm', False),
+               ('input_activation',
+                tf.nn.elu),
+               ('ff_filter_size', 2.0),
+               ('feedback_filter_size', 8.0),
+               ('feedback_entry', 'input'),
+               ('input_to_out', True),
+               ('in_out_filter_size', 3.0),
+               ('tau_offset', 0.9219348064291611),
+               ('tau_multiplier', -0.9219348064291611),
+               ('tau_bias', 4.147336708899556),
+               ('out_activation',
+                tf.nn.elu),
+               ('weight_decay', 0.0002033999204146308),
+               ('kernel_initializer', 'variance_scaling'),
+               ('kernel_initializer_kwargs', {'scale': 0.6393378386273998}),
+               ('cell_depth', 64),
+               ('gate_depth_separable', True),
+               ('gate_filter_size', 7.0),
+               ('gate_offset', 0.7006566684988862),
+               ('gate_multiplier', -0.7006566684988862),
+               ('gate_bias', 2.776542926439013),
+               ('cell_activation',
+                tf.nn.elu)]),
+  'image_off': 12,
+  'times': 17}}
+
+edges_2 = [(('conv8', 'conv5'), 0.0), (('conv9', 'conv6'), 0.0)]
+edges_3 = edges_2 + [(('conv10', 'conv7'), 0.0)]
+edges_5 = edges_3 + [(('conv7', 'conv6'), 0.0), (('conv10', 'conv9'), 0.0)]
+
 #todo need to fill in with the npz params
 def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in range(1,11)], alter_layers=None,
              unroll_tf=False, const_pres=False, out_layers='imnetds', base_name='model_jsons/10Lv9_imnet128_res23_rrgctx', 
@@ -196,3 +245,43 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
     for t in times:
         outputs['times'][t] = tf.squeeze(G.node[out_layers]['outputs'][t])     
     return outputs, mo_params
+
+def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, 
+               cell_layers = ['conv' + str(i) for i in range(4, 11)]):
+
+    model_params = config_dict['model_params']
+
+    cell_params = model_params.pop('cell_params')
+    # add fb specific params
+    cell_params['feedback_activation'] = tf.identity
+    cell_params['feedback_entry'] = 'out'
+    cell_params['feedback_depth_separable'] = False
+    cell_params['feedback_filter_size'] = 1
+
+    layer_params = {'conv1':{'cell_params': None}, 
+                    'conv2':{'cell_params':None}, 
+                    'conv3':{'cell_params':None}, 
+                    'conv4':{'cell_params':None}, 
+                    'conv5':{'cell_params':None}, 
+                    'conv6':{'cell_params':None}, 
+                    'conv7':{'cell_params':None}, 
+                    'conv8':{'cell_params':None}, 
+                    'conv9':{'cell_params':None}, 
+                    'conv10':{'cell_params':None}, 
+                    'imnetds':{'cell_params':None}}
+
+    for k in cell_layers:
+        layer_params[k]['cell_params'] = cell_params
+
+    model_params['layer_params'] = layer_params
+
+    model_params['ff_weight_decay'] = None # use the values specified in json
+    model_params['ff_kernel_initializer_kwargs'] = None # use the values specified in json
+    model_params['final_max_pool'] = True
+    model_params['decoder_end'] = model_params['times']
+    model_params['decoder_start'] = model_params['decoder_end'] - 1
+    model_params['decoder_type'] = 'last'
+
+    model_params['edges_arr'] = edges_arr
+    model_params['base_name'] = tnn_json
+    return tnn_base_edges(inputs, train=train, **model_params)

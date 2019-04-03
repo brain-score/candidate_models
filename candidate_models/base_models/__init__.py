@@ -8,7 +8,7 @@ import functools
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
-from candidate_models.base_models.convrnn import tnn_base_edges
+from candidate_models.base_models.convrnn import load_median_model
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
@@ -114,6 +114,12 @@ class TFUtilsModel:
         placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size, image_resize=image_resize)
 
+        if model_fn_kwargs is None:
+            model_fn_kwargs = {}
+
+        tnn_json = TFUtilsModel._find_model_json(identifier)
+        model_fn_kwargs['tnn_json'] = tnn_json
+        
         endpoints, params = model_fn(preprocess, train=False, **(model_fn_kwargs or {}))
         if not isinstance(endpoints, dict): # single tensor of logits
             new_endpoints = {}
@@ -155,6 +161,17 @@ class TFUtilsModel:
 
         restore_path = TFUtilsModel._find_model_weights(name)
         restorer.restore(session, restore_path)
+
+    @staticmethod
+    def _find_model_json(model_name):
+        _logger = logging.getLogger(fullname(TFUtilsModel._find_model_json))
+        framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+        json_path = os.getenv('CM_TFUTILS_WEIGHTS_DIR', os.path.join(framework_home, 'model-json', 'tfutils'))
+        model_path = os.path.join(json_path, model_name)
+        fnames = glob.glob(os.path.join(model_path, '*.json*'))
+        assert len(fnames) > 0, f"no json found in {model_path}"
+        tnn_json = fnames[0].split('.json')[0] + '.json'
+        return tnn_json
 
     @staticmethod
     def _find_model_weights(model_name):
@@ -282,8 +299,8 @@ class BaseModelPool(UniqueKeyDict):
             _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
 
         # ConvRNNs
-        _key_functions['convrnn_128'] = lambda: TFUtilsModel.init(tnn_base_edges, 'convrnn_128', preprocessing_type='convrnn', image_size=224, image_resize=128)
-        _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(tnn_base_edges, 'convrnn_224', preprocessing_type='convrnn', image_size=224, image_resize=None)
+        _key_functions['convrnn_128'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_128', preprocessing_type='convrnn', image_size=224, image_resize=128)
+        _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', preprocessing_type='convrnn', image_size=224, image_resize=None)
 
         # instantiate models with LazyLoad wrapper
         for identifier, function in _key_functions.items():
