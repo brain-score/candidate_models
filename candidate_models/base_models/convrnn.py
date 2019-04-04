@@ -248,7 +248,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
         print("logits shape", logits.shape)
 
     outputs = {}
-    outputs['imnet_logits'] = logits  
+    outputs['logits'] = logits  
     outputs['times'] = {} 
     for t in times:
         outputs['times'][t] = tf.squeeze(G.node[out_layers]['outputs'][t])     

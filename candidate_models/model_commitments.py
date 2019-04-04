@@ -181,8 +181,8 @@ class ModelLayers(UniqueKeyDict):
                       ['avgpool'],
 
             # TFUtils
-            'convrnn_128': ['imnet_logits'],
-            'convrnn_224': ['imnet_logits'],
+            'convrnn_128': ['logits'],
+            'convrnn_224': ['logits'],
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers

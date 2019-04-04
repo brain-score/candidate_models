@@ -13,8 +13,12 @@ class TestImagenet:
         benchmark = Imagenet2012()
         score = benchmark(model)
         accuracy = score.sel(aggregation='center')
+        print('Accuracy', accuracy)
         assert accuracy == expected_top1
 
 if __name__ == '__main__':
     ff_test = TestImagenet()
-    ff_test.test_top1(model='resnet-101_v2', expected_top1=0.770)
+    ff_test.test_top1(model='inception_v1', expected_top1=0.770)
+#    ff_test.test_top1(model='resnet-101_v2', expected_top1=0.770)
+#    ff_test.test_top1(model='convrnn_224', expected_top1=0.73)
+
