@@ -1,7 +1,8 @@
 import tensorflow as tf
 from tnn import main as tnn_main
 from tnn.reciprocalgaternn import tnn_ReciprocalGateCell
-from median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
+from candidate_models.base_models.median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
+from collections import OrderedDict
 
 dropout10L = {'conv'+str(l):1.0 for l in range(1,11)}
 dropout10L['imnetds'] = 1.0
@@ -119,7 +120,8 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
         
     # graph building stage
     with tf.variable_scope('tnn_model'):
-        base_name += '.json'
+        if '.json' not in base_name:
+            base_name += '.json'
         print('Using base: ', base_name)
         G = tnn_main.graph_from_json(base_name)
         print("graph build from JSON")

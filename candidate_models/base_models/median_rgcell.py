@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow.contrib.rnn import LSTMStateTuple
-import tfutils.model
 from tnn.cell import *
 from tnn.main import _get_func_from_kwargs
+import six
 
 class ConvRNNCell(object):
     """Abstract object representing an Convolutional RNN cell.
@@ -101,7 +101,7 @@ class Res3Cell(ConvRNNCell):
             self.gate_filter_size = gate_filter_size
             self._gate_bias = gate_bias
             
-            if isinstance(gate_nonlinearity, unicode):
+            if isinstance(gate_nonlinearity, six.string_types):
                 self._gate_nonlinearity = _get_func_from_kwargs(gate_nonlinearity)[0]
             else:
                 self._gate_nonlinearity = gate_nonlinearity
@@ -110,14 +110,18 @@ class Res3Cell(ConvRNNCell):
         self._cell_size = tf.TensorShape([self.shape[0], self.shape[1], self.cell_depth])
         self._fb_entry = fb_entry # place where ff and fb inputs are summed
 
-        if isinstance(activation, unicode):
+        if isinstance(activation, six.string_types):
             self._activation = _get_func_from_kwargs(activation)[0]
         else:
             self._activation = activation
             
         if kernel_initializer_kwargs is None:
             kernel_initializer_kwargs = {}
-        self._kernel_initializer = tfutils.model.initializer(kind=kernel_initializer, **kernel_initializer_kwargs)
+        try:
+            self._kernel_initializer = tfutils.model.initializer(kind=kernel_initializer, **kernel_initializer_kwargs)
+        except:
+            self._kernel_initializer = tfutils.model_tool_old.initializer(kind=kernel_initializer, **kernel_initializer_kwargs)
+
         self._bias_initializer = bias_initializer
         
         if not self.tau_gates:
@@ -570,12 +574,12 @@ class ReciprocalGateCell(ConvRNNCell):
         self.input_to_out = input_to_out
         self.cell_to_out = cell_to_out
             
-        if isinstance(gate_nonlinearity, unicode):
+        if isinstance(gate_nonlinearity, six.string_types):
             self._gate_nonlinearity = _get_func_from_kwargs(gate_nonlinearity)[0]
         else:
             self._gate_nonlinearity = gate_nonlinearity
 
-        if isinstance(tau_nonlinearity, unicode):
+        if isinstance(tau_nonlinearity, six.string_types):
             self._tau_nonlinearity = _get_func_from_kwargs(tau_nonlinearity)[0]
         else:
             self._tau_nonlinearity = tau_nonlinearity            
@@ -590,17 +594,17 @@ class ReciprocalGateCell(ConvRNNCell):
         self._size = tf.TensorShape([self.shape[0], self.shape[1], self.out_depth])
         self._cell_size = tf.TensorShape([self.shape[0], self.shape[1], self.cell_depth])
 
-        if isinstance(feedback_activation, unicode):
+        if isinstance(feedback_activation, six.string_types):
             self._feedback_activation = _get_func_from_kwargs(feedback_activation)[0]
         else:
             self._feedback_activation = feedback_activation
         
-        if isinstance(input_activation, unicode):
+        if isinstance(input_activation, six.string_types):
             self._input_activation = _get_func_from_kwargs(input_activation)[0]
         else:
             self._input_activation = input_activation
         
-        if isinstance(cell_activation, unicode):
+        if isinstance(cell_activation, six.string_types):
             self._cell_activation = _get_func_from_kwargs(cell_activation)[0]
         else:
             self._cell_activation = cell_activation
@@ -611,14 +615,18 @@ class ReciprocalGateCell(ConvRNNCell):
         else:
             self.cell_depth_out = self.cell_depth
 
-        if isinstance(out_activation, unicode):
+        if isinstance(out_activation, six.string_types):
             self._out_activation = _get_func_from_kwargs(out_activation)[0]
         else:
             self._out_activation = out_activation            
             
         if kernel_initializer_kwargs is None:
             kernel_initializer_kwargs = {}
-        self._kernel_initializer = tfutils.model.initializer(kind=kernel_initializer, **kernel_initializer_kwargs)
+        try:
+            self._kernel_initializer = tfutils.model.initializer(kind=kernel_initializer, **kernel_initializer_kwargs)
+        except:
+            self._kernel_initializer = tfutils.model_tool_old.initializer(kind=kernel_initializer, **kernel_initializer_kwargs)
+
         self._bias_initializer = bias_initializer
         
         if weight_decay is None:

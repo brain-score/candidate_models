@@ -179,6 +179,10 @@ class ModelLayers(UniqueKeyDict):
                       [f'layer{layer + 1}.{block}.relu' for layer, blocks in
                        enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
                       ['avgpool'],
+
+            # TFUtils
+            'convrnn_128': ['imnet_logits'],
+            'convrnn_224': ['imnet_logits'],
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
