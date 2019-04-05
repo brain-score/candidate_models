@@ -20,8 +20,11 @@ candidate_models/base_models/cornet.py
 candidate_models/base_models/median_rgcell.py
 candidate_models/base_models/models.csv
 tests/__init__.py
+tests/convrnn_test_activations.py
+tests/convrnn_test_imagenet.py
 tests/test___init__.py
 tests/test_activations.py
+tests/test_imagenet.py
 tests/test_model_commitments.py
 tests/test_s3.py
 tests/base_models/__init__.py

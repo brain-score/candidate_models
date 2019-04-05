@@ -18,7 +18,8 @@ class TestImagenet:
 
 if __name__ == '__main__':
     ff_test = TestImagenet()
-    ff_test.test_top1(model='inception_v1', expected_top1=0.770)
+#    ff_test.test_top1(model='inception_v1', expected_top1=0.770)
+#    ff_test.test_top1(model='resnet-101_v1', expected_top1=0.770)
 #    ff_test.test_top1(model='resnet-101_v2', expected_top1=0.770)
-#    ff_test.test_top1(model='convrnn_224', expected_top1=0.73)
+    ff_test.test_top1(model='convrnn_224', expected_top1=0.73)
 
