@@ -137,15 +137,14 @@ class TFUtilsModel:
     @staticmethod
     def _init_preprocessing(placeholder, preprocessing_type, image_size, image_resize=None):
         import tensorflow as tf
-        from model_tools.activations.tensorflow import load_resize_image
         from model_tools.activations.convrnn_preproc import preprocess_for_eval as convrnn_eval_preproc
         preprocessing_types = {
             'convrnn': lambda image: convrnn_eval_preproc(
-                image, image_size, image_resize),
+                image, resize=image_resize, crop_size=image_size),
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
-        preprocess = lambda image_path: preprocess_image(load_resize_image(image_path, image_size))
+        preprocess = lambda image_path: preprocess_image(tf.read_file(image_path))
         preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
         return preprocess
 

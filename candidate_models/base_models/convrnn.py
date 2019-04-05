@@ -61,7 +61,8 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
              unroll_tf=False, const_pres=False, out_layers='imnetds', base_name='model_jsons/10Lv9_imnet128_res23_rrgctx', 
              times=range(18), image_on=0, image_off=11, delay=10, random_off=None, dropout=dropout10L, 
              edges_arr=[], convrnn_type='recipcell', mem_val=0.0, train_tau_fg=False, apply_bn=False,
-             channel_op='concat', seed=0, min_duration=11, use_legacy_cell=False, color_norm=True,
+             channel_op='concat', seed=0, min_duration=11, use_legacy_cell=False, 
+#             color_norm=True,
              layer_params={},
              p_edge=1.0,
              decoder_start=18,
@@ -77,10 +78,10 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
              iterations_per_loop=None, **kwargs):  
 
     mo_params = {}
-    inputs = tf.cast(inputs, dtype=tf.float32)
-    if color_norm:
-        print('Apply color normalization')
-        inputs = tf.div(inputs, tf.constant(255, dtype=tf.float32))
+#    inputs = tf.cast(inputs, dtype=tf.float32)
+#    if color_norm:
+#        print('Apply color normalization')
+#        inputs = tf.div(inputs, tf.constant(255, dtype=tf.float32))
 #        inputs = tf.map_fn(ColorNormalize, inputs)
     print("using multicell model!")
     # set ds dropout
