@@ -75,6 +75,10 @@ class TestImagenet:
         ('mobilenet_v2_0.35_96', 0.455),
     ])
     def test_top1(self, model, expected_top1):
+        import tensorflow as tf
+        tf.reset_default_graph()
+        import keras
+        keras.backend.clear_session()
         model = brain_translated_pool[model]
         benchmark = Imagenet2012()
         score = benchmark(model)
