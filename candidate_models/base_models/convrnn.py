@@ -3,7 +3,6 @@ from tnn import main as tnn_main
 from tnn.reciprocalgaternn import tnn_ReciprocalGateCell
 from candidate_models.base_models.median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
 from collections import OrderedDict
-from model_tools.activations.convrnn_preproc import ColorNormalize
 
 dropout10L = {'conv'+str(l):1.0 for l in range(1,11)}
 dropout10L['imnetds'] = 1.0
@@ -62,7 +61,6 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
              times=range(18), image_on=0, image_off=11, delay=10, random_off=None, dropout=dropout10L, 
              edges_arr=[], convrnn_type='recipcell', mem_val=0.0, train_tau_fg=False, apply_bn=False,
              channel_op='concat', seed=0, min_duration=11, use_legacy_cell=False, 
-#             color_norm=True,
              layer_params={},
              p_edge=1.0,
              decoder_start=18,
@@ -78,11 +76,6 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
              iterations_per_loop=None, **kwargs):  
 
     mo_params = {}
-#    inputs = tf.cast(inputs, dtype=tf.float32)
-#    if color_norm:
-#        print('Apply color normalization')
-#        inputs = tf.div(inputs, tf.constant(255, dtype=tf.float32))
-#        inputs = tf.map_fn(ColorNormalize, inputs)
     print("using multicell model!")
     # set ds dropout
     # dropout[out_layers] = ds_dropout
