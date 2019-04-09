@@ -254,7 +254,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
         outputs['times'][t] = tf.squeeze(G.node[out_layers]['outputs'][t])     
     return outputs, mo_params
 
-def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, 
+def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neural_presentation=False,
                cell_layers = ['conv' + str(i) for i in range(4, 11)], use_legacy_cell=True):
 
     model_params = config_dict['model_params']
@@ -281,6 +281,11 @@ def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5,
     for k in cell_layers:
         layer_params[k]['cell_params'] = cell_params
 
+    if neural_presentation: # set up image presentation of model when mapping to neural data
+        model_params['times'] = range(26) # unroll for entire temporal trajectory
+        model_params['image_on'] = 0
+        model_params['image_off'] = 10
+        
     model_params['layer_params'] = layer_params
 
     model_params['ff_weight_decay'] = None # use the values specified in json
