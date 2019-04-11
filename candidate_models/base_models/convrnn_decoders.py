@@ -49,7 +49,7 @@ def compute_alpha(logits, trainable=False):
 def simple_decoder(logits, normalization=None):
     # Just reads at the last timestep
     logits = tf.identity(logits, name="time_logits")
-    alpha = compute_alpha(logits)
+#    alpha = compute_alpha(logits)
     # Normalize across categories
     if normalization is None:
         print('NOT using normalization')
@@ -61,7 +61,7 @@ def simple_decoder(logits, normalization=None):
 # w_avg
 def weighted_average_decoder(logits, beta=1, trainable=False):
     logits = tf.identity(logits, name="time_logits")
-    alpha_ = compute_alpha(logits)
+#    alpha_ = compute_alpha(logits)
     # Get the weights for the weighted average along the time dimension
     # TODO: this might be too large to store
     # [B,T,1000]
@@ -73,7 +73,7 @@ def weighted_average_decoder(logits, beta=1, trainable=False):
 # w_avg_t
 def weighted_average_trainable_decoder(logits, trainable=False):
     logits = tf.identity(logits, name="time_logits")
-    alpha_ = compute_alpha(logits) # Only for comparison purposes
+#    alpha_ = compute_alpha(logits) # Only for comparison purposes
     # TODO: in training and validation, the shape of this tensor might
     #       be different. How to address this?
     alpha = tf.get_variable(initializer=tf.initializers.random_uniform,
@@ -104,7 +104,7 @@ def weighted_time_average_decoder(logits, trainable=False):
 # max_conf
 def max_confidence_decoder(logits, trainable=False):
     logits = tf.identity(logits, name="time_logits")
-    alpha = compute_alpha(logits)
+#    alpha = compute_alpha(logits)
     # Normalize across categories
     probs = normalize(logits, axis=2, name='softmax', trainable=trainable)
     # For the most confident category, at which time does confidence peak?
@@ -119,7 +119,7 @@ def max_confidence_decoder(logits, trainable=False):
 # time_max
 def time_max_decoder(logits, trainable=False):
     logits = tf.identity(logits, name="time_logits")
-    alpha = compute_alpha(logits)
+#    alpha = compute_alpha(logits)
     # Normalize along logits dimension
     probs = normalize(logits, axis=2, name='softmax', trainable=trainable)
     # take argmax along the time dimension ->
@@ -139,7 +139,7 @@ def time_max_decoder(logits, trainable=False):
 # thresh
 def threshold_decoder(logits, threshold=0.9, trainable=False):
     logits = tf.identity(logits, name="time_logits")
-    alpha = compute_alpha(logits)
+#    alpha = compute_alpha(logits)
     if trainable:
         initializer = tf.initializers.random_uniform
     else:
@@ -184,7 +184,7 @@ def mlp_decoder(logits, layers_list=[250], trainable=False,
     print("trainable:{}".format(trainable))
 
     logits = tf.identity(logits, name="time_logits")
-    alpha = compute_alpha(logits)
+#    alpha = compute_alpha(logits)
     inputs = tf.reshape(logits, shape=[-1,logits.shape[1]*logits.shape[2]])
     i = 1
     for num_neurons in layers_list:
