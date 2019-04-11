@@ -255,7 +255,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
     return outputs, mo_params
 
 def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neural_presentation=False,
-               cell_layers = ['conv' + str(i) for i in range(4, 11)], use_legacy_cell=True):
+               cell_layers = ['conv' + str(i) for i in range(4, 11)], use_legacy_cell=True, tau_adjust=False):
 
     model_params = config_dict['model_params']
 
@@ -298,5 +298,12 @@ def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neu
     model_params['edges_arr'] = edges_arr
     model_params['base_name'] = tnn_json
     model_params['use_legacy_cell'] = use_legacy_cell
+
+    if tau_adjust: # when presenting 224 sized images to 128 image size models for neural/behavioral fits
+        print('Fixing filter sizes to pass 224 sized images to a model trained with 128 sized ImageNet')
+        for layer in ['conv8', 'conv9', 'conv10']:
+            for ksize in ['ff_filter_size', 'tau_filter_size', 'gate_filter_size']:
+                if model_params['layer_params'][layer]['cell_params'][ksize] > 4:
+                    model_params['layer_params'][layer]['cell_params'][ksize] = 4
 
     return tnn_base_edges(inputs, train=train, **model_params)
