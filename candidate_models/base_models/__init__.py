@@ -8,7 +8,7 @@ import functools
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
-from candidate_models.base_models.convrnn import load_median_model
+from candidate_models.base_models.convrnn import load_median_model, DECODER_POOL
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
@@ -299,7 +299,32 @@ class BaseModelPool(UniqueKeyDict):
             _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
 
         # ConvRNNs
-        _key_functions['convrnn_128'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_128', tnn_model=True, preprocessing_type='convrnn', image_size=224, image_resize=128)
+        # various 128 trained ConvRNNs with decoders
+        for decoder_type in DECODER_POOL:
+            for include_edges in [False]:
+                curr_model_fn_kwargs = {}
+                if include_edges:
+                    fb_suffix = 'wfb'
+                else:
+                    fb_suffix = 'nofb'
+                    curr_model_fn_kwargs['edges_arr'] = []
+
+                parse_decoder = decoder_type.split('_')
+                curr_model_fn_kwargs['decoder_type'] = '_'.join(parse_decoder[1:])
+                if parse_decoder[0].lower() == 'd':
+                    curr_model_fn_kwargs['decoder_trainable'] = False
+                elif parse_decoder[0].lower() == 't':
+                    curr_model_fn_kwargs['decoder_trainable'] = True
+                else:
+                    raise ValueError
+
+                curr_identifier = 'convrnn_' + decoder_type + '_' + fb_suffix + '_128'
+
+                _key_functions[curr_identifier] = lambda: TFUtilsModel.init(load_median_model, curr_identifier, 
+                                                                                        tnn_model=True, preprocessing_type='convrnn', 
+                                                                                        image_size=224, image_resize=128,
+                                                                                        model_fn_kwargs=curr_model_fn_kwargs)
+
         _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True, preprocessing_type='convrnn', image_size=224, image_resize=None)
 
         # instantiate models with LazyLoad wrapper

@@ -7,6 +7,7 @@ from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.base_models.cornet import CORnetCommitment
 from candidate_models.utils import UniqueKeyDict
+from candidate_models.base_models.convrnn import DECODER_POOL
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
 
@@ -181,9 +182,21 @@ class ModelLayers(UniqueKeyDict):
                       ['avgpool'],
 
             # TFUtils
-            'convrnn_128': ['logits'],
+            # ConvRNNs
             'convrnn_224': ['logits'],
         }
+        
+        #  various 128 trained ConvRNNs with decoders
+        for decoder_type in DECODER_POOL:
+            for include_edges in [False]:
+                if include_edges:
+                    fb_suffix = 'wfb'
+                else:
+                    fb_suffix = 'nofb'
+
+                curr_identifier = 'convrnn_' + decoder_type + '_' + fb_suffix + '_128'
+                layers[curr_identifier] = ['logits']
+
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
         self['vggface'] = self['vgg-16']
