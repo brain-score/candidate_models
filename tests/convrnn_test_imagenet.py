@@ -21,5 +21,10 @@ if __name__ == '__main__':
 #    ff_test.test_top1(model='inception_v1', expected_top1=0.770)
 #    ff_test.test_top1(model='resnet-101_v1', expected_top1=0.770)
 #    ff_test.test_top1(model='resnet-101_v2', expected_top1=0.770)
-    ff_test.test_top1(model='convrnn_224', expected_top1=0.73)
+#    ff_test.test_top1(model='convrnn_224', expected_top1=0.73)
+#    ff_test.test_top1(model='convrnn_d_simple_nofb_128', expected_top1=0.73)
+#    ff_test.test_top1(model='convrnn_d_w_avg_nofb_128', expected_top1=0.73)
+#    ff_test.test_top1(model='convrnn_t_w_avg_nofb_128', expected_top1=0.73)
+#    ff_test.test_top1(model='convrnn_t_max_conf_nofb_128', expected_top1=0.73)
+    ff_test.test_top1(model='convrnn_d_thresh_nofb_128', expected_top1=0.73)
 
