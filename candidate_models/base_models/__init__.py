@@ -63,16 +63,16 @@ class TFSlimModel:
     def _init_preprocessing(placeholder, preprocessing_type, image_size):
         import tensorflow as tf
         from preprocessing import vgg_preprocessing, inception_preprocessing
-        from model_tools.activations.tensorflow import load_resize_image
+        from model_tools.activations.tensorflow import load_image
         preprocessing_types = {
             'vgg': lambda image: vgg_preprocessing.preprocess_image(
                 image, image_size, image_size, resize_side_min=image_size),
             'inception': lambda image: inception_preprocessing.preprocess_for_eval(
-                image, image_size, image_size, central_fraction=1.)
+                image, image_size, image_size)
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
-        preprocess = lambda image_path: preprocess_image(load_resize_image(image_path, image_size))
+        preprocess = lambda image_path: preprocess_image(load_image(image_path))
         preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
         return preprocess
 
