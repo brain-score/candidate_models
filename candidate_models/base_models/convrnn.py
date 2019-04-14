@@ -58,7 +58,6 @@ edges_2 = [(('conv8', 'conv5'), 0.0), (('conv9', 'conv6'), 0.0)]
 edges_3 = edges_2 + [(('conv10', 'conv7'), 0.0)]
 edges_5 = edges_3 + [(('conv7', 'conv6'), 0.0), (('conv10', 'conv9'), 0.0)]
 
-#todo need to fill in with the npz params
 def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in range(1,11)], alter_layers=None,
              unroll_tf=False, const_pres=False, out_layers='imnetds', base_name='model_jsons/10Lv9_imnet128_res23_rrgctx', 
              times=range(18), image_on=0, image_off=11, delay=10, random_off=None, dropout=dropout10L, 
