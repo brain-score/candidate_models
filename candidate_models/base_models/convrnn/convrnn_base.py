@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tnn import main as tnn_main
 from tnn.reciprocalgaternn import tnn_ReciprocalGateCell
-from candidate_models.base_models.median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
-from candidate_models.base_models.convrnn_decoders import decoder as temporal_decoders
+from candidate_models.base_models.convrnn.median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
+from candidate_models.base_models.convrnn.convrnn_decoders import decoder as temporal_decoders
 from collections import OrderedDict
 
 DECODER_POOL = ['d_simple', 'd_w_avg', 't_w_avg', 't_max_conf', 'd_thresh']

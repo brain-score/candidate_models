@@ -8,7 +8,7 @@ import functools
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
-from candidate_models.base_models.convrnn import load_median_model, DECODER_POOL
+from candidate_models.base_models.convrnn.convrnn_base import load_median_model, DECODER_POOL
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
@@ -137,7 +137,7 @@ class TFUtilsModel:
     @staticmethod
     def _init_preprocessing(placeholder, preprocessing_type, image_size, image_resize=None):
         import tensorflow as tf
-        from model_tools.activations.convrnn_preproc import preprocess_for_eval as convrnn_eval_preproc
+        from candidate_models.base_model.convrnn.convrnn_preproc import preprocess_for_eval as convrnn_eval_preproc
         preprocessing_types = {
             'convrnn': lambda image: convrnn_eval_preproc(
                 image, resize=image_resize, crop_size=image_size),
