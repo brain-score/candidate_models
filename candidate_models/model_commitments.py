@@ -7,7 +7,7 @@ from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.base_models.cornet import CORnetCommitment
 from candidate_models.utils import UniqueKeyDict
-from candidate_models.base_models.convrnn import DECODER_POOL
+from candidate_models.base_models.convrnn.convrnn_base import DECODER_POOL
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
 
