@@ -7,7 +7,7 @@ import functools
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
-from candidate_models.base_models.cornet import cornet
+#from candidate_models.base_models.cornet import cornet
 from candidate_models.base_models.convrnn.convrnn_base import load_median_model, DECODER_POOL
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
@@ -294,9 +294,9 @@ class BaseModelPool(UniqueKeyDict):
                     identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
                     model_ctr_kwargs={'depth_multiplier': multiplier})
         # CORnets
-        for cornet_type in ['Z', 'R', 'R2', 'S']:
-            identifier = f"CORnet-{cornet_type}"
-            _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
+#        for cornet_type in ['Z', 'R', 'R2', 'S']:
+#            identifier = f"CORnet-{cornet_type}"
+#            _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
 
         # ConvRNNs
         # various 128 trained ConvRNNs with decoders
