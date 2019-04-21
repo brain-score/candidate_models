@@ -276,6 +276,7 @@ class BrainTranslatedPool(UniqueKeyDict):
                 def load(basemodel_identifier=basemodel_identifier, identifier=identifier,
                          activations_model=activations_model, layers=layers):
 #                    brain_model_ctr = CORnetCommitment if basemodel_identifier.startswith('CORnet') else ModelCommitment
+                    brain_model_ctr = ModelCommitment
                     brain_model = brain_model_ctr(identifier=identifier, activations_model=activations_model,
                                                   layers=layers)
                     for region, assembly in commitment_assemblies.items():
