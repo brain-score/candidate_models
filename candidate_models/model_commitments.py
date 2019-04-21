@@ -2,7 +2,7 @@ import warnings
 
 import itertools
 
-from brainscore.benchmarks.loaders import load_assembly
+from brainscore.assemblies.public import load_assembly
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.base_models.cornet import CORnetCommitment
@@ -259,8 +259,8 @@ class BrainTranslatedPool(UniqueKeyDict):
         super(BrainTranslatedPool, self).__init__()
 
         commitment_assemblies = {
-            'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.V1', average_repetition=False)),
-            'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.V2', average_repetition=False)),
+            'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V1', average_repetition=False)),
+            'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V2', average_repetition=False)),
             'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.V4', average_repetition=False)),
             'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
         }

@@ -1,5 +1,6 @@
 import logging
 import sys
+from collections import OrderedDict
 
 import argparse
 import fire
@@ -31,8 +32,8 @@ def activations(model, assembly, layers=None):
 
 def score_model(model, benchmark):
     logger.info(f"Scoring {model} on benchmark {benchmark} with args {args}")
-    model = brain_translated_pool[model]
-    result = score_model_function(model_identifier=model, benchmark_identifier=benchmark, model=model)
+    _model = brain_translated_pool[model]
+    result = score_model_function(model_identifier=model, benchmark_identifier=benchmark, model=_model)
     print(result)
 
 
@@ -48,4 +49,14 @@ def score_layers(model, benchmark, layers=None):
     print(result)
 
 
+def score_on_benchmarks(model, *benchmarks):
+    scores = OrderedDict()
+    for benchmark in benchmarks:
+        _model = brain_translated_pool[model]
+        score = score_model_function(model_identifier=model, benchmark_identifier=benchmark, model=_model)
+        scores[benchmark] = score
+    print(scores)
+
+
+logger.info(f"Running {' '.join(sys.argv)}")
 fire.Fire()

@@ -1,9 +1,7 @@
-from typing import Union
-
 import functools
 import numpy as np
-import pytest
 from pytest import approx
+from typing import Union
 
 from brainscore.utils import LazyLoad
 from candidate_models import score_model, brain_translated_pool
@@ -11,7 +9,7 @@ from candidate_models.base_models import base_model_pool
 from candidate_models.model_commitments import Hooks
 from model_tools.activations import PytorchWrapper
 from model_tools.activations.pca import LayerPCA
-from model_tools.brain_transformation import LayerModel
+from model_tools.brain_transformation import LayerMappedModel, TemporalIgnore
 
 
 class TestPreselectedLayer:
@@ -21,7 +19,7 @@ class TestPreselectedLayer:
             if pca_components:
                 LayerPCA.hook(activations_model, n_components=pca_components)
                 activations_model.identifier += Hooks.HOOK_SEPARATOR + "pca_1000"
-            model = LayerModel(f"{model_name}-{layer}", activations_model=activations_model)
+            model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
             model.commit(region, layer)
             return model
 
@@ -92,13 +90,35 @@ class TestPreselectedLayer:
         model_id = 'new_pytorch'
         activations_model = PytorchWrapper(model=MyModel(), preprocessing=preprocessing, identifier=model_id)
         layer = 'relu2'
-        candidate = LayerModel(f"{model_id}-{layer}", activations_model=activations_model)
+        candidate = LayerMappedModel(f"{model_id}-{layer}", activations_model=activations_model)
         candidate.commit('IT', layer)
 
         ceiled_score = score_model(model_identifier=model_id, model=candidate,
                                    benchmark_identifier='dicarlo.Majaj2015.IT-pls')
         score = ceiled_score.raw
         assert score.sel(aggregation='center') == approx(.078191, abs=.001)
+
+
+class TestPreselectedLayerTemporal:
+    def layer_candidate(self, model_name, layer, region, pca_components: Union[None, int] = 1000):
+        def load(model_name=model_name, layer=layer, region=region, pca_components=pca_components):
+            activations_model = base_model_pool[model_name]
+            if pca_components:
+                LayerPCA.hook(activations_model, n_components=pca_components)
+                activations_model.identifier += Hooks.HOOK_SEPARATOR + "pca_1000"
+            model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
+            model = TemporalIgnore(model)
+            model.commit(region, layer)
+            return model
+
+        return LazyLoad(load)  # lazy-load to avoid loading all models right away
+
+    def test_alexnet_conv5_IT_temporal(self):
+        model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
+        score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
+                            benchmark_identifier='dicarlo.Majaj2015.temporal.IT-pls')
+        assert score.raw.sel(aggregation='center') == approx(0.277449, abs=0.005)
+        assert len(score.raw.raw['time_bin']) == 12
 
 
 class TestBrainTranslated:
@@ -119,3 +139,31 @@ class TestBrainTranslated:
         model = brain_translated_pool[identifier]
         score = score_model(identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
         assert score.raw.sel(aggregation='center') == approx(0.567, abs=0.005)
+
+    def test_alexnet_temporal_V4(self):
+        identifier = 'alexnet--pca_1000'
+        model = brain_translated_pool[identifier]
+        score = score_model(identifier, 'dicarlo.Majaj2015.temporal.V4-pls', model=model)
+        assert score.raw.sel(aggregation='center') == approx(0.281565, abs=0.005)
+        assert len(score.raw.raw['time_bin']) == 12
+
+    def test_alexnet_temporal_IT(self):
+        identifier = 'alexnet--pca_1000'
+        model = brain_translated_pool[identifier]
+        score = score_model(identifier, 'dicarlo.Majaj2015.temporal.IT-pls', model=model)
+        assert score.raw.sel(aggregation='center') == approx(0.277449, abs=0.005)
+        assert len(score.raw.raw['time_bin']) == 12
+
+    def test_alexnet_temporal_V1(self):
+        identifier = 'alexnet--pca_1000'
+        model = brain_translated_pool[identifier]
+        score = score_model(identifier, 'movshon.FreemanZiemba2013.temporal.V1-pls', model=model)
+        assert score.raw.sel(aggregation='center') == approx(0.120222, abs=0.005)
+        assert len(score.raw.raw['time_bin']) == 25
+
+    def test_alexnet_temporal_V2(self):
+        identifier = 'alexnet--pca_1000'
+        model = brain_translated_pool[identifier]
+        score = score_model(identifier, 'movshon.FreemanZiemba2013.temporal.V2-pls', model=model)
+        assert score.raw.sel(aggregation='center') == approx(0.138038, abs=0.005)
+        assert len(score.raw.raw['time_bin']) == 25
