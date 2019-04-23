@@ -2,10 +2,7 @@ import tensorflow as tf
 from tnn import main as tnn_main
 from tnn.reciprocalgaternn import tnn_ReciprocalGateCell
 from candidate_models.base_models.convrnn.median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
-from candidate_models.base_models.convrnn.convrnn_decoders import decoder as temporal_decoders
 from collections import OrderedDict
-
-DECODER_POOL = ['d_simple', 'd_w_avg', 't_w_avg', 't_max_conf', 'd_thresh']
 
 dropout10L = {'conv'+str(l):1.0 for l in range(1,11)}
 dropout10L['imnetds'] = 1.0
@@ -68,11 +65,6 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
              decoder_start=18,
              decoder_end=26,
              decoder_type='last',
-             decoder_trainable=False,
-             decoder_mlp_layers="250",
-             decoder_pool_type=None,
-             decoder_num_filters=None,
-             decoder_weight_decay=None,
              ff_weight_decay=0.0,
              ff_kernel_initializer_kwargs={},
              final_max_pool=True,
@@ -251,20 +243,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
                 t_eval = t_eval - decoder_start
                 logits = logits_list[t_eval]
         else:
-            if decoder_mlp_layers is None:
-                layers_list = []
-            elif isinstance(decoder_mlp_layers, str):
-                layers_list = [int(i) for i in decoder_mlp_layers.split(",")]
-            else:
-                raise ValueError
-
-            logits = temporal_decoders(logits_list,
-                    name=decoder_type,
-                    trainable=decoder_trainable,
-                    mlp_layers=layers_list,
-                    pool_type=decoder_pool_type,
-                    num_filters=decoder_num_filters,
-                    weight_decay=decoder_weight_decay)
+            raise ValueError
 
         logits = tf.squeeze(logits)
         print("logits shape", logits.shape)
@@ -278,12 +257,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
 
 def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neural_presentation=False,
                cell_layers = ['conv' + str(i) for i in range(4, 11)], use_legacy_cell=True, tau_adjust=False,
-               decoder_type='last',
-               decoder_trainable=False,
-               decoder_mlp_layers=None,
-               decoder_pool_type=None,
-               decoder_num_filters=None,
-               decoder_weight_decay=None):
+               decoder_type='last')
 
     model_params = config_dict['model_params']
 
@@ -324,16 +298,6 @@ def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neu
         model_params['decoder_end'] = model_params['times']
         model_params['decoder_start'] = model_params['decoder_end'] - 1
         model_params['decoder_type'] = 'last'
-    else:
-        print('Using ', decoder_type, ' decoder')
-        model_params['decoder_end'] = model_params['times']
-        model_params['decoder_start'] = 11 # first timestep of feedforward output
-        model_params['decoder_type'] = decoder_type
-        model_params['decoder_trainable'] = decoder_trainable
-        model_params['decoder_mlp_layers'] = decoder_mlp_layers
-        model_params['decoder_pool_type'] = decoder_pool_type
-        model_params['decoder_num_filters'] = decoder_num_filters
-        model_params['decoder_weight_decay'] = decoder_weight_decay
 
     model_params['edges_arr'] = edges_arr
     model_params['base_name'] = tnn_json

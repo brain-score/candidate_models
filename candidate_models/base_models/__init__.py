@@ -7,8 +7,8 @@ import functools
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
-#from candidate_models.base_models.cornet import cornet
-from candidate_models.base_models.convrnn.convrnn_base import load_median_model, DECODER_POOL
+from candidate_models.base_models.cornet import cornet
+from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
@@ -294,36 +294,9 @@ class BaseModelPool(UniqueKeyDict):
                     identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
                     model_ctr_kwargs={'depth_multiplier': multiplier})
         # CORnets
-#        for cornet_type in ['Z', 'R', 'R2', 'S']:
-#            identifier = f"CORnet-{cornet_type}"
-#            _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
-
-        # ConvRNNs
-        # various 128 trained ConvRNNs with decoders
-        for decoder_type in DECODER_POOL:
-            for include_edges in [False]:
-                curr_model_fn_kwargs = {}
-                if include_edges:
-                    fb_suffix = 'wfb'
-                else:
-                    fb_suffix = 'nofb'
-                    curr_model_fn_kwargs['edges_arr'] = []
-
-                parse_decoder = decoder_type.split('_')
-                curr_model_fn_kwargs['decoder_type'] = '_'.join(parse_decoder[1:])
-                if parse_decoder[0].lower() == 'd':
-                    curr_model_fn_kwargs['decoder_trainable'] = False
-                elif parse_decoder[0].lower() == 't':
-                    curr_model_fn_kwargs['decoder_trainable'] = True
-                else:
-                    raise ValueError
-
-                curr_identifier = 'convrnn_' + decoder_type + '_' + fb_suffix + '_128'
-
-                _key_functions[curr_identifier] = lambda: TFUtilsModel.init(load_median_model, curr_identifier, 
-                                                                                        tnn_model=True, preprocessing_type='convrnn', 
-                                                                                        image_size=224, image_resize=128,
-                                                                                        model_fn_kwargs=curr_model_fn_kwargs)
+        for cornet_type in ['Z', 'R', 'R2', 'S']:
+            identifier = f"CORnet-{cornet_type}"
+            _key_functions[identifier] = lambda identifier=identifier: cornet(identifier)
 
         _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True, preprocessing_type='convrnn', image_size=224, image_resize=None)
 
