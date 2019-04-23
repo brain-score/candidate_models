@@ -1,5 +1,6 @@
 import pytest
 from brainscore.benchmarks.imagenet import Imagenet2012
+from pytest import approx
 
 from candidate_models import brain_translated_pool
 
@@ -73,14 +74,18 @@ class TestImagenet:
         ('mobilenet_v2_0.35_160', 0.557),
         ('mobilenet_v2_0.35_128', 0.508),
         ('mobilenet_v2_0.35_96', 0.455),
+        # bagnet: own runs
+        ('bagnet9', .2635),
+        ('bagnet17', .46),
+        ('bagnet33', .58924),
     ])
     def test_top1(self, model, expected_top1):
         import tensorflow as tf
         tf.reset_default_graph()
         import keras
         keras.backend.clear_session()
-        model = brain_translated_pool[model]
+        _model = brain_translated_pool[model]
         benchmark = Imagenet2012()
-        score = benchmark(model)
+        score = benchmark(_model)
         accuracy = score.sel(aggregation='center')
-        assert accuracy == expected_top1
+        assert accuracy == approx(expected_top1, abs=.07)

@@ -194,7 +194,7 @@ def bagnet(function):
     model = model_ctr(pretrained=True)
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=224)
-    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing, batch_size=28)
     wrapper.image_size = 224
     return wrapper
 
