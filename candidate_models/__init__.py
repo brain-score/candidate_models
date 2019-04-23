@@ -25,7 +25,7 @@ def map_and_score_model(model_identifier, benchmark_identifier, model=None, benc
     return score
 
 
-#@store(identifier_ignore=['model', 'benchmark'])
+@store(identifier_ignore=['model', 'benchmark'])
 def score_model(model_identifier, benchmark_identifier, model, benchmark=None):
     assert model is not None
     if benchmark is None:

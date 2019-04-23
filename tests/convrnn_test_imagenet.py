@@ -12,9 +12,3 @@ def test_top1(self, model):
 
 if __name__ == '__main__':
     test_top1(model='convrnn_224')
-#    test_top1(model='convrnn_d_simple_nofb_128')
-#    test_top1(model='convrnn_d_w_avg_nofb_128')
-#    test_top1(model='convrnn_t_w_avg_nofb_128')
-#    test_top1(model='convrnn_t_max_conf_nofb_128')
-#    test_top1(model='convrnn_d_thresh_nofb_128')
-
