@@ -137,7 +137,7 @@ class TFUtilsModel:
     @staticmethod
     def _init_preprocessing(placeholder, preprocessing_type, image_size, image_resize=None):
         import tensorflow as tf
-        from candidate_models.base_model.convrnn.convrnn_preproc import preprocess_for_eval as convrnn_eval_preproc
+        from candidate_models.base_models.convrnn.convrnn_preproc import preprocess_for_eval as convrnn_eval_preproc
         preprocessing_types = {
             'convrnn': lambda image: convrnn_eval_preproc(
                 image, resize=image_resize, crop_size=image_size),
