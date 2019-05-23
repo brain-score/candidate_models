@@ -1,11 +1,13 @@
 import warnings
 
+import importlib
 import itertools
 
 from brainscore.assemblies.public import load_assembly
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.base_models.cornet import CORnetCommitment
+from candidate_models.base_models.layers_as_timesteps import LayersAsTimesteps
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
@@ -237,9 +239,30 @@ model_layers_pool = ModelLayersPool()
 
 
 class BrainTranslatedPool(UniqueKeyDict):
-
     def __init__(self):
         super(BrainTranslatedPool, self).__init__()
+
+        # pre-defined brain translation
+        def lazy_import(module, func):  # avoid circular imports
+            mod = importlib.import_module(module)
+            func = getattr(mod, func)
+            return func()
+
+        self['CORnet-S'] = LazyLoad(lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s_brainmodel'))
+        self['CORnet-S10'] = LazyLoad(
+            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s10_brainmodel'))
+        self['CORnet-S222'] = LazyLoad(
+            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s222_brainmodel'))
+        self['CORnet-S444'] = LazyLoad(
+            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s444_brainmodel'))
+        self['CORnet-S484'] = LazyLoad(
+            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s484_brainmodel'))
+        self['CORnet-S10rep'] = LazyLoad(
+            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s10rep_brainmodel'))
+        self['CORnet-R'] = LazyLoad(lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_r_brainmodel'))
+        self['CORnet-R10'] = LazyLoad(
+            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_r10_brainmodel'))
+        self['CORnet-R2'] = LazyLoad(lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_r2_brainmodel'))
 
         commitment_assemblies = {
             'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V1', average_repetition=False)),
@@ -248,6 +271,17 @@ class BrainTranslatedPool(UniqueKeyDict):
             'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
         }
 
+        def resnet_layer_timesteps():
+            brain_model = LayersAsTimesteps('resnet-101_v2-layer_timesteps',
+                                            activations_model=base_model_pool['resnet-101_v2'],
+                                            layers=model_layers['resnet-101_v2'])
+            for region, assembly in commitment_assemblies.items():
+                brain_model.commit_region(region, assembly)
+            return brain_model
+
+        self['resnet-101_v2-layer_timesteps'] = LazyLoad(resnet_layer_timesteps)
+
+        # standard brain translation
         for basemodel_identifier in base_model_pool:
             if basemodel_identifier not in model_layers:
                 warnings.warn(f"{basemodel_identifier} not found in model_layers")
@@ -255,6 +289,9 @@ class BrainTranslatedPool(UniqueKeyDict):
             layers = model_layers[basemodel_identifier]
 
             for identifier, activations_model in Hooks().iterate_hooks(basemodel_identifier):
+                if identifier in self:  # already pre-defined
+                    continue
+
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
                 def load(basemodel_identifier=basemodel_identifier, identifier=identifier,
                          activations_model=activations_model, layers=layers):
