@@ -1,13 +1,10 @@
 import warnings
 
-import importlib
 import itertools
 
 from brainscore.assemblies.public import load_assembly
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
-from candidate_models.base_models.cornet import CORnetCommitment
-from candidate_models.base_models.layers_as_timesteps import LayersAsTimesteps
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
@@ -165,17 +162,6 @@ class ModelLayers(UniqueKeyDict):
                     *[[f'Conv2d_{i + 1}_depthwise', f'Conv2d_{i + 1}_pointwise'] for i in range(13)])) +
                 ['AvgPool_1a'],
             'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
-            'CORnet-Z': ['V1.output-t0', 'V2.output-t0', 'V4.output-t0', 'IT.output-t0', 'decoder.avgpool-t0'],
-            'CORnet-R': [f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
-                         range(5)] + ['decoder.avgpool-t0'],
-            'CORnet-R2': ['maxpool-t0'] + \
-                         [f'{area}.relu3-t{timestep}' for area in ['block2', 'block3', 'block4']
-                          for timestep in range(5)] + ['avgpool-t0'],
-            'CORnet-S': ['V1.output-t0'] + \
-                        [f'{area}.output-t{timestep}'
-                         for area, timesteps in [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]
-                         for timestep in timesteps] + \
-                        ['decoder.avgpool-t0'],
             'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
             'bagnet': ['relu'] +
                       [f'layer{layer + 1}.{block}.relu' for layer, blocks in
@@ -237,51 +223,18 @@ class ModelLayersPool(UniqueKeyDict):
 
 model_layers_pool = ModelLayersPool()
 
+commitment_assemblies = {
+    'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V1', average_repetition=False)),
+    'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V2', average_repetition=False)),
+    'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.V4', average_repetition=False)),
+    'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
+}
 
-class BrainTranslatedPool(UniqueKeyDict):
+
+class MLBrainPool(UniqueKeyDict):
     def __init__(self):
-        super(BrainTranslatedPool, self).__init__()
+        super(MLBrainPool, self).__init__()
 
-        # pre-defined brain translation
-        def lazy_import(module, func):  # avoid circular imports
-            mod = importlib.import_module(module)
-            func = getattr(mod, func)
-            return func()
-
-        self['CORnet-S'] = LazyLoad(lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s_brainmodel'))
-        self['CORnet-S10'] = LazyLoad(
-            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s10_brainmodel'))
-        self['CORnet-S222'] = LazyLoad(
-            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s222_brainmodel'))
-        self['CORnet-S444'] = LazyLoad(
-            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s444_brainmodel'))
-        self['CORnet-S484'] = LazyLoad(
-            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s484_brainmodel'))
-        self['CORnet-S10rep'] = LazyLoad(
-            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_s10rep_brainmodel'))
-        self['CORnet-R'] = LazyLoad(lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_r_brainmodel'))
-        self['CORnet-R10'] = LazyLoad(
-            lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_r10_brainmodel'))
-        self['CORnet-R2'] = LazyLoad(lambda: lazy_import('candidate_models.base_models.cornet', 'cornet_r2_brainmodel'))
-
-        commitment_assemblies = {
-            'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V1', average_repetition=False)),
-            'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V2', average_repetition=False)),
-            'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.V4', average_repetition=False)),
-            'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
-        }
-
-        def resnet_layer_timesteps():
-            brain_model = LayersAsTimesteps('resnet-101_v2-layer_timesteps',
-                                            activations_model=base_model_pool['resnet-101_v2'],
-                                            layers=model_layers['resnet-101_v2'])
-            for region, assembly in commitment_assemblies.items():
-                brain_model.commit_region(region, assembly)
-            return brain_model
-
-        self['resnet-101_v2-layer_timesteps'] = LazyLoad(resnet_layer_timesteps)
-
-        # standard brain translation
         for basemodel_identifier in base_model_pool:
             if basemodel_identifier not in model_layers:
                 warnings.warn(f"{basemodel_identifier} not found in model_layers")
@@ -295,7 +248,7 @@ class BrainTranslatedPool(UniqueKeyDict):
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
                 def load(basemodel_identifier=basemodel_identifier, identifier=identifier,
                          activations_model=activations_model, layers=layers):
-                    brain_model_ctr = CORnetCommitment if basemodel_identifier.startswith('CORnet') else ModelCommitment
+                    brain_model_ctr = ModelCommitment
                     brain_model = brain_model_ctr(identifier=identifier, activations_model=activations_model,
                                                   layers=layers)
                     for region, assembly in commitment_assemblies.items():
@@ -305,4 +258,4 @@ class BrainTranslatedPool(UniqueKeyDict):
                 self[identifier] = LazyLoad(load)
 
 
-brain_translated_pool = BrainTranslatedPool()
+ml_brain_pool = MLBrainPool()
