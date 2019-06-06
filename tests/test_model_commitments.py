@@ -1,8 +1,11 @@
 import pytest
 
 from candidate_models import brain_translated_pool
+from tests.flags import private_access, memory_intense
 
 
+@memory_intense
+@private_access
 class TestBestLayers:
     @pytest.mark.parametrize(['model_identifier', 'expected'], [
         ('alexnet', {'V1': 'features.5', 'V2': 'features.5', 'V4': 'features.5', 'IT': 'features.12'}),
