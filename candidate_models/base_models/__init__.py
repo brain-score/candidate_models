@@ -167,6 +167,9 @@ class BaseModelPool(UniqueKeyDict):
             'resnet-152_v1': lambda: TFSlimModel.init('resnet-152_v1', net_name='resnet_v1_152',
                                                       preprocessing_type='vgg',
                                                       image_size=224, labels_offset=0),
+            # image_size is 299 for resnet-v2, this is a bug in tf-slim.
+            # see https://github.com/tensorflow/models/tree/8b18491b26e4b8271db757a3245008882ea112b3/research/slim:
+            # "ResNet V2 models use Inception pre-processing and input image size of 299"
             'resnet-50_v2': lambda: TFSlimModel.init('resnet-50_v2', net_name='resnet_v2_50',
                                                      preprocessing_type='inception',
                                                      image_size=299),
