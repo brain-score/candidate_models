@@ -22,6 +22,7 @@ class TestPreselectedLayer:
                 activations_model.identifier += Hooks.HOOK_SEPARATOR + "pca_1000"
             model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
             model.commit(region, layer)
+            model = TemporalIgnore(model)
             return model
 
         return LazyLoad(load)  # lazy-load to avoid loading all models right away
@@ -98,6 +99,7 @@ class TestPreselectedLayer:
         layer = 'relu2'
         candidate = LayerMappedModel(f"{model_id}-{layer}", activations_model=activations_model)
         candidate.commit('IT', layer)
+        candidate = TemporalIgnore(candidate)
 
         ceiled_score = score_model(model_identifier=model_id, model=candidate,
                                    benchmark_identifier='dicarlo.Majaj2015.IT-pls')

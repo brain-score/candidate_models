@@ -15,6 +15,7 @@ before_install:
 - source activate test-environment
 
 - conda install pytorch torchvision -c pytorch # install pytorch manually to avoid pip installation errors
+- conda install keras
 - git clone https://github.com/qbilius/models/ tf-models
 - export PYTHONPATH="$PYTHONPATH:$(pwd)/tf-models/research/slim"
 install:
