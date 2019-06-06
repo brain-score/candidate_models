@@ -20,5 +20,6 @@ before_install:
 install:
   - pip install .
   - pip install pytest pytest-mock
+  - conda list # list installed package versions
 script:
   - pytest --ignore=tf-models
