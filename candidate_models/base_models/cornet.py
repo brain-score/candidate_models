@@ -13,7 +13,7 @@ from torch.nn import Module
 
 from candidate_models import s3
 from model_tools.activations.pytorch import PytorchWrapper
-from model_tools.brain_transformation import LayerModel, LayerSelection, ModelCommitment
+from model_tools.brain_transformation import LayerSelection, ModelCommitment
 
 _logger = logging.getLogger(__name__)
 
