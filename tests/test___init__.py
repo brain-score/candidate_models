@@ -104,7 +104,7 @@ class TestPreselectedLayer:
         ceiled_score = score_model(model_identifier=model_id, model=candidate,
                                    benchmark_identifier='dicarlo.Majaj2015.IT-pls')
         score = ceiled_score.raw
-        assert score.sel(aggregation='center') == approx(.078191, abs=.001)
+        assert score.sel(aggregation='center') == approx(.0820823, abs=.005)
 
 
 class TestPreselectedLayerTemporal:
