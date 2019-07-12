@@ -10,6 +10,7 @@ from candidate_models.model_commitments import Hooks
 from model_tools.activations import PytorchWrapper
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import LayerMappedModel, TemporalIgnore
+from tests.flags import memory_intense
 
 
 class TestPreselectedLayer:
@@ -21,28 +22,33 @@ class TestPreselectedLayer:
                 activations_model.identifier += Hooks.HOOK_SEPARATOR + "pca_1000"
             model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
             model.commit(region, layer)
+            model = TemporalIgnore(model)
             return model
 
         return LazyLoad(load)  # lazy-load to avoid loading all models right away
 
+    @memory_intense
     def test_alexnet_conv2_V4(self):
         model = self.layer_candidate('alexnet', layer='features.5', region='V4', pca_components=1000)
         score = score_model(model_identifier='alexnet-f5-pca_1000', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.V4-pls')
         assert score.raw.sel(aggregation='center').max() == approx(0.656703, abs=0.005)
 
+    @memory_intense
     def test_alexnet_conv5_V4(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='V4', pca_components=1000)
         score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.V4-pls')
         assert score.raw.sel(aggregation='center') == approx(0.533175, abs=0.005)
 
+    @memory_intense
     def test_alexnet_conv5_IT(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
         score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.IT-pls')
         assert score.raw.sel(aggregation='center') == approx(0.601174, abs=0.005)
 
+    @memory_intense
     def test_alexnet_conv3_IT_mask(self):
         model = self.layer_candidate('alexnet', layer='features.6', region='IT', pca_components=None)
         np.random.seed(123)
@@ -50,6 +56,7 @@ class TestPreselectedLayer:
                             benchmark_identifier='dicarlo.Majaj2015.IT-mask')
         assert score.raw.sel(aggregation='center') == approx(0.614621, abs=0.005)
 
+    @memory_intense
     def test_repeat_same_result(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
         score1 = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
@@ -92,11 +99,12 @@ class TestPreselectedLayer:
         layer = 'relu2'
         candidate = LayerMappedModel(f"{model_id}-{layer}", activations_model=activations_model)
         candidate.commit('IT', layer)
+        candidate = TemporalIgnore(candidate)
 
         ceiled_score = score_model(model_identifier=model_id, model=candidate,
                                    benchmark_identifier='dicarlo.Majaj2015.IT-pls')
         score = ceiled_score.raw
-        assert score.sel(aggregation='center') == approx(.078191, abs=.001)
+        assert score.sel(aggregation='center') == approx(.0820823, abs=.01)
 
 
 class TestPreselectedLayerTemporal:
@@ -113,6 +121,7 @@ class TestPreselectedLayerTemporal:
 
         return LazyLoad(load)  # lazy-load to avoid loading all models right away
 
+    @memory_intense
     def test_alexnet_conv5_IT_temporal(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
         score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
@@ -121,6 +130,7 @@ class TestPreselectedLayerTemporal:
         assert len(score.raw.raw['time_bin']) == 12
 
 
+@memory_intense
 class TestBrainTranslated:
     def test_alexnet_pca(self):
         identifier = 'alexnet--pca_1000'
