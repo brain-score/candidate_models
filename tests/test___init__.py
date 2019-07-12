@@ -1,12 +1,13 @@
 import functools
 import numpy as np
+import pytest
 from pytest import approx
 from typing import Union
 
 from brainscore.utils import LazyLoad
 from candidate_models import score_model, brain_translated_pool
 from candidate_models.base_models import base_model_pool
-from candidate_models.model_commitments import Hooks
+from candidate_models.model_commitments.ml_pool import Hooks
 from model_tools.activations import PytorchWrapper
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import LayerMappedModel, TemporalIgnore
@@ -177,3 +178,16 @@ class TestBrainTranslated:
         score = score_model(identifier, 'movshon.FreemanZiemba2013.temporal.V2-pls', model=model)
         assert score.raw.sel(aggregation='center') == approx(0.138038, abs=0.005)
         assert len(score.raw.raw['time_bin']) == 25
+
+    @memory_intense
+    @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
+        ('CORnet-S', .25),
+        ('alexnet', np.nan),
+    ])
+    def test_candidate_Kar2019OST(self, model_identifier, expected_score):
+        model = brain_translated_pool[model_identifier]
+        score = score_model(model_identifier=model_identifier, model=model, benchmark_identifier='dicarlo.Kar2019-ost')
+        if not np.isnan(expected_score):
+            assert score.raw.sel(aggregation='center') == approx(expected_score, abs=.002)
+        else:
+            assert np.isnan(score.raw.sel(aggregation='center'))
