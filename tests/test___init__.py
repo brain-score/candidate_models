@@ -133,55 +133,33 @@ class TestPreselectedLayerTemporal:
 
 @memory_intense
 class TestBrainTranslated:
-    def test_alexnet_pca(self):
-        identifier = 'alexnet--pca_1000'
-        model = brain_translated_pool[identifier]
-        score = score_model(identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.601174, abs=0.005)
+    @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
+        ('alexnet--pca_1000', .601174),
+        ('alexnet--degrees', .560698),
+        ('alexnet--degrees-pca_1000', .567),
+        ('CORnet-S', .600),
+    ])
+    def test_Majaj2015ITpls(self, model_identifier, expected_score):
+        model = brain_translated_pool[model_identifier]
+        score = score_model(model_identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
+        assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
 
-    def test_alexnet_degrees(self):
-        identifier = 'alexnet--degrees'
+    @pytest.mark.parametrize(['identifier_suffix', 'benchmark', 'expected_score', 'time_bins'], [
+        ('--pca_1000', 'dicarlo.Majaj2015.temporal.V4-pls', .281565, 12),
+        ('--pca_1000', 'dicarlo.Majaj2015.temporal.IT-pls', .277449, 12),
+        ('--pca_1000', 'movshon.FreemanZiemba2013.temporal.V1-pls', .120222, 25),
+        ('--pca_1000', 'movshon.FreemanZiemba2013.temporal.V2-pls', .138038, 25),
+    ])
+    def test_alexnet_temporal(self, identifier_suffix, benchmark, expected_score, time_bins):
+        identifier = f'alexnet{identifier_suffix}'
         model = brain_translated_pool[identifier]
-        score = score_model(identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.560698, abs=0.005)
+        score = score_model(identifier, benchmark, model=model)
+        assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
+        assert len(score.raw.raw['time_bin']) == time_bins
 
-    def test_alexnet_degrees_pca(self):
-        identifier = 'alexnet--degrees-pca_1000'
-        model = brain_translated_pool[identifier]
-        score = score_model(identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.567, abs=0.005)
-
-    def test_alexnet_temporal_V4(self):
-        identifier = 'alexnet--pca_1000'
-        model = brain_translated_pool[identifier]
-        score = score_model(identifier, 'dicarlo.Majaj2015.temporal.V4-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.281565, abs=0.005)
-        assert len(score.raw.raw['time_bin']) == 12
-
-    def test_alexnet_temporal_IT(self):
-        identifier = 'alexnet--pca_1000'
-        model = brain_translated_pool[identifier]
-        score = score_model(identifier, 'dicarlo.Majaj2015.temporal.IT-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.277449, abs=0.005)
-        assert len(score.raw.raw['time_bin']) == 12
-
-    def test_alexnet_temporal_V1(self):
-        identifier = 'alexnet--pca_1000'
-        model = brain_translated_pool[identifier]
-        score = score_model(identifier, 'movshon.FreemanZiemba2013.temporal.V1-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.120222, abs=0.005)
-        assert len(score.raw.raw['time_bin']) == 25
-
-    def test_alexnet_temporal_V2(self):
-        identifier = 'alexnet--pca_1000'
-        model = brain_translated_pool[identifier]
-        score = score_model(identifier, 'movshon.FreemanZiemba2013.temporal.V2-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(0.138038, abs=0.005)
-        assert len(score.raw.raw['time_bin']) == 25
-
-    @memory_intense
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
         ('CORnet-S', .25),
+        ('CORnet-R2', .298),
         ('alexnet', np.nan),
     ])
     def test_candidate_Kar2019OST(self, model_identifier, expected_score):
@@ -191,3 +169,13 @@ class TestBrainTranslated:
             assert score.raw.sel(aggregation='center') == approx(expected_score, abs=.002)
         else:
             assert np.isnan(score.raw.sel(aggregation='center'))
+
+    @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
+        ('CORnet-S', .382),
+        ('alexnet', .253),
+    ])
+    def test_Rajalingham2018i2n(self, model_identifier, expected_score):
+        model = brain_translated_pool[model_identifier]
+        score = score_model(model_identifier=model_identifier, model=model,
+                            benchmark_identifier='dicarlo.Rajalingham2018-i2n')
+        assert score.raw.sel(aggregation='center') == approx(expected_score, abs=.005)
