@@ -10,6 +10,7 @@ from torch.nn import Module
 
 from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
 from candidate_models import s3
+from candidate_models.base_models.cornet.cornet_r2 import fix_state_dict_naming as fix_r2_state_dict_naming
 from model_tools.activations.pytorch import PytorchWrapper
 
 _logger = logging.getLogger(__name__)
@@ -116,6 +117,8 @@ def cornet(identifier):
         os.makedirs(weightsdir_path, exist_ok=True)
         s3.download_file(WEIGHT_MAPPING[cornet_type.upper()], weights_path, bucket='cornet-models')
     checkpoint = torch.load(weights_path, map_location=lambda storage, loc: storage)  # map onto cpu
+    if cornet_type.lower() == 'r2':
+        checkpoint['state_dict'] = fix_r2_state_dict_naming(checkpoint['state_dict'])
     model.load_state_dict(checkpoint['state_dict'])
     model = model.module  # unwrap
 

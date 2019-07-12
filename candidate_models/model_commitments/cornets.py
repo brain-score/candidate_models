@@ -188,10 +188,9 @@ def cornet_r10rep_brainmodel():
 
 
 def cornet_r2_brainmodel():
-    # TODO: layers don't start with region
     return CORnetCommitment(identifier='CORnet-R2', activations_model=cornet('CORnet-R2'),
-                            layers=['maxpool-t0'] +
-                                   [f'{area}.relu3-t{timestep}' for area in ['block2', 'block3', 'block4']
+                            layers=['V1.output-t0'] +
+                                   [f'{area}.output-t{timestep}' for area in ['V2', 'V4', 'IT']
                                     for timestep in range(5)] + ['avgpool-t0'],
                             time_mapping={'IT': {
                                 0: (70, 105), 1: (105, 140), 2: (140, 175), 3: (175, 210), 4: (210, 250)}})
