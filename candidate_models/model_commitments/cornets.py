@@ -3,13 +3,21 @@ from torch import nn
 from typing import Dict, Tuple
 
 from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
+from brainscore.model_interface import BrainModel
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import cornet
+from model_tools.brain_transformation.behavior import BehaviorArbiter, LogitsBehavior, ProbabilitiesMapping
 from result_caching import store
 
 
-class CORnetCommitment:
-    # TODO: get behavior back in there
+class CORnetCommitment(BrainModel):
+    """
+    CORnet commitment where only the model interface is implemented and behavioral readouts are attached.
+    Importantly, layer-region commitments do not occur due to the anatomical pre-mapping.
+    Further, due to the temporal component of the model, requested time-bins are matched to the nearest committed
+    time-bin for the model.
+    """
+
     def __init__(self, identifier, activations_model, layers,
                  time_mapping: Dict[str, Dict[int, Tuple[int, int]]], behavioral_readout_layer=None):
         """
@@ -19,20 +27,33 @@ class CORnetCommitment:
         self.region_assemblies = {}
         self.activations_model = activations_model
         self.time_mapping = time_mapping
-        self.do_behavior = False
         self.recording_layers = None
         self.recording_time_bins = None
 
-    def commit_region(self, region, assembly):
-        pass  # already anatomically pre-mapped
+        logits_behavior = LogitsBehavior(
+            identifier=identifier, activations_model=TemporalIgnore(activations_model))
+        behavioral_readout_layer = behavioral_readout_layer or layers[-1]
+        probabilities_behavior = ProbabilitiesMapping(
+            identifier=identifier, activations_model=TemporalIgnore(activations_model), layer=behavioral_readout_layer)
+        self.behavior_model = BehaviorArbiter({BrainModel.Task.label: logits_behavior,
+                                               BrainModel.Task.probabilities: probabilities_behavior})
+        self.do_behavior = False
 
     def start_recording(self, recording_target, time_bins):
         self.recording_layers = [layer for layer in self.layers if layer.startswith(recording_target)]
         self.recording_time_bins = time_bins
 
+    def start_task(self, task: BrainModel.Task, *args, **kwargs):
+        if task != BrainModel.Task.passive:
+            self.behavior_model.start_task(task, *args, **kwargs)
+            self.do_behavior = True
+
     def look_at(self, stimuli):
-        # cache, since piecing times together is not too fast unfortunately
-        return self.look_at_cached(self.activations_model.identifier, stimuli.name, stimuli)
+        if self.do_behavior:
+            return self.behavior_model.look_at(stimuli)
+        else:
+            # cache, since piecing times together is not too fast unfortunately
+            return self.look_at_cached(self.activations_model.identifier, stimuli.name, stimuli)
 
     @store(identifier_ignore=['stimuli'])
     def look_at_cached(self, activations_model_identifier, stimuli_identifier, stimuli):
@@ -70,8 +91,21 @@ def find_nearest(array, value):
     return array[idx]
 
 
+class TemporalIgnore:
+    """
+    Wrapper around a activations model that squeezes out the temporal axis.
+    Useful when there is only one time step and the behavioral readout does not know what to do with time.
+    """
+    def __init__(self, temporal_activations_model):
+        self._activations_model = temporal_activations_model
+
+    def __call__(self, *args, **kwargs):
+        activations = self._activations_model(*args, **kwargs)
+        activations = activations.squeeze('time_step')
+        return activations
+
+
 def cornet_s_brainmodel():
-    # time_start, time_step_size = 70, 100
     time_start, time_step_size = 100, 100
     time_mapping = {timestep: (time_start + timestep * time_step_size, time_start + (timestep + 1) * time_step_size)
                     for timestep in range(0, 2)}
