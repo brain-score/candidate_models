@@ -248,8 +248,7 @@ class MLBrainPool(UniqueKeyDict):
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
                 def load(basemodel_identifier=basemodel_identifier, identifier=identifier,
                          activations_model=activations_model, layers=layers):
-                    brain_model_ctr = ModelCommitment
-                    brain_model = brain_model_ctr(identifier=identifier, activations_model=activations_model,
+                    brain_model = ModelCommitment(identifier=identifier, activations_model=activations_model,
                                                   layers=layers)
                     for region, assembly in commitment_assemblies.items():
                         brain_model.commit_region(region, assembly)
