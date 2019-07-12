@@ -2,7 +2,7 @@ import pytest
 
 from brainscore import get_stimulus_set
 from candidate_models.base_models import base_model_pool
-from candidate_models.model_commitments import model_layers
+from candidate_models.model_commitments.ml_pool import model_layers
 from model_tools.activations.pca import LayerPCA
 from tests.flags import memory_intense
 
