@@ -23,4 +23,4 @@ install:
 - pip install pytest pytest-mock
 - conda list # list installed package versions
 script:
-- CUDA_VISIBLE_DEVICES= pytest --ignore=tf-models --skip-private --skip-memory-intense --skip-gpu
+- CUDA_VISIBLE_DEVICES= pytest --ignore=tf-models -m "not private_access and not memory_intense and not requires_gpu"

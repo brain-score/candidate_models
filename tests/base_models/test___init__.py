@@ -3,10 +3,9 @@ import os
 import pytest
 
 from candidate_models.base_models import base_model_pool
-from tests.flags import memory_intense
 
 
-@memory_intense
+@pytest.mark.memory_intense
 @pytest.mark.parametrize('model_name', list(base_model_pool.keys()))
 def test_run_logits(model_name):
     base_model = base_model_pool[model_name]

@@ -6,13 +6,14 @@ import argparse
 import fire
 
 from candidate_models import score_layers as score_layers_function, score_model as score_model_function, get_activations
-from candidate_models.model_commitments import model_layers_pool, brain_translated_pool
+from candidate_models.model_commitments import brain_translated_pool
+from candidate_models.model_commitments.ml_pool import model_layers_pool
 
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--log_level', type=str, default='INFO')
-args, _ = parser.parse_known_args()
+args, remaining_args = parser.parse_known_args()
 logging.basicConfig(stream=sys.stdout, level=logging.getLevelName(args.log_level),
                     format='%(asctime)-15s %(levelname)s:%(name)s:%(message)s')
 for disable_logger in ['s3transfer', 'botocore', 'boto3', 'urllib3', 'peewee', 'PIL']:
@@ -59,4 +60,4 @@ def score_on_benchmarks(model, *benchmarks):
 
 
 logger.info(f"Running {' '.join(sys.argv)}")
-fire.Fire()
+fire.Fire(command=remaining_args)

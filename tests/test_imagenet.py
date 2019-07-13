@@ -3,11 +3,10 @@ from pytest import approx
 
 from brainscore.benchmarks.imagenet import Imagenet2012
 from candidate_models import brain_translated_pool
-from tests.flags import requires_gpu, memory_intense
 
 
-@memory_intense
-@requires_gpu
+@pytest.mark.memory_intense
+@pytest.mark.requires_gpu
 class TestImagenet:
     @pytest.mark.parametrize(['model', 'expected_top1'], [
         # pytorch: from https://pytorch.org/docs/stable/torchvision/models.html
