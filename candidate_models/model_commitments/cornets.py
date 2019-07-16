@@ -96,6 +96,7 @@ class TemporalIgnore:
     Wrapper around a activations model that squeezes out the temporal axis.
     Useful when there is only one time step and the behavioral readout does not know what to do with time.
     """
+
     def __init__(self, temporal_activations_model):
         self._activations_model = temporal_activations_model
 
@@ -105,17 +106,41 @@ class TemporalIgnore:
         return activations
 
 
+def _build_time_mappings(time_mappings):
+    return {region: {
+        timestep: (time_start + timestep * time_step_size,
+                   time_start + (timestep + 1) * time_step_size)
+        for timestep in range(0, timesteps)}
+        for region, (time_start, time_step_size, timesteps) in time_mappings.items()}
+
+
+def cornet_z_brainmodel():
+    return CORnetCommitment(identifier='CORnet-Z', activations_model=cornet('CORnet-Z'),
+                            layers=[f'{region}.output-t0' for region in ['V1', 'V2', 'V4', 'IT']] +
+                                   ['decoder.avgpool-t0'],
+                            time_mapping={
+                                'V1': {0: (50, 150)},
+                                'V2': {0: (70, 170)},
+                                'V4': {0: (90, 190)},
+                                'IT': {0: (100, 200)},
+                            })
+
+
 def cornet_s_brainmodel():
-    time_start, time_step_size = 100, 100
-    time_mapping = {timestep: (time_start + timestep * time_step_size, time_start + (timestep + 1) * time_step_size)
-                    for timestep in range(0, 2)}
+    # map region -> (time_start, time_step_size, timesteps)
+    time_mappings = {
+        'V1': (50, 100, 1),
+        'V2': (70, 100, 2),
+        'V4': (90, 50, 4),
+        'IT': (100, 100, 2),
+    }
     return CORnetCommitment(identifier='CORnet-S', activations_model=cornet('CORnet-S'),
                             layers=['V1.output-t0'] +
                                    [f'{area}.output-t{timestep}'
                                     for area, timesteps in [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]
                                     for timestep in timesteps] +
                                    ['decoder.avgpool-t0'],
-                            time_mapping={'IT': time_mapping})
+                            time_mapping=_build_time_mappings(time_mappings))
 
 
 def cornet_s222_brainmodel():
@@ -202,8 +227,12 @@ def cornet_r_brainmodel():
     return CORnetCommitment(identifier='CORnet-R', activations_model=cornet('CORnet-R'),
                             layers=[f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
                                     range(5)] + ['decoder.avgpool-t0'],
-                            time_mapping={'IT': {
-                                0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)}})
+                            time_mapping={
+                                'V1': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                            })
 
 
 def cornet_r10rep_brainmodel():
@@ -226,11 +255,16 @@ def cornet_r2_brainmodel():
                             layers=['V1.output-t0'] +
                                    [f'{area}.output-t{timestep}' for area in ['V2', 'V4', 'IT']
                                     for timestep in range(5)] + ['avgpool-t0'],
-                            time_mapping={'IT': {
-                                0: (70, 105), 1: (105, 140), 2: (140, 175), 3: (175, 210), 4: (210, 250)}})
+                            time_mapping={
+                                'V1': {0: (50, 150)},
+                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                            })
 
 
 cornet_brain_pool = {
+    'CORnet-Z': LazyLoad(cornet_z_brainmodel),
     'CORnet-S': LazyLoad(cornet_s_brainmodel),
     'CORnet-S101010': LazyLoad(cornet_s101010_brainmodel),
     'CORnet-S222': LazyLoad(cornet_s222_brainmodel),
