@@ -285,7 +285,7 @@ class CORnetBrainPool(UniqueKeyDict):
         self._accessed_brain_models = []
 
         for basemodel_identifier, brain_model in model_pool.items():
-            activations_model = brain_model.activations_model
+            activations_model = LazyLoad(lambda brain_model=brain_model: brain_model.activations_model)
             for identifier, activations_model in Hooks().iterate_hooks(basemodel_identifier, activations_model):
                 def load(basemodel_identifier=basemodel_identifier, identifier=identifier, brain_model=brain_model):
                     # only update when actually required, otherwise we'd change the activations_model
