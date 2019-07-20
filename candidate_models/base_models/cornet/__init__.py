@@ -22,7 +22,7 @@ class TemporalPytorchWrapper(PytorchWrapper):
         # introduce time dimension
         regions = defaultdict(list)
         for layer in set(activations['layer'].values):
-            match = re.match(r'(([^-]*)\..*|logits)-t([0-9]+)', layer)
+            match = re.match(r'(([^-]*)\..*|logits|avgpool)-t([0-9]+)', layer)
             region, timestep = match.group(2) if match.group(2) else match.group(1), match.group(3)
             regions[region].append((layer, timestep))
         activations = {(region, timestep): activations.sel(layer=time_layer)

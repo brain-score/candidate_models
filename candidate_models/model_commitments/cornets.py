@@ -1,5 +1,6 @@
 import numpy as np
 from torch import nn
+from tqdm import tqdm
 from typing import Dict, Tuple
 
 from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
@@ -31,6 +32,7 @@ class CORnetCommitment(BrainModel):
         self.time_mapping = time_mapping
         self.recording_layers = None
         self.recording_time_bins = None
+        self.identifier = identifier
 
         logits_behavior = LogitsBehavior(
             identifier=identifier, activations_model=TemporalIgnore(activations_model))
@@ -55,10 +57,10 @@ class CORnetCommitment(BrainModel):
             return self.behavior_model.look_at(stimuli)
         else:
             # cache, since piecing times together is not too fast unfortunately
-            return self.look_at_cached(self.activations_model.identifier, stimuli.name, stimuli)
+            return self.look_at_cached(self.identifier, stimuli.name, stimuli)
 
     @store(identifier_ignore=['stimuli'])
-    def look_at_cached(self, activations_model_identifier, stimuli_identifier, stimuli):
+    def look_at_cached(self, model_identifier, stimuli_identifier, stimuli):
         responses = self.activations_model(stimuli, layers=self.recording_layers)
         # map time
         regions = set(responses['region'].values)
@@ -71,7 +73,7 @@ class CORnetCommitment(BrainModel):
         responses = NeuroidAssembly(responses.rename({'time_step': 'time_bin'}))
         # select time
         time_responses = []
-        for time_bin in self.recording_time_bins:
+        for time_bin in tqdm(self.recording_time_bins, desc='CORnet-time to recording time'):
             time_bin = time_bin if not isinstance(time_bin, np.ndarray) else time_bin.tolist()
             time_bin_start, time_bin_end = time_bin
             nearest_start = find_nearest(responses['time_bin_start'].values, time_bin_start)
@@ -133,6 +135,7 @@ def cornet_s_brainmodel():
     time_mappings = {
         'V1': (50, 100, 1),
         'V2': (70, 100, 2),
+        # 'V2': (20, 50, 2),  # MS: This follows from the movshon anesthesized-monkey recordings, so might not hold up
         'V4': (90, 50, 4),
         'IT': (100, 100, 2),
     }
@@ -237,6 +240,66 @@ def cornet_r_brainmodel():
                             })
 
 
+def cornet_r_ITt0_brainmodel():
+    return CORnetCommitment(identifier='CORnet-R_ITt0', activations_model=cornet('CORnet-R'),
+                            layers=[f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
+                                    range(5)] + ['decoder.avgpool-t0'],
+                            time_mapping={
+                                'V1': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {0: (70, 100), 1: (100, 130), 2: (130, 160), 3: (160, 190), 4: (190, 250)},
+                            })
+
+
+def cornet_r_ITt1_brainmodel():
+    return CORnetCommitment(identifier='CORnet-R_ITt1', activations_model=cornet('CORnet-R'),
+                            layers=[f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
+                                    range(5)] + ['decoder.avgpool-t0'],
+                            time_mapping={
+                                'V1': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {0: (10, 70), 1: (70, 170), 2: (170, 190), 3: (190, 210), 4: (210, 250)},
+                            })
+
+
+def cornet_r_ITt2_brainmodel():
+    return CORnetCommitment(identifier='CORnet-R_ITt2', activations_model=cornet('CORnet-R'),
+                            layers=[f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
+                                    range(5)] + ['decoder.avgpool-t0'],
+                            time_mapping={
+                                'V1': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {0: (10, 30), 1: (30, 70), 2: (70, 170), 3: (170, 200), 4: (200, 250)},
+                            })
+
+
+def cornet_r_ITt3_brainmodel():
+    return CORnetCommitment(identifier='CORnet-R_ITt3', activations_model=cornet('CORnet-R'),
+                            layers=[f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
+                                    range(5)] + ['decoder.avgpool-t0'],
+                            time_mapping={
+                                'V1': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {0: (10, 30), 1: (30, 50), 2: (50, 70), 3: (70, 150), 4: (150, 250)},
+                            })
+
+
+def cornet_r_ITt4_brainmodel():
+    return CORnetCommitment(identifier='CORnet-R_ITt4', activations_model=cornet('CORnet-R'),
+                            layers=[f'{area}.output-t{timestep}' for area in ['V1', 'V2', 'V4', 'IT'] for timestep in
+                                    range(5)] + ['decoder.avgpool-t0'],
+                            time_mapping={
+                                'V1': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {0: (10, 30), 1: (30, 50), 2: (50, 60), 3: (60, 70), 4: (70, 250)},
+                            })
+
+
 def cornet_r10rep_brainmodel():
     activations_model = cornet('CORnet-R')
     new_times = 10
@@ -278,6 +341,11 @@ class CORnetBrainPool(UniqueKeyDict):
             'CORnet-S484': LazyLoad(cornet_s484_brainmodel),
             'CORnet-S10rep': LazyLoad(cornet_s10rep_brainmodel),
             'CORnet-R': LazyLoad(cornet_r_brainmodel),
+            'CORnet-R_ITt0': LazyLoad(cornet_r_ITt0_brainmodel),
+            'CORnet-R_ITt1': LazyLoad(cornet_r_ITt1_brainmodel),
+            'CORnet-R_ITt2': LazyLoad(cornet_r_ITt2_brainmodel),
+            'CORnet-R_ITt3': LazyLoad(cornet_r_ITt3_brainmodel),
+            'CORnet-R_ITt4': LazyLoad(cornet_r_ITt4_brainmodel),
             'CORnet-R10rep': LazyLoad(cornet_r10rep_brainmodel),
             'CORnet-R2': LazyLoad(cornet_r2_brainmodel),
         }
