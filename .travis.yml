@@ -1,24 +1,26 @@
 language: python
 python:
-  - 3.6
+- "3.6"
 before_install:
-  # the following is taken from https://github.com/pytorch/vision/blob/master/.travis.yml
-  - sudo apt-get update
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a # Useful for debugging any issues with conda
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
-  - source activate test-environment
+# the following is taken from https://github.com/pytorch/vision/blob/master/.travis.yml
+- sudo apt-get update
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a # Useful for debugging any issues with conda
+- conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+- source activate test-environment
 
-  - conda install pytorch torchvision -c pytorch # install pytorch manually to avoid pip installation errors
-  - git clone https://github.com/qbilius/models/ tf-models
-  - export PYTHONPATH="$PYTHONPATH:$(pwd)/tf-models/research/slim"
+- conda install pytorch torchvision -c pytorch # install pytorch manually to avoid pip installation errors
+- conda install keras
+- git clone https://github.com/qbilius/models/ tf-models
+- export PYTHONPATH="$PYTHONPATH:$(pwd)/tf-models/research/slim"
 install:
-  - pip install .
-  - pip install pytest pytest-mock
+- pip install .
+- pip install pytest pytest-mock
+- conda list # list installed package versions
 script:
-  - pytest --ignore=tf-models
+- CUDA_VISIBLE_DEVICES= pytest --ignore=tf-models -m "not private_access and not memory_intense and not requires_gpu"

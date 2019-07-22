@@ -1,5 +1,5 @@
-framework,model,link,bibtex,module,callable,behav_layer,preprocessing,image_size,checkpoint,depth_multiplier,labels_offset,depth,flops,num_params,top1,top5,behav_r,nonlins
-pytorch,alexnet,https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks,"@incollection{NIPS2012_4824,
+model,link,bibtex,top1,top5
+alexnet,https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks,"@incollection{NIPS2012_4824,
 title = {ImageNet Classification with Deep Convolutional Neural Networks},
 author = {Alex Krizhevsky and Sutskever, Ilya and Hinton, Geoffrey E},
 booktitle = {Advances in Neural Information Processing Systems 25},
@@ -9,44 +9,44 @@ year = {2012},
 publisher = {Curran Associates, Inc.},
 url = {http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf}
 }
-",alexnet,alexnet_v2,fc7,,224,,,1,8,14846401685,50303912,0.577,,0.244529425,7
-pytorch,cornet_s,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
+",0.577,
+CORnet-S,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
 title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
 year = {2018},
 }
-",,,,,224,,,1,8,14846401685,50303912,0.747,,0.382,7
-pytorch,cornet_r,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
+",0.747,
+CORnet-R,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
 title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
 year = {2018},
 }
-",,,,,224,,,,,,,,,,
-pytorch,cornet_z,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
+",.56,
+CORnet-Z,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
 title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
 year = {2018},
 }
-",,,,,224,,,,,,,,,,
-pytorch,cornet_r2,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
+",.47,
+CORnet-R2,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
 title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Recognition},
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
 year = {2018},
 }
-",,,,,224,,,,,,,,,,
-pytorch,squeezenet1_0,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
+",.70,
+squeezenet1_0,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Author = {Forrest N. Iandola and Song Han and Matthew W. Moskewicz and Khalid Ashraf and William J. Dally and Kurt Keutzer},
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
     Journal = {arXiv:1602.07360},
     Year = {2016}
-}",,,,,224,,,,34,14848864815,51539408,0.575,,0.17975704074986987,25
-pytorch,squeezenet1_1,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
+}",0.575,
+squeezenet1_1,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Author = {Forrest N. Iandola and Song Han and Matthew W. Moskewicz and Khalid Ashraf and William J. Dally and Kurt Keutzer},
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
     Journal = {arXiv:1602.07360},
     Year = {2016}
-}",,,,,224,,,,34,14848864815,51539408,0.575,,0.20139813685140573,25
-keras,xception,https://arxiv.org/abs/1610.02357,"@article{DBLP:journals/corr/Chollet16a,
+}",0.575,
+xception,https://arxiv.org/abs/1610.02357,"@article{DBLP:journals/corr/Chollet16a,
   author    = {Fran{\c{c}}ois Chollet},
   title     = {Xception: Deep Learning with Depthwise Separable Convolutions},
   journal   = {CoRR},
@@ -58,8 +58,8 @@ keras,xception,https://arxiv.org/abs/1610.02357,"@article{DBLP:journals/corr/Cho
   timestamp = {Wed, 07 Jun 2017 14:41:03 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/Chollet16a},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",xception,Xception,avg_pool,,299,,,,40,46119339,22910480,0.79,0.945,0.361446007,35
-keras,densenet-121,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr/HuangLW16a,
+}",0.79,0.945
+densenet-121,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr/HuangLW16a,
   author    = {Gao Huang and
                Zhuang Liu and
                Kilian Q. Weinberger},
@@ -73,8 +73,8 @@ keras,densenet-121,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:42:40 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HuangLW16a},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",densenet,DenseNet121,avg_pool,,224,,,,120,62703742,30972984,0.745,0.918,0.369344311,120
-keras,densenet-169,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr/HuangLW16a,
+}",0.745,0.918
+densenet-169,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr/HuangLW16a,
   author    = {Gao Huang and
                Zhuang Liu and
                Kilian Q. Weinberger},
@@ -88,8 +88,8 @@ keras,densenet-169,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:42:40 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HuangLW16a},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",densenet,DenseNet169,avg_pool,,224,,,,168,92190561,45280864,0.759,0.928,0.377923394,168
-keras,densenet-201,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr/HuangLW16a,
+}",0.759,0.928
+densenet-201,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr/HuangLW16a,
   author    = {Gao Huang and
                Zhuang Liu and
                Kilian Q. Weinberger},
@@ -103,8 +103,8 @@ keras,densenet-201,https://arxiv.org/abs/1608.06993,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:42:40 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HuangLW16a},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",densenet,DenseNet201,avg_pool,,224,,,,200,133936548,65523848,0.772,0.933,0.367812844,200
-slim,inception_v1,https://arxiv.org/abs/1409.4842,"@article{DBLP:journals/corr/SzegedyLJSRAEVR14,
+}",0.772,0.933
+inception_v1,https://arxiv.org/abs/1409.4842,"@article{DBLP:journals/corr/SzegedyLJSRAEVR14,
   author    = {Christian Szegedy and
                Wei Liu and
                Yangqing Jia and
@@ -124,8 +124,8 @@ slim,inception_v1,https://arxiv.org/abs/1409.4842,"@article{DBLP:journals/corr/S
   timestamp = {Wed, 07 Jun 2017 14:40:42 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/SzegedyLJSRAEVR14},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,inception_v1,AvgPool_0a_7x7,inception,224,inception_v1_2016_08_28.tar.gz,,0,115,30109871516,6618649,0.698,0.896,0.361635919,57
-slim,inception_v2,https://arxiv.org/abs/1512.00567,"@article{DBLP:journals/corr/SzegedyVISW15,
+}",0.698,0.896
+inception_v2,https://arxiv.org/abs/1512.00567,"@article{DBLP:journals/corr/SzegedyVISW15,
   author    = {Christian Szegedy and
                Vincent Vanhoucke and
                Sergey Ioffe and
@@ -141,8 +141,8 @@ slim,inception_v2,https://arxiv.org/abs/1512.00567,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:40:22 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/SzegedyVISW15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,inception_v2,AvgPool_1a,inception,224,inception_v2_2016_08_28.tar.gz,,0,139,38852183116,11179361,0.739,0.918,0.356874149,69
-slim,inception_v3,https://arxiv.org/abs/1512.00567,"@article{DBLP:journals/corr/SzegedyVISW15,
+}",0.739,0.918
+inception_v3,https://arxiv.org/abs/1512.00567,"@article{DBLP:journals/corr/SzegedyVISW15,
   author    = {Christian Szegedy and
                Vincent Vanhoucke and
                Sergey Ioffe and
@@ -158,8 +158,8 @@ slim,inception_v3,https://arxiv.org/abs/1512.00567,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:40:22 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/SzegedyVISW15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,inception_v3,AvgPool_1a,inception,299,inception_v3_2016_08_28.tar.gz,,0,191,1.15E+11,27145970,0.78,0.939,0.334889408,96
-slim,inception_v4,https://arxiv.org/abs/1602.07261,"@article{DBLP:journals/corr/SzegedyIV16,
+}",0.78,0.939
+inception_v4,https://arxiv.org/abs/1602.07261,"@article{DBLP:journals/corr/SzegedyIV16,
   author    = {Christian Szegedy and
                Sergey Ioffe and
                Vincent Vanhoucke},
@@ -174,8 +174,8 @@ slim,inception_v4,https://arxiv.org/abs/1602.07261,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:42:58 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/SzegedyIV16},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,inception_v4,global_pool,inception,299,inception_v4_2016_09_09.tar.gz,,0,300,2.46E+11,46009106,0.802,0.952,0.370860325,151
-slim,inception_resnet_v2,https://arxiv.org/abs/1602.07261,"@article{DBLP:journals/corr/SzegedyIV16,
+}",0.802,0.952
+inception_resnet_v2,https://arxiv.org/abs/1602.07261,"@article{DBLP:journals/corr/SzegedyIV16,
   author    = {Christian Szegedy and
                Sergey Ioffe and
                Vincent Vanhoucke},
@@ -190,8 +190,8 @@ slim,inception_resnet_v2,https://arxiv.org/abs/1602.07261,"@article{DBLP:journal
   timestamp = {Wed, 07 Jun 2017 14:42:58 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/SzegedyIV16},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,inception_resnet_v2,global_pool,inception,299,inception_resnet_v2_2016_08_30.tar.gz,,0,491,2.64E+11,59182258,0.804,0.953,0.352379734,245
-pytorch,resnet-18,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.804,0.953
+resnet-18,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -206,8 +206,8 @@ pytorch,resnet-18,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,,,,224,,,,18,1800000000,,0.6976,0.8908,0.363837784,
-pytorch,resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.6976,0.8908
+resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -222,8 +222,8 @@ pytorch,resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,,,,224,,,,34,3600000000,,0.733,0.9142,0.37787026,
-slim,resnet-50_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.733,0.9142
+resnet-50_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -238,8 +238,8 @@ slim,resnet-50_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,resnet_v1_50,global_pool,vgg,224,resnet_v1_50_2016_08_28.tar.gz,,1,54,69766419424,25557032,0.752,0.922,0.357590528,49
-slim,resnet-101_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.752,0.922
+resnet-101_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -254,8 +254,8 @@ slim,resnet-101_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,resnet_v1_101,global_pool,vgg,224,resnet_v1_101_2016_08_28.tar.gz,,1,105,1.44E+11,44549160,0.764,0.929,0.381865046,100
-slim,resnet-152_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.764,0.929
+resnet-152_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -270,8 +270,8 @@ slim,resnet-152_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,resnet_v1_152,global_pool,vgg,224,resnet_v1_152_2016_08_28.tar.gz,,1,156,2.18E+11,60192808,0.768,0.932,0.373860442,151
-slim,resnet-50_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.768,0.932
+resnet-50_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -286,8 +286,8 @@ slim,resnet-50_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,resnet_v2_50,global_pool,inception,299,resnet_v2_50_2017_04_14.tar.gz,,0,54,1.31E+11,25570409,0.756,0.928,0.377464769,49
-slim,resnet-101_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.756,0.928
+resnet-101_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -302,8 +302,8 @@ slim,resnet-101_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,resnet_v2_101,global_pool,inception,299,resnet_v2_101_2017_04_14.tar.gz,,0,105,2.68E+11,44579945,0.7737,0.937,0.389477175,100
-slim,resnet-152_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+}",0.7737,0.937
+resnet-152_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and
                Shaoqing Ren and
@@ -318,8 +318,8 @@ slim,resnet-152_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr
   timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,resnet_v2_152,global_pool,inception,299,resnet_v2_152_2017_04_14.tar.gz,,0,156,4.05E+11,60238953,0.778,0.941,0.376567353,151
-keras,vgg-16,https://arxiv.org/abs/1409.1556,"@article{DBLP:journals/corr/SimonyanZ14a,
+}",0.778,0.941
+vgg-16,https://arxiv.org/abs/1409.1556,"@article{DBLP:journals/corr/SimonyanZ14a,
   author    = {Karen Simonyan and
                Andrew Zisserman},
   title     = {Very Deep Convolutional Networks for Large-Scale Image Recognition},
@@ -332,8 +332,8 @@ keras,vgg-16,https://arxiv.org/abs/1409.1556,"@article{DBLP:journals/corr/Simony
   timestamp = {Wed, 07 Jun 2017 14:41:51 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/SimonyanZ14a},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,vgg_16,fc7,vgg,224,vgg_16_2016_08_28.tar.gz,,1,16,3.10E+11,138357544,0.715,0.898,0.321200396,15
-keras,vgg-19,https://arxiv.org/abs/1409.1556,"@article{DBLP:journals/corr/SimonyanZ14a,
+}",0.715,0.898
+vgg-19,https://arxiv.org/abs/1409.1556,"@article{DBLP:journals/corr/SimonyanZ14a,
   author    = {Karen Simonyan and
                Andrew Zisserman},
   title     = {Very Deep Convolutional Networks for Large-Scale Image Recognition},
@@ -346,8 +346,38 @@ keras,vgg-19,https://arxiv.org/abs/1409.1556,"@article{DBLP:journals/corr/Simony
   timestamp = {Wed, 07 Jun 2017 14:41:51 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/SimonyanZ14a},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,vgg_19,fc7,vgg,224,vgg_19_2016_08_28.tar.gz,,1,19,3.93E+11,143667240,0.711,0.898,0.337596515,18
-slim,nasnet_mobile,https://arxiv.org/abs/1707.07012,"@article{DBLP:journals/corr/ZophVSL17,
+}",0.711,0.898
+vggface,https://www.robots.ox.ac.uk/~vgg/publications/2015/Parkhi15/parkhi15.pdf,"@inproceedings{parkhi2015deep,
+  title={Deep face recognition.},
+  author={Parkhi, Omkar M and Vedaldi, Andrea and Zisserman, Andrew and others},
+  booktitle={British Machine Vision Conference},
+  year={2015},
+}",,
+bagnet9,https://openreview.net/forum?id=SkfMWhAqYQ,"@inproceedings{
+brendel2018approximating,
+title={Approximating {CNN}s with Bag-of-local-Features models works surprisingly well on ImageNet},
+author={Wieland Brendel and Matthias Bethge},
+booktitle={International Conference on Learning Representations},
+year={2019},
+url={https://openreview.net/forum?id=SkfMWhAqYQ},
+}",0.26,
+bagnet17,https://openreview.net/forum?id=SkfMWhAqYQ,"@inproceedings{
+brendel2018approximating,
+title={Approximating {CNN}s with Bag-of-local-Features models works surprisingly well on ImageNet},
+author={Wieland Brendel and Matthias Bethge},
+booktitle={International Conference on Learning Representations},
+year={2019},
+url={https://openreview.net/forum?id=SkfMWhAqYQ},
+}",0.46,0.805
+bagnet33,https://openreview.net/forum?id=SkfMWhAqYQ,"@inproceedings{
+brendel2018approximating,
+title={Approximating {CNN}s with Bag-of-local-Features models works surprisingly well on ImageNet},
+author={Wieland Brendel and Matthias Bethge},
+booktitle={International Conference on Learning Representations},
+year={2019},
+url={https://openreview.net/forum?id=SkfMWhAqYQ},
+}",0.59,0.876
+nasnet_mobile,https://arxiv.org/abs/1707.07012,"@article{DBLP:journals/corr/ZophVSL17,
   author    = {Barret Zoph and
                Vijay Vasudevan and
                Jonathon Shlens and
@@ -362,8 +392,8 @@ slim,nasnet_mobile,https://arxiv.org/abs/1707.07012,"@article{DBLP:journals/corr
   timestamp = {Sat, 05 Aug 2017 14:56:05 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/ZophVSL17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,nasnet_mobile,global_pool,inception,331,nasnet-a_mobile_04_10_2017.tar.gz,,0,196,26210297782,5291035,0.74,0.916,0.342017421,192
-slim,nasnet_large,https://arxiv.org/abs/1707.07012,"@article{DBLP:journals/corr/ZophVSL17,
+}",0.74,0.916
+nasnet_large,https://arxiv.org/abs/1707.07012,"@article{DBLP:journals/corr/ZophVSL17,
   author    = {Barret Zoph and
                Vijay Vasudevan and
                Jonathon Shlens and
@@ -378,8 +408,8 @@ slim,nasnet_large,https://arxiv.org/abs/1707.07012,"@article{DBLP:journals/corr/
   timestamp = {Sat, 05 Aug 2017 14:56:05 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/ZophVSL17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,nasnet_large,global_pool,inception,331,nasnet-a_large_04_10_2017.tar.gz,,0,268,4.77E+11,88757183,0.827,0.962,0.338544875,264
-slim,pnasnet_large,https://arxiv.org/abs/1712.00559,"@article{DBLP:journals/corr/abs-1712-00559,
+}",0.827,0.962
+pnasnet_large,https://arxiv.org/abs/1712.00559,"@article{DBLP:journals/corr/abs-1712-00559,
   author    = {Chenxi Liu and
                Barret Zoph and
                Jonathon Shlens and
@@ -399,8 +429,8 @@ slim,pnasnet_large,https://arxiv.org/abs/1712.00559,"@article{DBLP:journals/corr
   timestamp = {Wed, 03 Jan 2018 12:33:17 +0100},
   biburl    = {https://dblp.org/rec/bib/journals/corr/abs-1712-00559},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",,pnasnet_large,global_pool,inception,331,pnasnet-5_large_2017_12_13.tar.gz,,0,205,5.00E+11,86061989,0.829,0.962,0.350724562,200
-slim,mobilenet_v1_1.0_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.829,0.962
+mobilenet_v1_1.0_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -420,8 +450,8 @@ slim,mobilenet_v1_1.0_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,224,,1,0,55,11386820124,4233001,0.709,0.899,0.347430029,27
-slim,mobilenet_v1_1.0_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.709,0.899
+mobilenet_v1_1.0_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -441,8 +471,8 @@ slim,mobilenet_v1_1.0_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,192,,1,0,55,8373515804,4233001,0.7,0.892,0.324912841,27
-slim,mobilenet_v1_1.0_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.7,0.892
+mobilenet_v1_1.0_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -462,8 +492,8 @@ slim,mobilenet_v1_1.0_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,160,,1,0,55,5823796764,4233001,0.68,0.877,0.326747881,27
-slim,mobilenet_v1_1.0_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.68,0.877
+mobilenet_v1_1.0_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -483,8 +513,8 @@ slim,mobilenet_v1_1.0_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,128,,1,0,55,3737663004,4233001,0.652,0.858,0.307915493,27
-slim,mobilenet_v1_0.75_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.652,0.858
+mobilenet_v1_0.75_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -504,8 +534,8 @@ slim,mobilenet_v1_0.75_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,224,,0.75,0,55,6516609084,2586329,0.684,0.882,0.345916954,27
-slim,mobilenet_v1_0.75_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.684,0.882
+mobilenet_v1_0.75_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -525,8 +555,8 @@ slim,mobilenet_v1_0.75_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,192,,0.75,0,55,4793171004,2586329,0.672,0.873,0.340058095,27
-slim,mobilenet_v1_0.75_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.672,0.873
+mobilenet_v1_0.75_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -546,8 +576,8 @@ slim,mobilenet_v1_0.75_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,160,,0.75,0,55,3334877244,2586329,0.653,0.86,0.30101946,27
-slim,mobilenet_v1_0.75_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.653,0.86
+mobilenet_v1_0.75_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -567,8 +597,8 @@ slim,mobilenet_v1_0.75_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,128,,0.75,0,55,2141727804,2586329,0.621,0.839,0.284347379,27
-slim,mobilenet_v1_0.5_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.621,0.839
+mobilenet_v1_0.5_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -588,8 +618,8 @@ slim,mobilenet_v1_0.5_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,224,,0.5,0,55,2995913820,1332105,0.633,0.849,0.326266427,27
-slim,mobilenet_v1_0.5_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.633,0.849
+mobilenet_v1_0.5_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -609,8 +639,8 @@ slim,mobilenet_v1_0.5_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,192,,0.5,0,55,2204515420,1332105,0.617,0.836,0.318241214,27
-slim,mobilenet_v1_0.5_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.617,0.836
+mobilenet_v1_0.5_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -630,8 +660,8 @@ slim,mobilenet_v1_0.5_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,160,,0.5,0,55,1534870620,1332105,0.591,0.819,0.288707408,27
-slim,mobilenet_v1_0.5_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.591,0.819
+mobilenet_v1_0.5_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -651,8 +681,8 @@ slim,mobilenet_v1_0.5_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,128,,0.5,0,55,986979420,1332105,0.563,0.794,0.255760278,27
-slim,mobilenet_v1_0.25_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.563,0.794
+mobilenet_v1_0.25_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -672,8 +702,8 @@ slim,mobilenet_v1_0.25_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,224,,0.25,0,55,824734332,470329,0.498,0.742,0.240127557,27
-slim,mobilenet_v1_0.25_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.498,0.742
+mobilenet_v1_0.25_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -693,8 +723,8 @@ slim,mobilenet_v1_0.25_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,192,,0.25,0,55,607549052,470329,0.477,0.723,0.241850839,27
-slim,mobilenet_v1_0.25_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.477,0.723
+mobilenet_v1_0.25_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -714,8 +744,8 @@ slim,mobilenet_v1_0.25_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,160,,0.25,0,55,423776892,470329,0.455,0.703,0.227679587,27
-slim,mobilenet_v1_0.25_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.455,0.703
+mobilenet_v1_0.25_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -735,8 +765,8 @@ slim,mobilenet_v1_0.25_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v1,mobilenet_v1,AvgPool_1a,,128,,0.25,0,55,273417852,470329,0.415,0.663,0.220368134,27
-slim,mobilenet_v2_1.4_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.415,0.663
+mobilenet_v2_1.4_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -756,8 +786,8 @@ slim,mobilenet_v2_1.4_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,224,,1.4,0,36,11663050524,6110569,0.75,0.925,0.348328008,35
-slim,mobilenet_v2_1.3_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.75,0.925
+mobilenet_v2_1.3_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -777,8 +807,8 @@ slim,mobilenet_v2_1.3_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,224,,1.3,0,36,10204903580,5388457,0.744,0.921,0.355729483,35
-slim,mobilenet_v2_1.0_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.744,0.921
+mobilenet_v2_1.0_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -798,8 +828,8 @@ slim,mobilenet_v2_1.0_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,224,,1,0,36,6028314780,3506153,0.718,0.91,0.34751149,35
-slim,mobilenet_v2_1.0_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.718,0.91
+mobilenet_v2_1.0_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -819,8 +849,8 @@ slim,mobilenet_v2_1.0_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,192,,1,0,36,4437622300,3506153,0.707,0.901,0.369149097,35
-slim,mobilenet_v2_1.0_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.707,0.901
+mobilenet_v2_1.0_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -840,8 +870,8 @@ slim,mobilenet_v2_1.0_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,160,,1,0,36,3091651740,3506153,0.688,0.89,0.336943603,35
-slim,mobilenet_v2_1.0_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.688,0.89
+mobilenet_v2_1.0_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -861,8 +891,8 @@ slim,mobilenet_v2_1.0_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,128,,1,0,36,1990403100,3506153,0.653,0.869,0.310204992,35
-slim,mobilenet_v2_1.0_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.653,0.869
+mobilenet_v2_1.0_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -882,8 +912,8 @@ slim,mobilenet_v2_1.0_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journal
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,96,,1,0,36,1133876380,3506153,0.603,0.832,0.297085021,35
-slim,mobilenet_v2_0.75_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.603,0.832
+mobilenet_v2_0.75_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -903,8 +933,8 @@ slim,mobilenet_v2_0.75_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,224,,0.75,0,36,4192150428,2637705,0.698,0.896,0.37661762,35
-slim,mobilenet_v2_0.75_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.698,0.896
+mobilenet_v2_0.75_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -924,8 +954,8 @@ slim,mobilenet_v2_0.75_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,192,,0.75,0,36,3088146748,2637705,0.687,0.889,0.359357474,35
-slim,mobilenet_v2_0.75_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.687,0.889
+mobilenet_v2_0.75_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -945,8 +975,8 @@ slim,mobilenet_v2_0.75_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,160,,0.75,0,36,2153989788,2637705,0.664,0.873,0.327736718,35
-slim,mobilenet_v2_0.75_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.664,0.873
+mobilenet_v2_0.75_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -966,8 +996,8 @@ slim,mobilenet_v2_0.75_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,128,,0.75,0,36,1389679548,2637705,0.632,0.853,0.302342028,35
-slim,mobilenet_v2_0.75_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.632,0.853
+mobilenet_v2_0.75_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -987,8 +1017,8 @@ slim,mobilenet_v2_0.75_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,96,,0.75,0,36,795216028,2637705,0.588,0.816,0.285615213,35
-slim,mobilenet_v2_0.5_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.588,0.816
+mobilenet_v2_0.5_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1008,8 +1038,8 @@ slim,mobilenet_v2_0.5_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,224,,0.5,0,36,1951468412,1969961,0.654,0.864,0.332379305,35
-slim,mobilenet_v2_0.5_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.654,0.864
+mobilenet_v2_0.5_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1029,8 +1059,8 @@ slim,mobilenet_v2_0.5_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,192,,0.5,0,36,1441581372,1969961,0.639,0.854,0.328691664,35
-slim,mobilenet_v2_0.5_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.639,0.854
+mobilenet_v2_0.5_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1050,8 +1080,8 @@ slim,mobilenet_v2_0.5_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,160,,0.5,0,36,1010138492,1969961,0.61,0.832,0.309841732,35
-slim,mobilenet_v2_0.5_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.61,0.832
+mobilenet_v2_0.5_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1071,8 +1101,8 @@ slim,mobilenet_v2_0.5_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,128,,0.5,0,36,657139772,1969961,0.577,0.808,0.287122522,35
-slim,mobilenet_v2_0.5_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.577,0.808
+mobilenet_v2_0.5_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1092,8 +1122,8 @@ slim,mobilenet_v2_0.5_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journal
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,96,,0.5,0,36,382585212,1969961,0.512,0.758,0.261922315,35
-slim,mobilenet_v2_0.35_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.512,0.758
+mobilenet_v2_0.35_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1113,8 +1143,8 @@ slim,mobilenet_v2_0.35_224,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,224,,0.35,0,36,1193589436,1678409,0.603,0.829,0.314382677,35
-slim,mobilenet_v2_0.35_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.603,0.829
+mobilenet_v2_0.35_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1134,8 +1164,8 @@ slim,mobilenet_v2_0.35_192,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,192,,0.35,0,36,884619996,1678409,0.582,0.812,0.290038213,35
-slim,mobilenet_v2_0.35_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.582,0.812
+mobilenet_v2_0.35_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1155,8 +1185,8 @@ slim,mobilenet_v2_0.35_160,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,160,,0.35,0,36,623184316,1678409,0.557,0.791,0.303056709,35
-slim,mobilenet_v2_0.35_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.557,0.791
+mobilenet_v2_0.35_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1176,8 +1206,8 @@ slim,mobilenet_v2_0.35_128,https://arxiv.org/abs/1704.04861,"@article{DBLP:journ
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,128,,0.35,0,36,409282396,1678409,0.508,0.75,0.253032539,35
-slim,mobilenet_v2_0.35_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
+}",0.508,0.75
+mobilenet_v2_0.35_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/corr/HowardZCKWWAA17,
   author    = {Andrew G. Howard and
                Menglong Zhu and
                Bo Chen and
@@ -1197,4 +1227,4 @@ slim,mobilenet_v2_0.35_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journa
   timestamp = {Wed, 07 Jun 2017 14:40:11 +0200},
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
-}",mobilenet_v2,mobilenet_v2,global_pool,,96,,0.35,0,36,242914236,1678409,0.455,0.704,0.243968245,35
+}",0.455,0.704
