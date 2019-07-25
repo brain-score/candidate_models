@@ -22,7 +22,8 @@ class CORnetCommitment(BrainModel):
     """
 
     def __init__(self, identifier, activations_model, layers,
-                 time_mapping: Dict[str, Dict[int, Tuple[int, int]]], behavioral_readout_layer=None):
+                 time_mapping: Dict[str, Dict[int, Tuple[int, int]]], behavioral_readout_layer=None,
+                 visual_degrees=8):
         """
         :param time_mapping: mapping from region -> {model_timestep -> (time_bin_start, time_bin_end)}
         """
@@ -42,6 +43,11 @@ class CORnetCommitment(BrainModel):
         self.behavior_model = BehaviorArbiter({BrainModel.Task.label: logits_behavior,
                                                BrainModel.Task.probabilities: probabilities_behavior})
         self.do_behavior = False
+
+        self._visual_degrees = visual_degrees
+
+    def visual_degrees(self) -> int:
+        return self._visual_degrees
 
     def start_recording(self, recording_target, time_bins):
         self.recording_layers = [layer for layer in self.layers if layer.startswith(recording_target)]
