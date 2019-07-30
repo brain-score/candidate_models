@@ -157,8 +157,6 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
                         if ff_kernel_initializer_kwargs is not None: # otherwise uses json
                             kwargs['kernel_init_kwargs'] = ff_kernel_initializer_kwargs
 
-                # if func.__name__ == 'dropout':
-                #     kwargs['keep_prob'] = dropout[node]
 
             # # optional max pooling at end of conv10
             if node == 'conv10':
@@ -171,14 +169,6 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
                 else:
                     attr['kwargs']['post_memory'][-1] = (tf.identity, {})
                     print("not using a final max pool")
-
-            # # optional final average pooling before dropout and fc
-            # if node == 'imnetds':
-            #     if final_avg_pool:
-            #         attr['kwargs']['pre_memory'][0] = (global_pool,
-            #                                            {'kind': 'avg'})
-            #     else:
-            #         attr['kwargs']['pre_memory'][0] = (tf.identity, {})
 
             # set memory params, including cell config
             memory_func, memory_param = attr['kwargs']['memory']
