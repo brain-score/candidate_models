@@ -3,6 +3,7 @@ from tnn import main as tnn_main
 from tnn.reciprocalgaternn import tnn_ReciprocalGateCell
 from candidate_models.base_models.convrnn.median_rgcell import tnn_ReciprocalGateCell as legacy_tnn_ReciprocalGateCell
 from collections import OrderedDict
+import copy
 
 dropout10L = {'conv'+str(l):1.0 for l in range(1,11)}
 dropout10L['imnetds'] = 1.0
@@ -259,7 +260,8 @@ def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neu
                cell_layers = ['conv' + str(i) for i in range(4, 11)], use_legacy_cell=True, tau_adjust=False,
                decoder_type='last'):
 
-    model_params = config_dict['model_params']
+    train_config = copy.deepcopy(config_dict)
+    model_params = train_config['model_params']
 
     cell_params = model_params.pop('cell_params')
     # add fb specific params
@@ -281,7 +283,7 @@ def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neu
                     'imnetds':{'cell_params':None}}
 
     for k in cell_layers:
-        layer_params[k]['cell_params'] = cell_params
+        layer_params[k]['cell_params'] = cell_params.copy()
 
     if neural_presentation: # set up image presentation of model when mapping to neural data
         model_params['times'] = range(26) # unroll for entire temporal trajectory
