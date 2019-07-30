@@ -11,11 +11,12 @@ requirements = [
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
     "result_caching @ git+https://github.com/mschrimpf/result_caching",
-    "networkx",
+    "networkx==1.11",
     "tqdm",
 
     "cornet @ git+https://github.com/dicarlolab/CORnet",
     "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
+    "tnn @ git+https://github.com/neuroailab/tnn.git",
 ]
 
 setup(
