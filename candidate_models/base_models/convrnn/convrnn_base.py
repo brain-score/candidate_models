@@ -257,7 +257,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
 
 def load_median_model(inputs, train=False, tnn_json=None, edges_arr=edges_5, neural_presentation=False,
                cell_layers = ['conv' + str(i) for i in range(4, 11)], use_legacy_cell=True, tau_adjust=False,
-               decoder_type='last')
+               decoder_type='last'):
 
     model_params = config_dict['model_params']
 
