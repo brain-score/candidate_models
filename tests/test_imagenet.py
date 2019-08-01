@@ -80,6 +80,7 @@ class TestImagenet:
         ('bagnet9', .2635),
         ('bagnet17', .46),
         ('bagnet33', .58924),
+        ('convrnn_224', 0.729)
     ])
     def test_top1(self, model, expected_top1):
         import tensorflow as tf
