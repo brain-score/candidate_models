@@ -105,6 +105,7 @@ class TFSlimModel:
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
         return restore_path
 
+
 class TFUtilsModel:
     @staticmethod
     def init(model_fn, identifier, preprocessing_type, image_size, image_resize=None, batch_size=64, tnn_model=False,
@@ -112,7 +113,8 @@ class TFUtilsModel:
         import tensorflow as tf
 
         placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
-        preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size, image_resize=image_resize)
+        preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size,
+                                                      image_resize=image_resize)
 
         if model_fn_kwargs is None:
             model_fn_kwargs = {}
@@ -120,9 +122,9 @@ class TFUtilsModel:
         if tnn_model:
             tnn_json = TFUtilsModel._find_model_json(identifier)
             model_fn_kwargs['tnn_json'] = tnn_json
-        
+
         endpoints, params = model_fn(preprocess, train=False, **(model_fn_kwargs or {}))
-        if not isinstance(endpoints, dict): # single tensor of logits
+        if not isinstance(endpoints, dict):  # single tensor of logits
             new_endpoints = {}
             new_endpoints['logits'] = endpoints
             endpoints = new_endpoints
@@ -130,7 +132,7 @@ class TFUtilsModel:
         session = tf.Session()
         TFUtilsModel._restore_imagenet_weights(identifier, session)
         wrapper = TensorflowWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
-                                        batch_size=batch_size)
+                                    batch_size=batch_size)
         wrapper.image_size = image_size
         return wrapper
 
@@ -187,6 +189,7 @@ class TFUtilsModel:
         assert len(fnames) > 0, f"no checkpoint found in {model_path}"
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
         return restore_path
+
 
 def bagnet(function):
     module = import_module(f'bagnets.pytorch')
@@ -268,6 +271,8 @@ class BaseModelPool(UniqueKeyDict):
             'bagnet9': lambda: bagnet("bagnet9"),
             'bagnet17': lambda: bagnet("bagnet17"),
             'bagnet33': lambda: bagnet("bagnet33"),
+            'convrnn_224': lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
+                                                     preprocessing_type='convrnn', image_size=224, image_resize=None),
         }
         # MobileNets
         for version, multiplier, image_size in [
@@ -296,8 +301,6 @@ class BaseModelPool(UniqueKeyDict):
                        multiplier=multiplier: TFSlimModel.init(
                     identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
                     model_ctr_kwargs={'depth_multiplier': multiplier})
-
-        _key_functions['convrnn_224'] = lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True, preprocessing_type='convrnn', image_size=224, image_resize=None)
 
         # instantiate models with LazyLoad wrapper
         for identifier, function in _key_functions.items():
