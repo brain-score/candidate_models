@@ -50,6 +50,12 @@ class ModelLayers(UniqueKeyDict):
                     'classifier.2', 'classifier.5'],  # fc-[relu]{6,7,8}
             'vgg-16': [f'block{i + 1}_pool' for i in range(5)] + ['fc1', 'fc2'],
             'vgg-19': [f'block{i + 1}_pool' for i in range(5)] + ['fc1', 'fc2'],
+            'vgg-16-pytorch': [  # conv-relu (1, 6, 11, 13, 18, 20, 25), conv-relu-pool (4, 9, 16, 23, 30)
+                'features.1', 'features.4', 'features.6', 'features.9', 'features.11', 'features.13', 'features.16',
+                'features.18', 'features.20', 'features.23', 'features.25', 'features.30'],
+            'vgg-19-pytorch': ['features.1', 'features.4', 'features.6', 'features.9', 'features.11', 'features.13',
+                               'features.15', 'features.18', 'features.20', 'features.22', 'features.24',
+                               'features.27', 'features.29', 'features.31', 'features.33', 'features.36'],
             'squeezenet1_0':
                 ['features.' + layer for layer in
                  # max pool + fire outputs (ignoring pools)

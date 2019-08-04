@@ -13,12 +13,13 @@ from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
 
 
-def pytorch_model(function, image_size):
+def pytorch_model(function, image_size, identifier=None):
+    identifier = identifier or function
     module = import_module(f'torchvision.models')
     model_ctr = getattr(module, function)
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
-    wrapper = PytorchWrapper(identifier=function, model=model_ctr(pretrained=True), preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=identifier, model=model_ctr(pretrained=True), preprocessing=preprocessing)
     wrapper.image_size = image_size
     return wrapper
 
@@ -144,6 +145,8 @@ class BaseModelPool(UniqueKeyDict):
             'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
             'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
             'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
+            'vgg-16-pytorch': lambda: pytorch_model('vgg16', image_size=224, identifier='vgg16-pytorch'),
+            'vgg-19-pytorch': lambda: pytorch_model('vgg19', image_size=224, identifier='vgg19-pytorch'),
 
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
             'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),
