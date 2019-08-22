@@ -185,6 +185,11 @@ class BaseModelPool(UniqueKeyDict):
             'bagnet9': lambda: bagnet("bagnet9"),
             'bagnet17': lambda: bagnet("bagnet17"),
             'bagnet33': lambda: bagnet("bagnet33"),
+            # CORnets. Note that these are only here for the base_model_pool, their commitment works separately
+            # from the models here due to anatomical alignment.
+            'CORnet-Z': lambda: cornet('CORnet-Z'),
+            'CORnet-R': lambda: cornet('CORnet-R'),
+            'CORnet-S': lambda: cornet('CORnet-S'),
         }
         # MobileNets
         for version, multiplier, image_size in [

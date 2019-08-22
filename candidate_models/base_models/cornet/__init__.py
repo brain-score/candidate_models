@@ -11,63 +11,10 @@ from torch.nn import Module
 from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
 from candidate_models import s3
 from candidate_models.base_models.cornet.cornet_r2 import fix_state_dict_naming as fix_r2_state_dict_naming
+from model_tools.activations.core import ActivationsExtractorHelper
 from model_tools.activations.pytorch import PytorchWrapper
 
 _logger = logging.getLogger(__name__)
-
-
-class TemporalPytorchWrapper(PytorchWrapper):
-    def __call__(self, *args, **kwargs):
-        activations = super(TemporalPytorchWrapper, self).__call__(*args, **kwargs)
-        # introduce time dimension
-        regions = defaultdict(list)
-        for layer in set(activations['layer'].values):
-            match = re.match(r'(([^-]*)\..*|logits|avgpool)-t([0-9]+)', layer)
-            region, timestep = match.group(2) if match.group(2) else match.group(1), match.group(3)
-            regions[region].append((layer, timestep))
-        activations = {(region, timestep): activations.sel(layer=time_layer)
-                       for region, time_layers in regions.items() for (time_layer, timestep) in time_layers}
-        for key in activations:
-            region, timestep = key
-            exclude_coords = ['neuroid_id']  # otherwise, neuroid dim will be as large as before with nans
-            activations[key]['region'] = 'neuroid', [region] * len(activations[key]['neuroid'])
-            activations[key] = NeuroidAssembly([activations[key].values], coords={
-                **{coord: (dims, values) for coord, dims, values in walk_coords(activations[key])
-                   if coord not in exclude_coords},
-                **{'time_step': [int(timestep)]}
-            }, dims=['time_step'] + list(activations[key].dims))
-        activations = list(activations.values())
-        activations = merge_data_arrays(activations)
-        return activations
-
-    def get_activations(self, images, layer_names):
-        # reset
-        self._layer_counter = defaultdict(lambda: 0)
-        self._layer_hooks = {}
-        return super(TemporalPytorchWrapper, self).get_activations(images=images, layer_names=layer_names)
-
-    def register_hook(self, layer, layer_name, target_dict):
-        layer_name = self._strip_layer_timestep(layer_name)
-        if layer_name in self._layer_hooks:  # add hook only once for multiple timesteps
-            return self._layer_hooks[layer_name]
-
-        def hook_function(_layer, _input, output):
-            target_dict[f"{layer_name}-t{self._layer_counter[layer_name]}"] = PytorchWrapper._tensor_to_numpy(output)
-            self._layer_counter[layer_name] += 1
-
-        hook = layer.register_forward_hook(hook_function)
-        self._layer_hooks[layer_name] = hook
-        return hook
-
-    def get_layer(self, layer_name):
-        layer_name = self._strip_layer_timestep(layer_name)
-        return super(TemporalPytorchWrapper, self).get_layer(layer_name)
-
-    def _strip_layer_timestep(self, layer_name):
-        match = re.search('-t[0-9]+$', layer_name)
-        if match:
-            layer_name = layer_name[:match.start()]
-        return layer_name
 
 
 def cornet(identifier):
@@ -127,3 +74,73 @@ def cornet(identifier):
     wrapper = TemporalPytorchWrapper(identifier=identifier, model=model, preprocessing=preprocessing)
     wrapper.image_size = 224
     return wrapper
+
+
+class TemporalPytorchWrapper(PytorchWrapper):
+    def _build_extractor(self, *args, **kwargs):
+        return TemporalExtractor(*args, **kwargs)
+
+    def get_activations(self, images, layer_names):
+        # reset
+        self._layer_counter = defaultdict(lambda: 0)
+        self._layer_hooks = {}
+        return super(TemporalPytorchWrapper, self).get_activations(images=images, layer_names=layer_names)
+
+    def register_hook(self, layer, layer_name, target_dict):
+        layer_name = self._strip_layer_timestep(layer_name)
+        if layer_name in self._layer_hooks:  # add hook only once for multiple timesteps
+            return self._layer_hooks[layer_name]
+
+        def hook_function(_layer, _input, output):
+            target_dict[f"{layer_name}-t{self._layer_counter[layer_name]}"] = PytorchWrapper._tensor_to_numpy(output)
+            self._layer_counter[layer_name] += 1
+
+        hook = layer.register_forward_hook(hook_function)
+        self._layer_hooks[layer_name] = hook
+        return hook
+
+    def get_layer(self, layer_name):
+        layer_name = self._strip_layer_timestep(layer_name)
+        return super(TemporalPytorchWrapper, self).get_layer(layer_name)
+
+    def _strip_layer_timestep(self, layer_name):
+        match = re.search('-t[0-9]+$', layer_name)
+        if match:
+            layer_name = layer_name[:match.start()]
+        return layer_name
+
+
+class TemporalExtractor(ActivationsExtractorHelper):
+    # `from_paths` is the earliest method at which we can interject because calls below are stored and checked for the
+    # presence of all layers which, for CORnet, are passed as e.g. `IT.output-t0`.
+    # This code re-arranges the time component.
+    def from_paths(self, *args, **kwargs):
+        raw_activations = super(TemporalExtractor, self).from_paths(*args, **kwargs)
+        # introduce time dimension
+        regions = defaultdict(list)
+        for layer in set(raw_activations['layer'].values):
+            match = re.match(r'(([^-]*)\..*|logits|avgpool)-t([0-9]+)', layer)
+            region, timestep = match.group(2) if match.group(2) else match.group(1), match.group(3)
+            stripped_layer = match.group(1)
+            regions[region].append((layer, stripped_layer, timestep))
+        activations = {}
+        for region, time_layers in regions.items():
+            for (full_layer, stripped_layer, timestep) in time_layers:
+                region_time_activations = raw_activations.sel(layer=full_layer)
+                region_time_activations['layer'] = 'neuroid', [stripped_layer] * len(region_time_activations['neuroid'])
+                activations[(region, timestep)] = region_time_activations
+        for key, key_activations in activations.items():
+            region, timestep = key
+            key_activations['region'] = 'neuroid', [region] * len(key_activations['neuroid'])
+            activations[key] = NeuroidAssembly([key_activations.values], coords={
+                **{coord: (dims, values) for coord, dims, values in walk_coords(activations[key])
+                   if coord != 'neuroid_id'},  # otherwise, neuroid dim will be as large as before with nans
+                **{'time_step': [int(timestep)]}
+            }, dims=['time_step'] + list(key_activations.dims))
+        activations = list(activations.values())
+        activations = merge_data_arrays(activations)
+        # rebuild neuroid_id without timestep
+        neuroid_id = [".".join([f"{value}" for value in values]) for values in zip(*[
+            activations[coord].values for coord in ['model', 'region', 'neuroid_num']])]
+        activations['neuroid_id'] = 'neuroid', neuroid_id
+        return activations
