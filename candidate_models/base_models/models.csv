@@ -1228,3 +1228,11 @@ mobilenet_v2_0.35_96,https://arxiv.org/abs/1704.04861,"@article{DBLP:journals/co
   biburl    = {https://dblp.org/rec/bib/journals/corr/HowardZCKWWAA17},
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }",0.455,0.704
+resnet50-SIN,https://openreview.net/forum?id=Bygh9j09KX,"@inproceedings{
+geirhos2018imagenettrained,
+title={ImageNet-trained {CNN}s are biased towards texture; increasing shape bias improves accuracy and robustness.},
+author={Robert Geirhos and Patricia Rubisch and Claudio Michaelis and Matthias Bethge and Felix A. Wichmann and Wieland Brendel},
+booktitle={International Conference on Learning Representations},
+year={2019},
+url={https://openreview.net/forum?id=Bygh9j09KX},
+}",,
