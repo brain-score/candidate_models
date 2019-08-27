@@ -170,6 +170,13 @@ class ModelLayers(UniqueKeyDict):
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
         self['vggface'] = self['vgg-16']
+        for sin_model in ['resnet50-SIN', 'resnet50-SIN_IN', 'resnet50-SIN_IN_IN']:
+            self[sin_model] = \
+                ['conv1'] + \
+                [f'layer{seq}.{bottleneck}.relu'
+                 for seq, bottlenecks in enumerate([3, 4, 6, 3], start=1)
+                 for bottleneck in range(bottlenecks)] + \
+                ['avgpool']
 
     @staticmethod
     def _resnet50_layers(bottleneck_version):
@@ -245,8 +252,7 @@ class MLBrainPool(UniqueKeyDict):
                     continue
 
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-                def load(basemodel_identifier=basemodel_identifier, identifier=identifier,
-                         activations_model=activations_model, layers=layers):
+                def load(identifier=identifier, activations_model=activations_model, layers=layers):
                     brain_model = ModelCommitment(identifier=identifier, activations_model=activations_model,
                                                   layers=layers)
                     for region, assembly in commitment_assemblies.items():

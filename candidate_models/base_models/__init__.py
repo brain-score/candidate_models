@@ -128,6 +128,16 @@ def vggface():
     return wrapper
 
 
+def texture_vs_shape(model_identifier, model_name):
+    from texture_vs_shape.load_pretrained_models import load_model
+    model = load_model(model_name)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=224)
+    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=preprocessing)
+    wrapper.image_size = 224
+    return wrapper
+
+
 class BaseModelPool(UniqueKeyDict):
     """
     Provides a set of standard models.
@@ -190,6 +200,13 @@ class BaseModelPool(UniqueKeyDict):
             'CORnet-Z': lambda: cornet('CORnet-Z'),
             'CORnet-R': lambda: cornet('CORnet-R'),
             'CORnet-S': lambda: cornet('CORnet-S'),
+
+            'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
+                                                     model_name='resnet50_trained_on_SIN'),
+            'resnet50-SIN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN',
+                                                     model_name='resnet50_trained_on_SIN_and_IN'),
+            'resnet50-SIN_IN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN_IN',
+                                                     model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
         }
         # MobileNets
         for version, multiplier, image_size in [
