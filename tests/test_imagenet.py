@@ -88,6 +88,8 @@ class TestImagenet:
         ('resnet50-SIN', .6018),
         ('resnet50-SIN_IN', .7459),
         ('resnet50-SIN_IN_IN', .7672),
+        # FixRes: from https://arxiv.org/pdf/1906.06423.pdf, Table 8
+        ('fixres_resnext101_32x48d_wsl', .863),
     ])
     def test_top1(self, model, expected_top1):
         # clear tf graph

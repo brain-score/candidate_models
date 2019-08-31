@@ -17,6 +17,7 @@ requirements = [
     "cornet @ git+https://github.com/dicarlolab/CORnet",
     "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
+    "git+https://github.com/mschrimpf/FixRes.git",
 ]
 
 setup(

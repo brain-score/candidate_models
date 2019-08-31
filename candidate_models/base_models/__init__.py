@@ -4,6 +4,7 @@ import os
 from importlib import import_module
 
 import functools
+import numpy as np
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
@@ -138,6 +139,48 @@ def texture_vs_shape(model_identifier, model_name):
     return wrapper
 
 
+def fixres(model_identifier, model_url):
+    # model
+    from torch.hub import load_state_dict_from_url
+    module = import_module('from fixres.imnet_evaluate.resnext_wsl')
+    model_ctr = getattr(module, model_identifier)
+    model = model_ctr(pretrained=False)  # the pretrained flag here corresponds to standard resnext weights
+    pretrained_dict = load_state_dict_from_url(model_url)['model']
+    model_dict = model.state_dict()
+    for k in model_dict.keys():
+        if ('module.' + k) in pretrained_dict.keys():
+            model_dict[k] = pretrained_dict.get(('module.' + k))
+        else:
+            assert k in pretrained_dict.keys()
+    model.load_state_dict(model_dict)
+
+    # preprocessing
+    from fixres.transforms_v2 import get_transforms
+    # 320 for ResNeXt:
+    # https://github.com/mschrimpf/FixRes/tree/4ddcf11b29c118dfb8a48686f75f572450f67e5d#example-evaluation-procedure
+    input_size = 320
+    # https://github.com/mschrimpf/FixRes/blob/0dc15ab509b9cb9d7002ca47826dab4d66033668/fixres/imnet_evaluate/train.py#L159-L160
+    transformation = get_transforms(input_size=input_size, test_size=input_size,
+                                    kind='full', need=('val',),
+                                    # this is different from standard ImageNet evaluation to show the whole image
+                                    crop=False,
+                                    # no backbone parameter for ResNeXt following
+                                    # https://github.com/mschrimpf/FixRes/blob/0dc15ab509b9cb9d7002ca47826dab4d66033668/fixres/imnet_evaluate/train.py#L154-L156
+                                    backbone=None)
+    transform = transformation['val']
+    from model_tools.activations.pytorch import load_images
+
+    def load_preprocess_images(image_filepaths):
+        images = load_images(image_filepaths)
+        images = [transform(image) for image in images]
+        images = np.concatenate(images)
+        return images
+
+    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=load_preprocess_images)
+    wrapper.image_size = input_size
+    return wrapper
+
+
 class BaseModelPool(UniqueKeyDict):
     """
     Provides a set of standard models.
@@ -204,9 +247,14 @@ class BaseModelPool(UniqueKeyDict):
             'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
                                                      model_name='resnet50_trained_on_SIN'),
             'resnet50-SIN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN',
-                                                     model_name='resnet50_trained_on_SIN_and_IN'),
-            'resnet50-SIN_IN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN_IN',
-                                                     model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
+                                                        model_name='resnet50_trained_on_SIN_and_IN'),
+            'resnet50-SIN_IN_IN': lambda: texture_vs_shape(
+                model_identifier='resnet50-SIN_IN_IN',
+                model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
+
+            'fixres_resnext101_32x48d_wsl': lambda: fixres(
+                'resnext101_32x48d_wsl',
+                'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
         }
         # MobileNets
         for version, multiplier, image_size in [
