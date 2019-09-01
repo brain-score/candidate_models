@@ -141,17 +141,15 @@ def texture_vs_shape(model_identifier, model_name):
 
 def fixres(model_identifier, model_url):
     # model
-    from torch.hub import load_state_dict_from_url
-    module = import_module('from fixres.imnet_evaluate.resnext_wsl')
+    from fixres.hubconf import load_state_dict_from_url
+    module = import_module('fixres.imnet_evaluate.resnext_wsl')
     model_ctr = getattr(module, model_identifier)
     model = model_ctr(pretrained=False)  # the pretrained flag here corresponds to standard resnext weights
-    pretrained_dict = load_state_dict_from_url(model_url)['model']
+    pretrained_dict = load_state_dict_from_url(model_url, map_location=lambda storage, loc: storage)['model']
     model_dict = model.state_dict()
     for k in model_dict.keys():
-        if ('module.' + k) in pretrained_dict.keys():
-            model_dict[k] = pretrained_dict.get(('module.' + k))
-        else:
-            assert k in pretrained_dict.keys()
+        assert ('module.' + k) in pretrained_dict.keys()
+        model_dict[k] = pretrained_dict.get(('module.' + k))
     model.load_state_dict(model_dict)
 
     # preprocessing
@@ -173,10 +171,12 @@ def fixres(model_identifier, model_url):
     def load_preprocess_images(image_filepaths):
         images = load_images(image_filepaths)
         images = [transform(image) for image in images]
+        images = [image.unsqueeze(0) for image in images]
         images = np.concatenate(images)
         return images
 
-    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=load_preprocess_images)
+    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=load_preprocess_images,
+                             batch_size=4)  # doesn't fit into 12 GB GPU memory otherwise
     wrapper.image_size = input_size
     return wrapper
 
