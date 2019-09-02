@@ -167,13 +167,11 @@ class ModelLayers(UniqueKeyDict):
                        enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
                       ['avgpool'],
             'fixres_resnext101_32x48d_wsl':
-                [f"ResNet.{layer}" for layer in
-                 ['conv1'] +
-                 # note that will relu is used multiple times, by default the last one will overwrite all previous ones
-                 [f"layer{block + 1}.{unit + 1}.relu"
-                  for block, block_units in enumerate([3, 4, 23, 3]) for unit in range(block_units)] +
-                 ['avgpool']
-                 ],
+                ['conv1'] +
+                # note that will relu is used multiple times, by default the last one will overwrite all previous ones
+                [f"layer{block + 1}.{unit}.relu"
+                 for block, block_units in enumerate([3, 4, 23, 3]) for unit in range(block_units)] +
+                ['avgpool'],
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
