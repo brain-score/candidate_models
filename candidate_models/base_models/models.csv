@@ -1306,4 +1306,22 @@ booktitle={International Conference on Learning Representations},
 year={2019},
 month={nov},
 url={https://openreview.net/forum?id=Bygh9j09KX},
-}",,
+}",0.6018,0.8262
+resnet50-SIN_IN,https://openreview.net/forum?id=Bygh9j09KX,"@inproceedings{
+geirhos2018imagenettrained,
+title={ImageNet-trained {CNN}s are biased towards texture; increasing shape bias improves accuracy and robustness.},
+author={Robert Geirhos and Patricia Rubisch and Claudio Michaelis and Matthias Bethge and Felix A. Wichmann and Wieland Brendel},
+booktitle={International Conference on Learning Representations},
+year={2019},
+month={nov},
+url={https://openreview.net/forum?id=Bygh9j09KX},
+}",0.7459,0.9214
+resnet50-SIN_IN_IN,https://openreview.net/forum?id=Bygh9j09KX,"@inproceedings{
+geirhos2018imagenettrained,
+title={ImageNet-trained {CNN}s are biased towards texture; increasing shape bias improves accuracy and robustness.},
+author={Robert Geirhos and Patricia Rubisch and Claudio Michaelis and Matthias Bethge and Felix A. Wichmann and Wieland Brendel},
+booktitle={International Conference on Learning Representations},
+year={2019},
+month={nov},
+url={https://openreview.net/forum?id=Bygh9j09KX},
+}",0.7672,0.9328
