@@ -1325,7 +1325,35 @@ year={2019},
 month={feb},
 url={https://openreview.net/forum?id=Bygh9j09KX},
 }",0.7672,0.9328
-fixres_resnext101_32x48d_wsl,https://arxiv.org/pdf/1906.06423.pdf,"@article{touvron2019fixres,
+resnext101_32x48d_wsl,https://arxiv.org/pdf/1906.06423.pdf,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.822,0.964
+resnext101_32x8d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.842,0.972
+resnext101_32x16d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.851,0.975
+resnext101_32x32d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.854,0.976
+fixres_resnext101_32x48d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@article{touvron2019fixres,
        author = {Hugo, Touvron and Vedaldi, Andrea and Douze, Matthijs and J{\'e}gou, Herv{\'e}},
         title = ""{Fixing the train-test resolution discrepancy}"",
       journal = {arXiv preprint},

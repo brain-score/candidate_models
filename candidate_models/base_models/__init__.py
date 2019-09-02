@@ -139,6 +139,19 @@ def texture_vs_shape(model_identifier, model_name):
     return wrapper
 
 
+def wsl(c_size):
+    import torch.hub
+    model_identifier = f"resnext101_32x{c_size}d_wsl"
+    model = torch.hub.load('facebookresearch/WSL-Images', model_identifier)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=224)
+    batch_size = {8: 32, 16: 16, 32: 8, 48: 4}
+    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=preprocessing,
+                             batch_size=batch_size[c_size])
+    wrapper.image_size = 224
+    return wrapper
+
+
 def fixres(model_identifier, model_url):
     # model
     from fixres.hubconf import load_state_dict_from_url
@@ -251,6 +264,11 @@ class BaseModelPool(UniqueKeyDict):
             'resnet50-SIN_IN_IN': lambda: texture_vs_shape(
                 model_identifier='resnet50-SIN_IN_IN',
                 model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
+
+            'resnext101_32x8d_wsl': lambda: wsl(8),
+            'resnext101_32x16d_wsl': lambda: wsl(16),
+            'resnext101_32x32d_wsl': lambda: wsl(32),
+            'resnext101_32x48d_wsl': lambda: wsl(48),
 
             'fixres_resnext101_32x48d_wsl': lambda: fixres(
                 'resnext101_32x48d_wsl',
