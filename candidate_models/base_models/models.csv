@@ -1333,3 +1333,31 @@ fixres_resnext101_32x48d_wsl,https://arxiv.org/pdf/1906.06423.pdf,"@article{touv
          year = {2019},
         month = {jun},
 }",0.863,
+fixres_resnext101_32x8d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.822,0.964
+fixres_resnext101_32x16d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.842,0.972
+fixres_resnext101_32x32d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.851,0.975
+fixres_resnext101_32x48d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
+author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
+title = {Exploring the Limits of Weakly Supervised Pretraining},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {sep},
+year = {2018}
+} ",0.854,0.976
