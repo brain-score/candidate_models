@@ -1304,7 +1304,7 @@ title={ImageNet-trained {CNN}s are biased towards texture; increasing shape bias
 author={Robert Geirhos and Patricia Rubisch and Claudio Michaelis and Matthias Bethge and Felix A. Wichmann and Wieland Brendel},
 booktitle={International Conference on Learning Representations},
 year={2019},
-month={nov},
+month={feb},
 url={https://openreview.net/forum?id=Bygh9j09KX},
 }",0.6018,0.8262
 resnet50-SIN_IN,https://openreview.net/forum?id=Bygh9j09KX,"@inproceedings{
@@ -1313,7 +1313,7 @@ title={ImageNet-trained {CNN}s are biased towards texture; increasing shape bias
 author={Robert Geirhos and Patricia Rubisch and Claudio Michaelis and Matthias Bethge and Felix A. Wichmann and Wieland Brendel},
 booktitle={International Conference on Learning Representations},
 year={2019},
-month={nov},
+month={feb},
 url={https://openreview.net/forum?id=Bygh9j09KX},
 }",0.7459,0.9214
 resnet50-SIN_IN_IN,https://openreview.net/forum?id=Bygh9j09KX,"@inproceedings{
@@ -1322,6 +1322,14 @@ title={ImageNet-trained {CNN}s are biased towards texture; increasing shape bias
 author={Robert Geirhos and Patricia Rubisch and Claudio Michaelis and Matthias Bethge and Felix A. Wichmann and Wieland Brendel},
 booktitle={International Conference on Learning Representations},
 year={2019},
-month={nov},
+month={feb},
 url={https://openreview.net/forum?id=Bygh9j09KX},
 }",0.7672,0.9328
+fixres_resnext101_32x48d_wsl,https://arxiv.org/pdf/1906.06423.pdf,"@article{touvron2019fixres,
+       author = {Hugo, Touvron and Vedaldi, Andrea and Douze, Matthijs and J{\'e}gou, Herv{\'e}},
+        title = ""{Fixing the train-test resolution discrepancy}"",
+      journal = {arXiv preprint},
+        url={https://arxiv.org/abs/1906.06423},
+         year = {2019},
+        month = {jun},
+}",0.863,
