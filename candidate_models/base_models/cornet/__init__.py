@@ -17,7 +17,7 @@ from model_tools.activations.pytorch import PytorchWrapper
 _logger = logging.getLogger(__name__)
 
 
-def cornet(identifier):
+def cornet(identifier, separate_time=True):
     cornet_type = re.match('CORnet-(.*)', identifier).group(1)
     if cornet_type.lower() == 'r2':
         from .cornet_r2 import CORNetR2
@@ -71,14 +71,22 @@ def cornet(identifier):
 
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=224)
-    wrapper = TemporalPytorchWrapper(identifier=identifier, model=model, preprocessing=preprocessing)
+    wrapper = TemporalPytorchWrapper(identifier=identifier, model=model, preprocessing=preprocessing,
+                                     separate_time=separate_time)
     wrapper.image_size = 224
     return wrapper
 
 
 class TemporalPytorchWrapper(PytorchWrapper):
+    def __init__(self, *args, separate_time=True, **kwargs):
+        self._separate_time = separate_time
+        super(TemporalPytorchWrapper, self).__init__(*args, **kwargs)
+
     def _build_extractor(self, *args, **kwargs):
-        return TemporalExtractor(*args, **kwargs)
+        if self._separate_time:
+            return TemporalExtractor(*args, **kwargs)
+        else:
+            return super(TemporalPytorchWrapper, self)._build_extractor(*args, **kwargs)
 
     def get_activations(self, images, layer_names):
         # reset

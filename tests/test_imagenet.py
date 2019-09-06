@@ -88,6 +88,11 @@ class TestImagenet:
         ('resnet50-SIN', .6018),
         ('resnet50-SIN_IN', .7459),
         ('resnet50-SIN_IN_IN', .7672),
+        # wsl: from https://github.com/facebookresearch/WSL-Images/tree/c4dac640995f66db893410d6d4356d49a9d3dcc0
+        ('resnext101_32x8d_wsl', .822),
+        ('resnext101_32x16d_wsl', .842),
+        ('resnext101_32x32d_wsl', .851),
+        ('resnext101_32x48d_wsl', .854),
         # FixRes: from https://arxiv.org/pdf/1906.06423.pdf, Table 8
         ('fixres_resnext101_32x48d_wsl', .863),
     ])
