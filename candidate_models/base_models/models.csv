@@ -342,6 +342,12 @@ resnet-152_v2,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZR
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }",0.778,0.941
+resnet-50-robust,https://arxiv.org/pdf/1906.09453.pdf,"@inproceedings{santurkar2019computer,
+    title={Computer Vision with a Single (Robust) Classifier},
+    author={Shibani Santurkar and Dimitris Tsipras and Brandon Tran and Andrew Ilyas and Logan Engstrom and Aleksander Madry},
+    booktitle={ArXiv preprint arXiv:1906.09453},
+    year={2019}
+}",,
 vgg-16,https://arxiv.org/abs/1409.1556,"@article{DBLP:journals/corr/SimonyanZ14a,
   author    = {Karen Simonyan and
                Andrew Zisserman},

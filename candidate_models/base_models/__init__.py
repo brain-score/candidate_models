@@ -138,6 +138,37 @@ def texture_vs_shape(model_identifier, model_name):
     wrapper.image_size = 224
     return wrapper
 
+def robust_model(function, image_size):
+    module = import_module(f'torchvision.models')
+    model_ctr = getattr(module, function)
+    model = model_ctr()
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
+    weights = robust_weights() # fetch adversarially trained weights
+    model.load_state_dict(weights)
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper.image_size = image_size
+    return wrapper
+
+def robust_weights():
+    framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+    weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR', os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
+    weights_path = os.path.join(weightsdir_path, 'resnet-50-robust')
+    if not os.path.isfile(weights_path):
+        from urllib import request
+        #_logger.debug(f"Downloading weights for {identifier} to {weights_path}")
+        print(f"Downloading weights for resnet-50-robust to {weights_path}")
+        os.makedirs(weightsdir_path, exist_ok=True)
+        url = 'http://andrewilyas.com/ImageNet.pt'
+        request.urlretrieve(url, weights_path)
+
+    from torch import load
+    checkpoint = load(weights_path) 
+    # process weights -- remove the attacker and prepocessing weights
+    weights = checkpoint['model']
+    weights = {k[len('module.model.'):]:v for k,v in weights.items() if 'attacker' not in k}
+    weights = {k:weights[k] for k in list(weights.keys())[2:]}
+    return weights
 
 def wsl(c_size):
     import torch.hub
@@ -210,6 +241,8 @@ class BaseModelPool(UniqueKeyDict):
             'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
             'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
             'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
+            'resnet-50': lambda: pytorch_model('resnet50', image_size=224),
+            'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
 
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
             'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),

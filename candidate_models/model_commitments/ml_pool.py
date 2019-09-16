@@ -109,6 +109,22 @@ class ModelLayers(UniqueKeyDict):
                  'layer3.4.conv2', 'layer3.5.conv2'] +
                 ['layer4.0.downsample.0', 'layer4.1.conv2', 'layer4.2.conv2'] +
                 ['avgpool'],
+            'resnet-50':
+                ['conv1'] +
+                ['layer1.0.conv3', 'layer1.1.conv3', 'layer1.2.conv3'] +
+                ['layer2.0.downsample.0', 'layer2.1.conv3', 'layer2.2.conv3', 'layer2.3.conv3'] +
+                ['layer3.0.downsample.0', 'layer3.1.conv3', 'layer3.2.conv3', 'layer3.3.conv3',
+                 'layer3.4.conv3', 'layer3.5.conv3'] +
+                ['layer4.0.downsample.0', 'layer4.1.conv3', 'layer4.2.conv3'] +
+                ['avgpool'],
+            'resnet-50-robust':
+                ['conv1'] +
+                ['layer1.0.conv3', 'layer1.1.conv3', 'layer1.2.conv3'] +
+                ['layer2.0.downsample.0', 'layer2.1.conv3', 'layer2.2.conv3', 'layer2.3.conv3'] +
+                ['layer3.0.downsample.0', 'layer3.1.conv3', 'layer3.2.conv3', 'layer3.3.conv3',
+                 'layer3.4.conv3', 'layer3.5.conv3'] +
+                ['layer4.0.downsample.0', 'layer4.1.conv3', 'layer4.2.conv3'] +
+                ['avgpool'],
 
             # Slim
             'inception_v1':
