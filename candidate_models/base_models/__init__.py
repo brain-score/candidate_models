@@ -194,6 +194,11 @@ def fixres(model_identifier, model_url):
     return wrapper
 
 
+def spiking_vgg16():
+    from .spiking_vgg import create_model
+    return create_model(architecture='VGG16')
+
+
 class BaseModelPool(UniqueKeyDict):
     """
     Provides a set of standard models.
@@ -273,6 +278,8 @@ class BaseModelPool(UniqueKeyDict):
             'fixres_resnext101_32x48d_wsl': lambda: fixres(
                 'resnext101_32x48d_wsl',
                 'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
+
+            'spiking-vgg16': spiking_vgg16,
         }
         # MobileNets
         for version, multiplier, image_size in [

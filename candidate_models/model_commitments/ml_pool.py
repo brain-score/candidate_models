@@ -171,6 +171,7 @@ class ModelLayers(UniqueKeyDict):
             'resnext101_32x32d_wsl': self._resnext101_layers(),
             'resnext101_32x48d_wsl': self._resnext101_layers(),
             'fixres_resnext101_32x48d_wsl': self._resnext101_layers(),
+            'spiking-vgg16': ['spike'],  # TODO
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
