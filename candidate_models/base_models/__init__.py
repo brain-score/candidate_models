@@ -13,6 +13,8 @@ from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
 
+_logger = logging.getLogger(__name__)
+
 
 def pytorch_model(function, image_size):
     module = import_module(f'torchvision.models')
@@ -138,37 +140,36 @@ def texture_vs_shape(model_identifier, model_name):
     wrapper.image_size = 224
     return wrapper
 
+
 def robust_model(function, image_size):
+    from urllib import request
+    from torch import load
+    from model_tools.activations.pytorch import load_preprocess_images
     module = import_module(f'torchvision.models')
     model_ctr = getattr(module, function)
     model = model_ctr()
-    from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
-
     # load weights
     framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
-    weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR', os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
+    weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR',
+                                os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
     weights_path = os.path.join(weightsdir_path, 'resnet-50-robust')
     if not os.path.isfile(weights_path):
-        from urllib import request
-        #_logger.debug(f"Downloading weights for {identifier} to {weights_path}")
-        print(f"Downloading weights for resnet-50-robust to {weights_path}")
-        os.makedirs(weightsdir_path, exist_ok=True)
         url = 'http://andrewilyas.com/ImageNet.pt'
+        _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
+        os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-
-    from torch import load
-    checkpoint = load(weights_path) 
+    checkpoint = load(weights_path)
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
-    weights = {k[len('module.model.'):]:v for k,v in weights.items() if 'attacker' not in k}
-    weights = {k:weights[k] for k in list(weights.keys())[2:]}
+    weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
+    weights = {k: weights[k] for k in list(weights.keys())[2:]}
     model.load_state_dict(weights)
-
     # wrap model with pytorch wrapper
     wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
     wrapper.image_size = image_size
     return wrapper
+
 
 def wsl(c_size):
     import torch.hub
