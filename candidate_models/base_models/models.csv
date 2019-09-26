@@ -240,6 +240,23 @@ resnet-34,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }",0.733,0.9142
+resnet-50-pytorch,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
+  author    = {Kaiming He and
+               Xiangyu Zhang and
+               Shaoqing Ren and
+               Jian Sun},
+  title     = {Deep Residual Learning for Image Recognition},
+  journal   = {CoRR},
+  volume    = {abs/1512.03385},
+  year      = {2015},
+  month = {dec},
+  url       = {http://arxiv.org/abs/1512.03385},
+  archivePrefix = {arXiv},
+  eprint    = {1512.03385},
+  timestamp = {Wed, 07 Jun 2017 14:41:17 +0200},
+  biburl    = {https://dblp.org/rec/bib/journals/corr/HeZRS15},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}",0.752,0.922
 resnet-50_v1,https://arxiv.org/abs/1512.03385,"@article{DBLP:journals/corr/HeZRS15,
   author    = {Kaiming He and
                Xiangyu Zhang and

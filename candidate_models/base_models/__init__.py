@@ -144,13 +144,8 @@ def robust_model(function, image_size):
     model = model_ctr()
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
-    weights = robust_weights() # fetch adversarially trained weights
-    model.load_state_dict(weights)
-    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
-    wrapper.image_size = image_size
-    return wrapper
 
-def robust_weights():
+    # load weights
     framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
     weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR', os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
     weights_path = os.path.join(weightsdir_path, 'resnet-50-robust')
@@ -168,7 +163,12 @@ def robust_weights():
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]:v for k,v in weights.items() if 'attacker' not in k}
     weights = {k:weights[k] for k in list(weights.keys())[2:]}
-    return weights
+    model.load_state_dict(weights)
+
+    # wrap model with pytorch wrapper
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper.image_size = image_size
+    return wrapper
 
 def wsl(c_size):
     import torch.hub
@@ -241,7 +241,7 @@ class BaseModelPool(UniqueKeyDict):
             'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
             'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
             'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
-            'resnet-50': lambda: pytorch_model('resnet50', image_size=224),
+            'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=224),
             'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
 
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
