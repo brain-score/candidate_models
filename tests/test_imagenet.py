@@ -97,6 +97,8 @@ class TestImagenet:
         ('resnext101_32x48d_wsl', .854),
         # FixRes: from https://arxiv.org/pdf/1906.06423.pdf, Table 8
         ('fixres_resnext101_32x48d_wsl', .863),
+        # spiking-vgg: from <TODO: paper source>
+        ('spiking-vgg16', .651),
     ])
     def test_top1(self, model, expected_top1):
         # clear tf graph
