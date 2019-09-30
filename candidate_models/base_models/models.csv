@@ -1361,4 +1361,4 @@ fixres_resnext101_32x48d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html
          year = {2019},
         month = {jun},
 }",0.863,
-spiking-vgg16,TODO: paper link,TODO: paper bibtex,TODO: ImageNet top-1,TODO: ImageNet top-5
+spiking-vgg16,TODO: paper link,TODO: paper bibtex,0.651,0.817
