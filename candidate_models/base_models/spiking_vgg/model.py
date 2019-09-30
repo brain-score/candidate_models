@@ -117,11 +117,13 @@ class VGG_SNN_STDB(nn.Module):
         self.mem = {}
         self.spike = {}
         self.mask = {}
+        self.spike_count = {}
 
         for l in range(len(self.features)):
 
             if isinstance(self.features[l], nn.Conv2d):
                 self.mem[l] = torch.zeros(self.batch_size, self.features[l].out_channels, self.width, self.height)
+                self.spike_count[l] = torch.zeros(self.mem[l].size())
 
             elif isinstance(self.features[l], nn.Dropout):
                 self.mask[l] = self.features[l](torch.ones(self.mem[l - 2].shape))
@@ -136,6 +138,7 @@ class VGG_SNN_STDB(nn.Module):
 
             if isinstance(self.classifier[l], nn.Linear):
                 self.mem[prev + l] = torch.zeros(self.batch_size, self.classifier[l].out_features)
+                self.spike_count[prev+l] 	= torch.zeros(self.mem[prev+l].size())
 
             elif isinstance(self.classifier[l], nn.Dropout):
                 self.mask[prev + l] = self.classifier[l](torch.ones(self.mem[prev + l - 2].shape))
@@ -159,7 +162,8 @@ class VGG_SNN_STDB(nn.Module):
                     mem_thr = (self.mem[l] / self.threshold[l]) - 1.0
                     out = self.act_func(mem_thr, (t - 1 - self.spike[l]))
                     rst = self.threshold[l] * (mem_thr > 0).float()
-                    self.spike[l] = self.spike[l].masked_fill(out.byte(), t - 1)
+                    self.spike[l] = self.spike[l].masked_fill(out.bool(), t - 1)
+                    self.spike_count[l][out.bool()] 	= self.spike_count[l][out.bool()] + 1
 
                     self.mem[l] = self.leak_mem * self.mem[l] + self.features[l](out_prev) - rst
                     out_prev = out.clone()
@@ -179,7 +183,8 @@ class VGG_SNN_STDB(nn.Module):
                     mem_thr = (self.mem[prev + l] / self.threshold[prev + l]) - 1.0
                     out = self.act_func(mem_thr, (t - 1 - self.spike[prev + l]))
                     rst = self.threshold[prev + l] * (mem_thr > 0).float()
-                    self.spike[prev + l] = self.spike[prev + l].masked_fill(out.byte(), t - 1)
+                    self.spike[prev + l] = self.spike[prev + l].masked_fill(out.bool(), t - 1)
+                    self.spike_count[prev+l][out.bool()] 	= self.spike_count[prev+l][out.bool()] + 1
 
                     self.mem[prev + l] = self.leak_mem * self.mem[prev + l] + self.classifier[l](out_prev) - rst
                     out_prev = out.clone()
