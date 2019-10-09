@@ -119,6 +119,17 @@ def bagnet(function):
     return wrapper
 
 
+def dcgan(function):
+    module = import_module(f'cifar10_dcgan.dcgan')
+    model_ctr = getattr(module, function)
+    model = model_ctr(pretrained=True)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=64)
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing, batch_size=28)
+    wrapper.image_size = 64
+    return wrapper
+
+
 def vggface():
     import keras
     weights = keras.utils.get_file(
@@ -307,6 +318,7 @@ class BaseModelPool(UniqueKeyDict):
             'fixres_resnext101_32x48d_wsl': lambda: fixres(
                 'resnext101_32x48d_wsl',
                 'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
+            'dcgan': lambda: dcgan("get_discriminator")
         }
         # MobileNets
         for version, multiplier, image_size in [
