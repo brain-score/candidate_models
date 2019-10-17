@@ -7,11 +7,10 @@ import functools
 import numpy as np
 
 from brainscore.utils import LazyLoad, fullname
-from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
-from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
+from submission.utils import UniqueKeyDict
 
 _logger = logging.getLogger(__name__)
 

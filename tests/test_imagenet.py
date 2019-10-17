@@ -4,7 +4,7 @@ import pytest
 from pytest import approx
 
 from brainscore.benchmarks.imagenet import Imagenet2012
-from candidate_models import brain_translated_pool
+from candidate_models.model_commitments import brain_translated_pool
 
 _logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class TestImagenet:
         ('resnet-18', 1 - .3024),
         ('resnet-34', 1 - .2670),
         ('resnet-50-pytorch', 1 - .2385),
-        ('resnet-50-robust', .5332), # computed manually, as no score was given with 
+        ('resnet-50-robust', .5332),  # computed manually, as no score was given with
         # keras: from https://keras.io/applications/#documentation-for-individual-models
         ('xception', .790),
         ('vgg-16', .713),

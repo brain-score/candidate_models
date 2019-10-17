@@ -7,10 +7,10 @@ from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coo
 from brainscore.model_interface import BrainModel
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import cornet
-from candidate_models.model_commitments.ml_pool import Hooks
-from candidate_models.utils import UniqueKeyDict
 from model_tools.brain_transformation.behavior import BehaviorArbiter, LogitsBehavior, ProbabilitiesMapping
 from result_caching import store
+from submission.ml_pool import Hooks
+from submission.utils import UniqueKeyDict
 
 
 class CORnetCommitment(BrainModel):
