@@ -182,7 +182,7 @@ class TFUtilsModel:
         if not os.path.isdir(model_path):
             _logger.debug(f"Downloading weights for {model_name} to {model_path}")
             os.makedirs(model_path)
-            s3.download_folder(f"tfutils/{model_name}", model_path)
+            s3.download_folder(f"tfutils/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
         fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
         assert len(fnames) > 0, f"no checkpoint found in {model_path}"
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
