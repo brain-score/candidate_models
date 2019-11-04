@@ -169,7 +169,7 @@ class TFUtilsModel:
         json_path = os.getenv('CM_TFUTILS_JSON_DIR', os.path.join(framework_home, 'model-jsons', 'tfutils'))
         model_path = os.path.join(json_path, model_name)
         if not os.path.isdir(model_path):
-            _logger.debug(f"Downloading weights for {model_name} to {model_path}")
+            _logger.debug(f"Downloading json for {model_name} to {model_path}")
             os.makedirs(model_path)
             s3.download_folder(f"model-jsons/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
         fnames = glob.glob(os.path.join(model_path, '*.json*'))
