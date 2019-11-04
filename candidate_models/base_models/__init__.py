@@ -168,8 +168,12 @@ class TFUtilsModel:
     def _find_model_json(model_name):
         _logger = logging.getLogger(fullname(TFUtilsModel._find_model_json))
         framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
-        json_path = os.getenv('CM_TFUTILS_WEIGHTS_DIR', os.path.join(framework_home, 'model-jsons', 'tfutils'))
+        json_path = os.getenv('CM_TFUTILS_JSON_DIR', os.path.join(framework_home, 'model-jsons', 'tfutils'))
         model_path = os.path.join(json_path, model_name)
+        if not os.path.isdir(model_path):
+            _logger.debug(f"Downloading weights for {model_name} to {model_path}")
+            os.makedirs(model_path)
+            s3.download_folder(f"model-jsons/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
         fnames = glob.glob(os.path.join(model_path, '*.json*'))
         assert len(fnames) > 0, f"no json found in {model_path}"
         tnn_json = fnames[0].split('.json')[0] + '.json'
@@ -184,7 +188,7 @@ class TFUtilsModel:
         if not os.path.isdir(model_path):
             _logger.debug(f"Downloading weights for {model_name} to {model_path}")
             os.makedirs(model_path)
-            s3.download_folder(f"tfutils/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
+            s3.download_folder(f"model-weights/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
         fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
         assert len(fnames) > 0, f"no checkpoint found in {model_path}"
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
