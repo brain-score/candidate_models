@@ -73,10 +73,12 @@ class CORnetCommitment(BrainModel):
         if len(regions) > 1:
             raise NotImplementedError("cannot handle more than one simultaneous region")
         region = list(regions)[0]
-        time_bins = [self.time_mapping[region][timestep] for timestep in responses['time_step'].values]
+        time_bins = [self.time_mapping[region][timestep] if timestep in self.time_mapping[region] else (None, None)
+                     for timestep in responses['time_step'].values]
         responses['time_bin_start'] = 'time_step', [time_bin[0] for time_bin in time_bins]
         responses['time_bin_end'] = 'time_step', [time_bin[1] for time_bin in time_bins]
         responses = NeuroidAssembly(responses.rename({'time_step': 'time_bin'}))
+        responses = responses[{'time_bin': [not np.isnan(time_start) for time_start in responses['time_bin_start']]}]
         # select time
         time_responses = []
         for time_bin in tqdm(self.recording_time_bins, desc='CORnet-time to recording time'):
@@ -240,9 +242,9 @@ def cornet_r_brainmodel():
                                     range(5)] + ['decoder.avgpool-t0'],
                             time_mapping={
                                 'V1': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
-                                'V2': {0: (50, 80), 1: (80, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
-                                'V4': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
-                                'IT': {0: (70, 110), 1: (110, 140), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'V2': {1: (60, 110), 2: (110, 140), 3: (140, 170), 4: (170, 200)},
+                                'V4': {1: (70, 110), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
+                                'IT': {1: (70, 110), 2: (140, 170), 3: (170, 200), 4: (200, 250)},
                             })
 
 
