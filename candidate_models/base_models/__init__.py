@@ -4,6 +4,7 @@ import os
 from importlib import import_module
 
 import functools
+import numpy as np
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
@@ -12,6 +13,8 @@ from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
+
+_logger = logging.getLogger(__name__)
 
 
 def pytorch_model(function, image_size):
@@ -207,6 +210,17 @@ def bagnet(function):
     return wrapper
 
 
+def dcgan(function):
+    module = import_module(f'cifar10_dcgan.dcgan')
+    model_ctr = getattr(module, function)
+    model = model_ctr(pretrained=True)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=64)
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing, batch_size=28)
+    wrapper.image_size = 64
+    return wrapper
+
+
 def vggface():
     import keras
     weights = keras.utils.get_file(
@@ -216,6 +230,101 @@ def vggface():
     wrapper = keras_model('vgg16', 'VGG16', image_size=224, identifier='vggface',
                           model_kwargs=dict(weights=weights, classes=2622))
     wrapper.image_size = 224
+    return wrapper
+
+
+def texture_vs_shape(model_identifier, model_name):
+    from texture_vs_shape.load_pretrained_models import load_model
+    model = load_model(model_name)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=224)
+    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=preprocessing)
+    wrapper.image_size = 224
+    return wrapper
+
+
+def robust_model(function, image_size):
+    from urllib import request
+    from torch import load
+    from model_tools.activations.pytorch import load_preprocess_images
+    module = import_module(f'torchvision.models')
+    model_ctr = getattr(module, function)
+    model = model_ctr()
+    preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
+    # load weights
+    framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+    weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR',
+                                os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
+    weights_path = os.path.join(weightsdir_path, 'resnet-50-robust')
+    if not os.path.isfile(weights_path):
+        url = 'http://andrewilyas.com/ImageNet.pt'
+        _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
+        os.makedirs(weightsdir_path, exist_ok=True)
+        request.urlretrieve(url, weights_path)
+    checkpoint = load(weights_path)
+    # process weights -- remove the attacker and prepocessing weights
+    weights = checkpoint['model']
+    weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
+    weights = {k: weights[k] for k in list(weights.keys())[2:]}
+    model.load_state_dict(weights)
+    # wrap model with pytorch wrapper
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper.image_size = image_size
+    return wrapper
+
+
+def wsl(c_size):
+    import torch.hub
+    model_identifier = f"resnext101_32x{c_size}d_wsl"
+    model = torch.hub.load('facebookresearch/WSL-Images', model_identifier)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=224)
+    batch_size = {8: 32, 16: 16, 32: 8, 48: 4}
+    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=preprocessing,
+                             batch_size=batch_size[c_size])
+    wrapper.image_size = 224
+    return wrapper
+
+
+def fixres(model_identifier, model_url):
+    # model
+    from fixres.hubconf import load_state_dict_from_url
+    module = import_module('fixres.imnet_evaluate.resnext_wsl')
+    model_ctr = getattr(module, model_identifier)
+    model = model_ctr(pretrained=False)  # the pretrained flag here corresponds to standard resnext weights
+    pretrained_dict = load_state_dict_from_url(model_url, map_location=lambda storage, loc: storage)['model']
+    model_dict = model.state_dict()
+    for k in model_dict.keys():
+        assert ('module.' + k) in pretrained_dict.keys()
+        model_dict[k] = pretrained_dict.get(('module.' + k))
+    model.load_state_dict(model_dict)
+
+    # preprocessing
+    from fixres.transforms_v2 import get_transforms
+    # 320 for ResNeXt:
+    # https://github.com/mschrimpf/FixRes/tree/4ddcf11b29c118dfb8a48686f75f572450f67e5d#example-evaluation-procedure
+    input_size = 320
+    # https://github.com/mschrimpf/FixRes/blob/0dc15ab509b9cb9d7002ca47826dab4d66033668/fixres/imnet_evaluate/train.py#L159-L160
+    transformation = get_transforms(input_size=input_size, test_size=input_size,
+                                    kind='full', need=('val',),
+                                    # this is different from standard ImageNet evaluation to show the whole image
+                                    crop=False,
+                                    # no backbone parameter for ResNeXt following
+                                    # https://github.com/mschrimpf/FixRes/blob/0dc15ab509b9cb9d7002ca47826dab4d66033668/fixres/imnet_evaluate/train.py#L154-L156
+                                    backbone=None)
+    transform = transformation['val']
+    from model_tools.activations.pytorch import load_images
+
+    def load_preprocess_images(image_filepaths):
+        images = load_images(image_filepaths)
+        images = [transform(image) for image in images]
+        images = [image.unsqueeze(0) for image in images]
+        images = np.concatenate(images)
+        return images
+
+    wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=load_preprocess_images,
+                             batch_size=4)  # doesn't fit into 12 GB GPU memory otherwise
+    wrapper.image_size = input_size
     return wrapper
 
 
@@ -235,6 +344,8 @@ class BaseModelPool(UniqueKeyDict):
             'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
             'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
             'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
+            'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=224),
+            'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
 
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
             'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),
@@ -276,6 +387,31 @@ class BaseModelPool(UniqueKeyDict):
             'bagnet9': lambda: bagnet("bagnet9"),
             'bagnet17': lambda: bagnet("bagnet17"),
             'bagnet33': lambda: bagnet("bagnet33"),
+            # CORnets. Note that these are only here for the base_model_pool, their commitment works separately
+            # from the models here due to anatomical alignment.
+            'CORnet-Z': lambda: cornet('CORnet-Z'),
+            'CORnet-R': lambda: cornet('CORnet-R'),
+            'CORnet-S': lambda: cornet('CORnet-S'),
+
+            'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
+                                                     model_name='resnet50_trained_on_SIN'),
+            'resnet50-SIN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN',
+                                                        model_name='resnet50_trained_on_SIN_and_IN'),
+            'resnet50-SIN_IN_IN': lambda: texture_vs_shape(
+                model_identifier='resnet50-SIN_IN_IN',
+                model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
+
+            'resnext101_32x8d_wsl': lambda: wsl(8),
+            'resnext101_32x16d_wsl': lambda: wsl(16),
+            'resnext101_32x32d_wsl': lambda: wsl(32),
+            'resnext101_32x48d_wsl': lambda: wsl(48),
+
+            'fixres_resnext101_32x48d_wsl': lambda: fixres(
+                'resnext101_32x48d_wsl',
+                'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
+
+            'dcgan': lambda: dcgan("get_discriminator")
+
             'convrnn_224': lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
                                                      preprocessing_type='convrnn', image_size=224, image_resize=None),
         }

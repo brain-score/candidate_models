@@ -109,6 +109,22 @@ class ModelLayers(UniqueKeyDict):
                  'layer3.4.conv2', 'layer3.5.conv2'] +
                 ['layer4.0.downsample.0', 'layer4.1.conv2', 'layer4.2.conv2'] +
                 ['avgpool'],
+            'resnet-50':
+                ['conv1'] +
+                ['layer1.0.conv3', 'layer1.1.conv3', 'layer1.2.conv3'] +
+                ['layer2.0.downsample.0', 'layer2.1.conv3', 'layer2.2.conv3', 'layer2.3.conv3'] +
+                ['layer3.0.downsample.0', 'layer3.1.conv3', 'layer3.2.conv3', 'layer3.3.conv3',
+                 'layer3.4.conv3', 'layer3.5.conv3'] +
+                ['layer4.0.downsample.0', 'layer4.1.conv3', 'layer4.2.conv3'] +
+                ['avgpool'],
+            'resnet-50-robust':
+                ['conv1'] +
+                ['layer1.0.conv3', 'layer1.1.conv3', 'layer1.2.conv3'] +
+                ['layer2.0.downsample.0', 'layer2.1.conv3', 'layer2.2.conv3', 'layer2.3.conv3'] +
+                ['layer3.0.downsample.0', 'layer3.1.conv3', 'layer3.2.conv3', 'layer3.3.conv3',
+                 'layer3.4.conv3', 'layer3.5.conv3'] +
+                ['layer4.0.downsample.0', 'layer4.1.conv3', 'layer4.2.conv3'] +
+                ['avgpool'],
 
             # Slim
             'inception_v1':
@@ -166,15 +182,25 @@ class ModelLayers(UniqueKeyDict):
                       [f'layer{layer + 1}.{block}.relu' for layer, blocks in
                        enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
                       ['avgpool'],
-
-            # TFUtils
+            'resnext101_32x8d_wsl': self._resnext101_layers(),
+            'resnext101_32x16d_wsl': self._resnext101_layers(),
+            'resnext101_32x32d_wsl': self._resnext101_layers(),
+            'resnext101_32x48d_wsl': self._resnext101_layers(),
+            'fixres_resnext101_32x48d_wsl': self._resnext101_layers(),
+            'dcgan': ['main.0', 'main.2', 'main.5', 'main.8', 'main.12'],
             # ConvRNNs
             'convrnn_224': ['logits'],
         }
-        
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
         self['vggface'] = self['vgg-16']
+        for sin_model in ['resnet50-SIN', 'resnet50-SIN_IN', 'resnet50-SIN_IN_IN']:
+            self[sin_model] = \
+                ['conv1'] + \
+                [f'layer{seq}.{bottleneck}.relu'
+                 for seq, bottlenecks in enumerate([3, 4, 6, 3], start=1)
+                 for bottleneck in range(bottlenecks)] + \
+                ['avgpool']
 
     @staticmethod
     def _resnet50_layers(bottleneck_version):
@@ -193,6 +219,14 @@ class ModelLayers(UniqueKeyDict):
         return ['conv1'] + \
                [f"block{block + 1}/unit_{unit + 1}/bottleneck_v{bottleneck_version}"
                 for block, block_units in enumerate(units) for unit in range(block_units)]
+
+    @staticmethod
+    def _resnext101_layers():
+        return (['conv1'] +
+                # note that while relu is used multiple times, by default the last one will overwrite all previous ones
+                [f"layer{block + 1}.{unit}.relu"
+                 for block, block_units in enumerate([3, 4, 23, 3]) for unit in range(block_units)] +
+                ['avgpool'])
 
     @staticmethod
     def _item(item):
@@ -250,8 +284,7 @@ class MLBrainPool(UniqueKeyDict):
                     continue
 
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-                def load(basemodel_identifier=basemodel_identifier, identifier=identifier,
-                         activations_model=activations_model, layers=layers):
+                def load(identifier=identifier, activations_model=activations_model, layers=layers):
                     brain_model = ModelCommitment(identifier=identifier, activations_model=activations_model,
                                                   layers=layers)
                     for region, assembly in commitment_assemblies.items():

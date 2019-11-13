@@ -1,8 +1,12 @@
+import logging
+
 import pytest
 from pytest import approx
 
 from brainscore.benchmarks.imagenet import Imagenet2012
 from candidate_models import brain_translated_pool
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.mark.memory_intense
@@ -15,6 +19,8 @@ class TestImagenet:
         ('squeezenet1_1', 1 - .4181, .07),
         ('resnet-18', 1 - .3024, .07),
         ('resnet-34', 1 - .2670, .07),
+        ('resnet-50-pytorch', 1 - .2385),
+        ('resnet-50-robust', .5332), # computed manually, as no score was given with
         # keras: from https://keras.io/applications/#documentation-for-individual-models
         ('xception', .790, .07),
         ('vgg-16', .713, .07),
@@ -82,14 +88,28 @@ class TestImagenet:
         ('bagnet33', .58924, .01),
         # # ConvRNN: from https://arxiv.org/abs/1807.00053, page 6
         ('convrnn_224', 0.729, .04),
+        # resnet stylized ImageNet: from https://openreview.net/pdf?id=Bygh9j09KX, Table 2
+        ('resnet50-SIN', .6018),
+        ('resnet50-SIN_IN', .7459),
+        ('resnet50-SIN_IN_IN', .7672),
+        # wsl: from https://github.com/facebookresearch/WSL-Images/tree/c4dac640995f66db893410d6d4356d49a9d3dcc0
+        ('resnext101_32x8d_wsl', .822),
+        ('resnext101_32x16d_wsl', .842),
+        ('resnext101_32x32d_wsl', .851),
+        ('resnext101_32x48d_wsl', .854),
+        # FixRes: from https://arxiv.org/pdf/1906.06423.pdf, Table 8
+        ('fixres_resnext101_32x48d_wsl', .863),
     ])
     def test_top1(self, model, expected_top1, allowed_deviation):
+        # clear tf graph
         import tensorflow as tf
         tf.reset_default_graph()
         import keras
         keras.backend.clear_session()
+        # run
         _model = brain_translated_pool[model]
         benchmark = Imagenet2012()
         score = benchmark(_model)
         accuracy = score.sel(aggregation='center')
+        _logger.debug(f"{model} ImageNet2012-top1 -> {accuracy} (expected {expected_top1})")
         assert accuracy == approx(expected_top1, abs=allowed_deviation)
