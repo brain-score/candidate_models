@@ -80,8 +80,8 @@ class TestImagenet:
         ('bagnet9', .2635, .01),
         ('bagnet17', .46, .01),
         ('bagnet33', .58924, .01),
-        #
-        ('convrnn_224', 0.729, .01),
+        # # ConvRNN: from https://arxiv.org/abs/1807.00053, page 6
+        ('convrnn_224', 0.729, .04),
     ])
     def test_top1(self, model, expected_top1, allowed_deviation):
         import tensorflow as tf

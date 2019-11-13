@@ -173,7 +173,8 @@ class TFUtilsModel:
         if not os.path.isdir(model_path):
             _logger.debug(f"Downloading json for {model_name} to {model_path}")
             os.makedirs(model_path)
-            s3.download_folder(f"model-jsons/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
+            s3.download_folder(f"model-jsons/{model_name}", model_path,
+                               bucket='brain-score-tfutils-models', region='us-west-1')
         fnames = glob.glob(os.path.join(model_path, '*.json*'))
         assert len(fnames) > 0, f"no json found in {model_path}"
         tnn_json = fnames[0].split('.json')[0] + '.json'
