@@ -410,7 +410,7 @@ class BaseModelPool(UniqueKeyDict):
                 'resnext101_32x48d_wsl',
                 'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
 
-            'dcgan': lambda: dcgan("get_discriminator")
+            'dcgan': lambda: dcgan("get_discriminator"),
 
             'convrnn_224': lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
                                                      preprocessing_type='convrnn', image_size=224, image_resize=None),
