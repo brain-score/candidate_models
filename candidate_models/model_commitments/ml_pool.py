@@ -188,6 +188,8 @@ class ModelLayers(UniqueKeyDict):
             'resnext101_32x48d_wsl': self._resnext101_layers(),
             'fixres_resnext101_32x48d_wsl': self._resnext101_layers(),
             'dcgan': ['main.0', 'main.2', 'main.5', 'main.8', 'main.12'],
+            # ConvRNNs
+            'convrnn_224': ['logits'],
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers

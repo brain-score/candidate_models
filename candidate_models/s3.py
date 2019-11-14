@@ -25,10 +25,11 @@ def download_folder(folder_key, target_directory, bucket=_DEFAULT_BUCKET, region
     for file in tqdm(files):
         # get part of file after given folder_key
         filename = file[len(folder_key):]
-        target_path = os.path.join(target_directory, filename)
-        temp_path = target_path + '.filepart'
-        bucket.download_file(file, temp_path)
-        os.rename(temp_path, target_path)
+        if len(filename) > 0:
+            target_path = os.path.join(target_directory, filename)
+            temp_path = target_path + '.filepart'
+            bucket.download_file(file, temp_path)
+            os.rename(temp_path, target_path)
 
 
 def download_file(key, target_path, bucket=_DEFAULT_BUCKET, region=_DEFAULT_REGION):
