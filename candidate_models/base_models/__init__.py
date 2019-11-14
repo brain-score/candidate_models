@@ -68,7 +68,7 @@ class TFSlimModel:
         from model_tools.activations.tensorflow import load_image
         preprocessing_types = {
             'vgg': lambda image: vgg_preprocessing.preprocess_image(
-                image, image_size, image_size, central_fraction=None, resize_side_min=image_size),
+                image, image_size, image_size, resize_side_min=image_size),
             'inception': lambda image: inception_preprocessing.preprocess_for_eval(
                 image, image_size, image_size, central_fraction=None)
         }
