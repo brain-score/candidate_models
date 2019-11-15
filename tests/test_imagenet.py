@@ -19,8 +19,8 @@ class TestImagenet:
         ('squeezenet1_1', 1 - .4181, .07),
         ('resnet-18', 1 - .3024, .07),
         ('resnet-34', 1 - .2670, .07),
-        ('resnet-50-pytorch', 1 - .2385),
-        ('resnet-50-robust', .5332), # computed manually, as no score was given with
+        ('resnet-50-pytorch', 1 - .2385, .07),
+        ('resnet-50-robust', .5332, .07),  # computed manually, as no score was given with
         # keras: from https://keras.io/applications/#documentation-for-individual-models
         ('xception', .790, .07),
         ('vgg-16', .713, .07),
@@ -89,16 +89,16 @@ class TestImagenet:
         # # ConvRNN: from https://arxiv.org/abs/1807.00053, page 6
         ('convrnn_224', 0.729, .04),
         # resnet stylized ImageNet: from https://openreview.net/pdf?id=Bygh9j09KX, Table 2
-        ('resnet50-SIN', .6018),
-        ('resnet50-SIN_IN', .7459),
-        ('resnet50-SIN_IN_IN', .7672),
+        ('resnet50-SIN', .6018, .07),
+        ('resnet50-SIN_IN', .7459, .07),
+        ('resnet50-SIN_IN_IN', .7672, .07),
         # wsl: from https://github.com/facebookresearch/WSL-Images/tree/c4dac640995f66db893410d6d4356d49a9d3dcc0
-        ('resnext101_32x8d_wsl', .822),
-        ('resnext101_32x16d_wsl', .842),
-        ('resnext101_32x32d_wsl', .851),
-        ('resnext101_32x48d_wsl', .854),
+        ('resnext101_32x8d_wsl', .822, .07),
+        ('resnext101_32x16d_wsl', .842, .07),
+        ('resnext101_32x32d_wsl', .851, .07),
+        ('resnext101_32x48d_wsl', .854, .07),
         # FixRes: from https://arxiv.org/pdf/1906.06423.pdf, Table 8
-        ('fixres_resnext101_32x48d_wsl', .863),
+        ('fixres_resnext101_32x48d_wsl', .863, .07),
     ])
     def test_top1(self, model, expected_top1, allowed_deviation):
         # clear tf graph
