@@ -264,8 +264,8 @@ model_layers_pool = ModelLayersPool()
 commitment_assemblies = {
     'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V1', average_repetition=False)),
     'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V2', average_repetition=False)),
-    'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.V4', average_repetition=False)),
-    'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
+    'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.public.V4', average_repetition=False)),
+    'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.public.IT', average_repetition=False)),
 }
 
 
