@@ -2,7 +2,6 @@ import warnings
 
 import itertools
 
-from brainscore.assemblies.public import load_assembly
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.utils import UniqueKeyDict
@@ -261,13 +260,6 @@ class ModelLayersPool(UniqueKeyDict):
 
 model_layers_pool = ModelLayersPool()
 
-commitment_assemblies = {
-    'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V1', average_repetition=False)),
-    'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V2', average_repetition=False)),
-    'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.public.V4', average_repetition=False)),
-    'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.public.IT', average_repetition=False)),
-}
-
 
 class MLBrainPool(UniqueKeyDict):
     def __init__(self):
@@ -275,7 +267,6 @@ class MLBrainPool(UniqueKeyDict):
 
         for basemodel_identifier, activations_model in base_model_pool.items():
             if basemodel_identifier not in model_layers:
-                warnings.warn(f"{basemodel_identifier} not found in model_layers")
                 continue
             layers = model_layers[basemodel_identifier]
 
@@ -284,14 +275,9 @@ class MLBrainPool(UniqueKeyDict):
                     continue
 
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-                def load(identifier=identifier, activations_model=activations_model, layers=layers):
-                    brain_model = ModelCommitment(identifier=identifier, activations_model=activations_model,
-                                                  layers=layers)
-                    for region, assembly in commitment_assemblies.items():
-                        brain_model.commit_region(region, assembly)
-                    return brain_model
-
-                self[identifier] = LazyLoad(load)
+                self[identifier] = LazyLoad(
+                    lambda identifier=identifier, activations_model=activations_model, layers=layers:
+                    ModelCommitment(identifier=identifier, activations_model=activations_model, layers=layers))
 
 
 ml_brain_pool = MLBrainPool()
