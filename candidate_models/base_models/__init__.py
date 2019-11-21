@@ -177,7 +177,7 @@ def robust_model(function, image_size):
     weights = {k: weights[k] for k in list(weights.keys())[2:]}
     model.load_state_dict(weights)
     # wrap model with pytorch wrapper
-    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=f"{function}-robust", model=model, preprocessing=preprocessing)
     wrapper.image_size = image_size
     return wrapper
 
