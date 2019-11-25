@@ -15,6 +15,7 @@ from model_tools.brain_transformation import LayerMappedModel, TemporalIgnore
 from submission import score_model
 
 
+@pytest.mark.private_access
 class TestPreselectedLayer:
     def layer_candidate(self, model_name, layer, region, pca_components: Union[None, int] = 1000):
         def load(model_name=model_name, layer=layer, region=region, pca_components=pca_components):
@@ -109,6 +110,7 @@ class TestPreselectedLayer:
         assert score.sel(aggregation='center') == approx(.0820823, abs=.01)
 
 
+@pytest.mark.private_access
 class TestPreselectedLayerTemporal:
     def layer_candidate(self, model_name, layer, region, pca_components: Union[None, int] = 1000):
         def load(model_name=model_name, layer=layer, region=region, pca_components=pca_components):
@@ -132,6 +134,7 @@ class TestPreselectedLayerTemporal:
         assert len(score.raw.raw['time_bin']) == 12
 
 
+@pytest.mark.private_access
 @pytest.mark.memory_intense
 class TestBrainTranslated:
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [

@@ -12,7 +12,7 @@ requirements = [
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
     "result_caching @ git+https://github.com/mschrimpf/result_caching",
-    "networkx",
+    "networkx==1.11",
     "tqdm",
     "gitpython",
 
@@ -20,7 +20,9 @@ requirements = [
     "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
     "Fixing-the-train-test-resolution-discrepancy-scripts @ git+https://github.com/mschrimpf/FixRes.git",
-    "dcgan @ git+https://github.com/franzigeiger/dcgan.git"
+    "dcgan @ git+https://github.com/franzigeiger/dcgan.git",
+    "tfutils @ git+https://github.com/neuroailab/tfutils.git",
+    "tnn @ git+https://github.com/neuroailab/tnn.git",
 ]
 
 setup(
