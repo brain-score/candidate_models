@@ -7,6 +7,7 @@ import functools
 import numpy as np
 
 from brainscore.utils import LazyLoad, fullname
+from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
 from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from model_tools.activations import PytorchWrapper, KerasWrapper
@@ -44,6 +45,7 @@ class TFSlimModel:
         import tensorflow as tf
         from nets import nets_factory
 
+        tf.reset_default_graph()
         placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFSlimModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size)
 
@@ -246,6 +248,7 @@ def robust_model(function, image_size):
     from urllib import request
     from torch import load
     from model_tools.activations.pytorch import load_preprocess_images
+    torch = import_module('torch')
     module = import_module(f'torchvision.models')
     model_ctr = getattr(module, function)
     model = model_ctr()
@@ -260,7 +263,7 @@ def robust_model(function, image_size):
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = load(weights_path)
+    checkpoint = load(weights_path, map_location=torch.device('cpu'))
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
@@ -388,9 +391,9 @@ class BaseModelPool(UniqueKeyDict):
             'bagnet33': lambda: bagnet("bagnet33"),
             # CORnets. Note that these are only here for the base_model_pool, their commitment works separately
             # from the models here due to anatomical alignment.
-            'CORnet-Z': lambda: cornet('CORnet-Z'),
-            'CORnet-R': lambda: cornet('CORnet-R'),
-            'CORnet-S': lambda: cornet('CORnet-S'),
+            # 'CORnet-Z': lambda: cornet('CORnet-Z'),
+            # 'CORnet-R': lambda: cornet('CORnet-R'),
+            # 'CORnet-S': lambda: cornet('CORnet-S'),
 
             'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
                                                      model_name='resnet50_trained_on_SIN'),

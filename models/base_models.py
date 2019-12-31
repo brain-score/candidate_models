@@ -7,7 +7,7 @@ def get_model_list():
 
 
 def get_model(name):
-    return base_model_pool(name)
+    return base_model_pool[name]
 
 
 def get_layers(name):

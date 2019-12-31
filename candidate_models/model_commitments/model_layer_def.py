@@ -29,6 +29,18 @@ def resnext101_layers():
              for block, block_units in enumerate([3, 4, 23, 3]) for unit in range(block_units)] +
             ['avgpool'])
 
+def mobilenet_v1():
+    return ['Conv2d_0'] + list(itertools.chain(
+        *[[f'Conv2d_{i + 1}_depthwise', f'Conv2d_{i + 1}_pointwise'] for i in range(13)])) + ['AvgPool_1a']
+
+def mobilenet_v2():
+    return ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool']
+
+def bagnet():
+    return (['relu'] +
+           [f'layer{layer + 1}.{block}.relu' for layer, blocks in
+             enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
+           ['avgpool'] )
 
 layers = {
     'alexnet':
@@ -112,7 +124,14 @@ layers = {
          'layer3.4.conv3', 'layer3.5.conv3'] +
         ['layer4.0.downsample.0', 'layer4.1.conv3', 'layer4.2.conv3'] +
         ['avgpool'],
-
+    'resnet-50-pytorch':
+        ['conv1'] +
+        ['layer1.0.conv3', 'layer1.1.conv3', 'layer1.2.conv3'] +
+        ['layer2.0.downsample.0', 'layer2.1.conv3', 'layer2.2.conv3', 'layer2.3.conv3'] +
+        ['layer3.0.downsample.0', 'layer3.1.conv3', 'layer3.2.conv3', 'layer3.3.conv3',
+         'layer3.4.conv3', 'layer3.5.conv3'] +
+        ['layer4.0.downsample.0', 'layer4.1.conv3', 'layer4.2.conv3'] +
+        ['avgpool'],
     # Slim
     'inception_v1':
         ['MaxPool_2a_3x3'] +
@@ -165,16 +184,18 @@ layers = {
         ['AvgPool_1a'],
     'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
     'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
-    'bagnet': ['relu'] +
-              [f'layer{layer + 1}.{block}.relu' for layer, blocks in
-               enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
-              ['avgpool'],
+    # 'bagnet' : bagnet(),
+    'bagnet9':  bagnet(),
+    'bagnet17':  bagnet(),
+    'bagnet33':  bagnet(),
     'resnext101_32x8d_wsl': resnext101_layers(),
     'resnext101_32x16d_wsl': resnext101_layers(),
     'resnext101_32x32d_wsl': resnext101_layers(),
     'resnext101_32x48d_wsl': resnext101_layers(),
     'fixres_resnext101_32x48d_wsl': resnext101_layers(),
     'dcgan': ['main.0', 'main.2', 'main.5', 'main.8', 'main.12'],
+    # ConvRNNs
+    'convrnn_224': ['logits'],
 }
 
 model_layers = ModelLayers(layers)
@@ -186,5 +207,28 @@ for sin_model in ['resnet50-SIN', 'resnet50-SIN_IN', 'resnet50-SIN_IN_IN']:
          for seq, bottlenecks in enumerate([3, 4, 6, 3], start=1)
          for bottleneck in range(bottlenecks)] + \
         ['avgpool']
+
+
+for version, multiplier, image_size in [
+    # v1
+    (1, 1.0, 224), (1, 1.0, 192), (1, 1.0, 160), (1, 1.0, 128),
+    (1, 0.75, 224), (1, 0.75, 192), (1, 0.75, 160), (1, 0.75, 128),
+    (1, 0.5, 224), (1, 0.5, 192), (1, 0.5, 160), (1, 0.5, 128),
+    (1, 0.25, 224), (1, 0.25, 192), (1, 0.25, 160), (1, 0.25, 128),
+    # v2
+    (2, 1.4, 224),
+    (2, 1.3, 224),
+    (2, 1.0, 224), (2, 1.0, 192), (2, 1.0, 160), (2, 1.0, 128), (2, 1.0, 96),
+    (2, 0.75, 224), (2, 0.75, 192), (2, 0.75, 160), (2, 0.75, 128), (2, 0.75, 96),
+    (2, 0.5, 224), (2, 0.5, 192), (2, 0.5, 160), (2, 0.5, 128), (2, 0.5, 96),
+    (2, 0.35, 224), (2, 0.35, 192), (2, 0.35, 160), (2, 0.35, 128), (2, 0.35, 96),
+]:
+    identifier = f"mobilenet_v{version}_{multiplier}_{image_size}"
+    if version ==1:
+        model_layers[identifier] = mobilenet_v1()
+    else:
+        model_layers[identifier] = mobilenet_v2()
+
+
 
 model_layers_pool = ModelLayersPool(base_model_pool=base_model_pool, model_layers=model_layers)
