@@ -9,9 +9,12 @@ import numpy as np
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
+from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
-from model_tools.activations.tensorflow import TensorflowSlimWrapper
+from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
+
+_logger = logging.getLogger(__name__)
 
 
 def pytorch_model(function, image_size):
@@ -106,6 +109,96 @@ class TFSlimModel:
         return restore_path
 
 
+class TFUtilsModel:
+    @staticmethod
+    def init(model_fn, identifier, preprocessing_type, image_size, image_resize=None, batch_size=64, tnn_model=False,
+             model_fn_kwargs=None):
+        import tensorflow as tf
+
+        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size,
+                                                      image_resize=image_resize)
+
+        if model_fn_kwargs is None:
+            model_fn_kwargs = {}
+
+        if tnn_model:
+            tnn_json = TFUtilsModel._find_model_json(identifier)
+            model_fn_kwargs['tnn_json'] = tnn_json
+
+        endpoints, params = model_fn(preprocess, train=False, **(model_fn_kwargs or {}))
+        if not isinstance(endpoints, dict):  # single tensor of logits
+            new_endpoints = {}
+            new_endpoints['logits'] = endpoints
+            endpoints = new_endpoints
+
+        session = tf.Session()
+        TFUtilsModel._restore_imagenet_weights(identifier, session)
+        wrapper = TensorflowWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
+                                    batch_size=batch_size)
+        wrapper.image_size = image_size
+        return wrapper
+
+    @staticmethod
+    def _init_preprocessing(placeholder, preprocessing_type, image_size, image_resize=None):
+        import tensorflow as tf
+        from candidate_models.base_models.convrnn.convrnn_preproc import preprocess_for_eval as convrnn_eval_preproc
+        preprocessing_types = {
+            'convrnn': lambda image: convrnn_eval_preproc(
+                image, resize=image_resize, crop_size=image_size),
+        }
+        assert preprocessing_type in preprocessing_types
+        preprocess_image = preprocessing_types[preprocessing_type]
+        preprocess = lambda image_path: preprocess_image(tf.read_file(image_path))
+        preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
+        return preprocess
+
+    @staticmethod
+    def _restore_imagenet_weights(name, session):
+        import tensorflow as tf
+        var_list = None
+        if name.startswith('mobilenet'):
+            # Restore using exponential moving average since it produces (1.5-2%) higher accuracy according to
+            # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
+            ema = tf.train.ExponentialMovingAverage(0.999)
+            var_list = ema.variables_to_restore()
+        restorer = tf.train.Saver(var_list)
+
+        restore_path = TFUtilsModel._find_model_weights(name)
+        restorer.restore(session, restore_path)
+
+    @staticmethod
+    def _find_model_json(model_name):
+        _logger = logging.getLogger(fullname(TFUtilsModel._find_model_json))
+        framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+        json_path = os.getenv('CM_TFUTILS_JSON_DIR', os.path.join(framework_home, 'model-jsons', 'tfutils'))
+        model_path = os.path.join(json_path, model_name)
+        if not os.path.isdir(model_path):
+            _logger.debug(f"Downloading json for {model_name} to {model_path}")
+            os.makedirs(model_path)
+            s3.download_folder(f"model-jsons/{model_name}", model_path,
+                               bucket='brain-score-tfutils-models', region='us-west-1')
+        fnames = glob.glob(os.path.join(model_path, '*.json*'))
+        assert len(fnames) > 0, f"no json found in {model_path}"
+        tnn_json = fnames[0].split('.json')[0] + '.json'
+        return tnn_json
+
+    @staticmethod
+    def _find_model_weights(model_name):
+        _logger = logging.getLogger(fullname(TFUtilsModel._find_model_weights))
+        framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+        weights_path = os.getenv('CM_TFUTILS_WEIGHTS_DIR', os.path.join(framework_home, 'model-weights', 'tfutils'))
+        model_path = os.path.join(weights_path, model_name)
+        if not os.path.isdir(model_path):
+            _logger.debug(f"Downloading weights for {model_name} to {model_path}")
+            os.makedirs(model_path)
+            s3.download_folder(f"model-weights/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
+        fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
+        assert len(fnames) > 0, f"no checkpoint found in {model_path}"
+        restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
+        return restore_path
+
+
 def bagnet(function):
     module = import_module(f'bagnets.pytorch')
     model_ctr = getattr(module, function)
@@ -114,6 +207,17 @@ def bagnet(function):
     preprocessing = functools.partial(load_preprocess_images, image_size=224)
     wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing, batch_size=28)
     wrapper.image_size = 224
+    return wrapper
+
+
+def dcgan(function):
+    module = import_module(f'cifar10_dcgan.dcgan')
+    model_ctr = getattr(module, function)
+    model = model_ctr(pretrained=True)
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=64)
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing, batch_size=28)
+    wrapper.image_size = 64
     return wrapper
 
 
@@ -136,6 +240,36 @@ def texture_vs_shape(model_identifier, model_name):
     preprocessing = functools.partial(load_preprocess_images, image_size=224)
     wrapper = PytorchWrapper(identifier=model_identifier, model=model, preprocessing=preprocessing)
     wrapper.image_size = 224
+    return wrapper
+
+
+def robust_model(function, image_size):
+    from urllib import request
+    from torch import load
+    from model_tools.activations.pytorch import load_preprocess_images
+    module = import_module(f'torchvision.models')
+    model_ctr = getattr(module, function)
+    model = model_ctr()
+    preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
+    # load weights
+    framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+    weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR',
+                                os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
+    weights_path = os.path.join(weightsdir_path, 'resnet-50-robust')
+    if not os.path.isfile(weights_path):
+        url = 'http://andrewilyas.com/ImageNet.pt'
+        _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
+        os.makedirs(weightsdir_path, exist_ok=True)
+        request.urlretrieve(url, weights_path)
+    checkpoint = load(weights_path)
+    # process weights -- remove the attacker and prepocessing weights
+    weights = checkpoint['model']
+    weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
+    weights = {k: weights[k] for k in list(weights.keys())[2:]}
+    model.load_state_dict(weights)
+    # wrap model with pytorch wrapper
+    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper.image_size = image_size
     return wrapper
 
 
@@ -210,6 +344,8 @@ class BaseModelPool(UniqueKeyDict):
             'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
             'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
             'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
+            'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=224),
+            'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
 
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
             'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),
@@ -273,6 +409,11 @@ class BaseModelPool(UniqueKeyDict):
             'fixres_resnext101_32x48d_wsl': lambda: fixres(
                 'resnext101_32x48d_wsl',
                 'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
+
+            'dcgan': lambda: dcgan("get_discriminator"),
+
+            'convrnn_224': lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
+                                                     preprocessing_type='convrnn', image_size=224, image_resize=None),
         }
         # MobileNets
         for version, multiplier, image_size in [
