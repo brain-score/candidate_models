@@ -1,7 +1,6 @@
 from brainscore.model_interface import BrainModel
 from candidate_models.model_commitments import cornet_brain_pool
-#
-# from test import test_models
+from test import test_models
 
 """
 Template module for a brain model submission to brain-score
@@ -28,5 +27,5 @@ def get_model(name):
     return cornet_brain_pool[name]
 
 
-# if __name__ == '__main__':
-#     test_models.test_brain_model(__name__)
+if __name__ == '__main__':
+    test_models.test_brain_model(__name__)

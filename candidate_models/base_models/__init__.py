@@ -246,9 +246,8 @@ def texture_vs_shape(model_identifier, model_name):
 
 def robust_model(function, image_size):
     from urllib import request
-    from torch import load
+    import torch
     from model_tools.activations.pytorch import load_preprocess_images
-    torch = import_module('torch')
     module = import_module(f'torchvision.models')
     model_ctr = getattr(module, function)
     model = model_ctr()
@@ -263,7 +262,7 @@ def robust_model(function, image_size):
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = load(weights_path, map_location=torch.device('cpu'))
+    checkpoint = torch.load(weights_path, map_location=torch.device('cpu'))
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}

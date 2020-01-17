@@ -184,7 +184,6 @@ layers = {
         ['AvgPool_1a'],
     'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
     'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
-    # 'bagnet' : bagnet(),
     'bagnet9':  bagnet(),
     'bagnet17':  bagnet(),
     'bagnet33':  bagnet(),

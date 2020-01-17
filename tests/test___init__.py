@@ -4,6 +4,7 @@ import pytest
 from pytest import approx
 from typing import Union
 
+from brainscore import score_model
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 
