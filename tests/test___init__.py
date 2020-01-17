@@ -6,13 +6,11 @@ from typing import Union
 
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
-from candidate_models.model_commitments.ml_pool import Hooks
 
 from candidate_models.model_commitments import brain_translated_pool
 from model_tools.activations import PytorchWrapper
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import LayerMappedModel, TemporalIgnore
-from submission import score_model
 
 
 @pytest.mark.private_access
