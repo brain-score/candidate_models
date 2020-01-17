@@ -5,6 +5,7 @@ from collections import OrderedDict
 import argparse
 import fire
 
+from candidate_models import score_model as score_model_function, get_activations
 from candidate_models.model_commitments import brain_translated_pool
 from candidate_models.model_commitments.model_layer_def import model_layers_pool
 from submission import score_layers as score_layers_function, score_model as score_model_function, get_activations
@@ -20,14 +21,14 @@ for disable_logger in ['s3transfer', 'botocore', 'boto3', 'urllib3', 'peewee', '
     logging.getLogger(disable_logger).setLevel(logging.WARNING)
 
 
-def activations(model, assembly, layers=None):
-    logger.info(f"Retrieving activations for {model} using assembly {assembly} and layers {layers} with args {args}")
+def activations(model, stimulus_set, layers=None):
+    logger.info(f"Retrieving activations for {model} layers {layers} on stimulus set {stimulus_set} with args {args}")
     if isinstance(layers, str):
         layers = [layers]
     model_layers = model_layers_pool[model]
     model, default_layers = model_layers['model'], model_layers['layers']
     layers = layers or default_layers
-    result = get_activations(model, layers=layers, assembly_identifier=assembly)
+    result = get_activations(model, layers=layers, stimulus_set=stimulus_set)
     print(result)
 
 
@@ -35,18 +36,6 @@ def score_model(model, benchmark):
     logger.info(f"Scoring {model} on benchmark {benchmark} with args {args}")
     _model = brain_translated_pool[model]
     result = score_model_function(model_identifier=model, benchmark_identifier=benchmark, model=_model)
-    print(result)
-
-
-def score_layers(model, benchmark, layers=None):
-    logger.info(f"Scoring {model}'s layers {layers} on benchmark {benchmark} with args {args}")
-    if isinstance(layers, str):
-        layers = [layers]
-    model_layers = model_layers_pool[model]
-    model, default_layers = model_layers['model'], model_layers['layers']
-    layers = layers or default_layers
-    result = score_layers_function(model_identifier=model, benchmark_identifier=benchmark, model=model,
-                                   layers=layers)
     print(result)
 
 
