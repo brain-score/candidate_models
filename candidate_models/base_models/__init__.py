@@ -45,8 +45,8 @@ class TFSlimModel:
         import tensorflow as tf
         from nets import nets_factory
 
-        tf.reset_default_graph()
-        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        tf.compat.v1.reset_default_graph()
+        placeholder = tf.compat.v1.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFSlimModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size)
 
         net_name = net_name or identifier
@@ -56,7 +56,7 @@ class TFSlimModel:
             endpoints['logits'] = endpoints['Logits']
             del endpoints['Logits']
 
-        session = tf.Session()
+        session = tf.compat.v1.Session()
         TFSlimModel._restore_imagenet_weights(identifier, session)
         wrapper = TensorflowSlimWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
                                         batch_size=batch_size, labels_offset=labels_offset)
@@ -89,7 +89,7 @@ class TFSlimModel:
             # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
-        restorer = tf.train.Saver(var_list)
+        restorer = tf.compat.v1.train.Saver(var_list)
 
         restore_path = TFSlimModel._find_model_weights(name)
         restorer.restore(session, restore_path)
@@ -116,7 +116,7 @@ class TFUtilsModel:
              model_fn_kwargs=None):
         import tensorflow as tf
 
-        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        placeholder = tf.compat.v1.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size,
                                                       image_resize=image_resize)
 
@@ -133,7 +133,7 @@ class TFUtilsModel:
             new_endpoints['logits'] = endpoints
             endpoints = new_endpoints
 
-        session = tf.Session()
+        session = tf.compat.v1.Session()
         TFUtilsModel._restore_imagenet_weights(identifier, session)
         wrapper = TensorflowWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
                                     batch_size=batch_size)
@@ -150,7 +150,7 @@ class TFUtilsModel:
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
-        preprocess = lambda image_path: preprocess_image(tf.read_file(image_path))
+        preprocess = lambda image_path: preprocess_image(tf.io.read_file(image_path))
         preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
         return preprocess
 
@@ -163,7 +163,7 @@ class TFUtilsModel:
             # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
-        restorer = tf.train.Saver(var_list)
+        restorer = tf.compat.v1.train.Saver(var_list)
 
         restore_path = TFUtilsModel._find_model_weights(name)
         restorer.restore(session, restore_path)
@@ -444,9 +444,9 @@ class BaseModelPool(UniqueKeyDict):
             self[identifier] = LazyLoad(function)
 
     def __getitem__(self, basemodel_identifier):
-        if basemodel_identifier in self._accessed_base_models:
-            raise ValueError(f"can retrieve each base model only once per session due to possible hook clashes - "
-                             f"{basemodel_identifier} has already been retrieved")
+        # if basemodel_identifier in self._accessed_base_models:
+        #     raise ValueError(f"can retrieve each base model only once per session due to possible hook clashes - "
+        #                      f"{basemodel_identifier} has already been retrieved")
         self._accessed_base_models.add(basemodel_identifier)
         return super(BaseModelPool, self).__getitem__(basemodel_identifier)
 
