@@ -15,6 +15,8 @@ requirements = [
     "networkx==1.11",
     "tqdm",
     "gitpython",
+    "torch",
+    "tensorflow==1.15",
 
     "cornet @ git+https://github.com/dicarlolab/CORnet",
     "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
