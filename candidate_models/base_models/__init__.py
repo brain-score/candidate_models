@@ -445,8 +445,8 @@ class BaseModelPool(UniqueKeyDict):
 
     def __getitem__(self, basemodel_identifier):
         if basemodel_identifier in self._accessed_base_models:
-            raise ValueError(f"can retrieve each base model only once per session due to possible hook clashes - "
-                             f"{basemodel_identifier} has already been retrieved")
+            model = super(BaseModelPool, self).__getitem__(basemodel_identifier)
+            model.unregister_hooks()
         self._accessed_base_models.add(basemodel_identifier)
         return super(BaseModelPool, self).__getitem__(basemodel_identifier)
 
