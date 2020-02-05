@@ -2,7 +2,6 @@ import warnings
 
 import itertools
 
-from brainscore.assemblies.public import load_assembly
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.utils import UniqueKeyDict
@@ -186,6 +185,8 @@ class ModelLayers(UniqueKeyDict):
             'resnext101_32x48d_wsl': self._resnext101_layers(),
             'fixres_resnext101_32x48d_wsl': self._resnext101_layers(),
             'dcgan': ['main.0', 'main.2', 'main.5', 'main.8', 'main.12'],
+            # ConvRNNs
+            'convrnn_224': ['logits'],
         }
         for basemodel_identifier, default_layers in layers.items():
             self[basemodel_identifier] = default_layers
@@ -257,13 +258,6 @@ class ModelLayersPool(UniqueKeyDict):
 
 model_layers_pool = ModelLayersPool()
 
-commitment_assemblies = {
-    'V1': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V1', average_repetition=False)),
-    'V2': LazyLoad(lambda: load_assembly('movshon.FreemanZiemba2013.public.V2', average_repetition=False)),
-    'V4': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.V4', average_repetition=False)),
-    'IT': LazyLoad(lambda: load_assembly('dicarlo.Majaj2015.lowvar.IT', average_repetition=False)),
-}
-
 
 class MLBrainPool(UniqueKeyDict):
     def __init__(self):
@@ -271,7 +265,6 @@ class MLBrainPool(UniqueKeyDict):
 
         for basemodel_identifier, activations_model in base_model_pool.items():
             if basemodel_identifier not in model_layers:
-                warnings.warn(f"{basemodel_identifier} not found in model_layers")
                 continue
             layers = model_layers[basemodel_identifier]
 
@@ -280,14 +273,9 @@ class MLBrainPool(UniqueKeyDict):
                     continue
 
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
-                def load(identifier=identifier, activations_model=activations_model, layers=layers):
-                    brain_model = ModelCommitment(identifier=identifier, activations_model=activations_model,
-                                                  layers=layers)
-                    for region, assembly in commitment_assemblies.items():
-                        brain_model.commit_region(region, assembly)
-                    return brain_model
-
-                self[identifier] = LazyLoad(load)
+                self[identifier] = LazyLoad(
+                    lambda identifier=identifier, activations_model=activations_model, layers=layers:
+                    ModelCommitment(identifier=identifier, activations_model=activations_model, layers=layers))
 
 
 ml_brain_pool = MLBrainPool()
