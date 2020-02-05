@@ -71,7 +71,7 @@ class TFSlimModel:
             'vgg': lambda image: vgg_preprocessing.preprocess_image(
                 image, image_size, image_size, resize_side_min=image_size),
             'inception': lambda image: inception_preprocessing.preprocess_for_eval(
-                image, image_size, image_size)
+                image, image_size, image_size, central_fraction=None)
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
@@ -261,7 +261,7 @@ def robust_model(function, image_size):
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = load(weights_path)
+    checkpoint = load(weights_path, map_location=lambda storage, location: 'cpu')
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}

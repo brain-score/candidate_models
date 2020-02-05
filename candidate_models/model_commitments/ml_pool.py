@@ -6,7 +6,7 @@ from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
-from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
+from model_tools.brain_transformation import ModelCommitment
 
 
 class Hooks:
@@ -16,9 +16,7 @@ class Hooks:
         pca_components = 1000
         self.activation_hooks = {
             f"pca_{pca_components}": lambda activations_model: LayerPCA.hook(
-                activations_model, n_components=pca_components),
-            "degrees": lambda activations_model: PixelsToDegrees.hook(
-                activations_model, target_pixels=activations_model.image_size)}
+                activations_model, n_components=pca_components)}
 
     def iterate_hooks(self, basemodel_identifier, activations_model):
         for hook_identifiers in itertools.chain.from_iterable(
