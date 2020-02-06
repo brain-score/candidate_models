@@ -8,8 +8,6 @@ import numpy as np
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
-from candidate_models.base_models.cornet import cornet
-from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
@@ -192,7 +190,8 @@ class TFUtilsModel:
         if not os.path.isdir(model_path):
             _logger.debug(f"Downloading weights for {model_name} to {model_path}")
             os.makedirs(model_path)
-            s3.download_folder(f"model-weights/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
+            s3.download_folder(f"model-weights/{model_name}", model_path, bucket='brain-score-tfutils-models',
+                               region='us-west-1')
         fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
         assert len(fnames) > 0, f"no checkpoint found in {model_path}"
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
@@ -233,6 +232,11 @@ def vggface():
     return wrapper
 
 
+def cornet(*args, **kwargs):  # wrapper to avoid having to import cornet at top-level
+    from candidate_models.base_models.cornet import cornet as cornet_ctr
+    return cornet_ctr(*args, **kwargs)
+
+
 def texture_vs_shape(model_identifier, model_name):
     from texture_vs_shape.load_pretrained_models import load_model
     model = load_model(model_name)
@@ -261,7 +265,7 @@ def robust_model(function, image_size):
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = load(weights_path, map_location=lambda storage, location: storage)
+    checkpoint = load(weights_path, map_location=lambda storage, location: 'cpu')
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
@@ -326,6 +330,12 @@ def fixres(model_identifier, model_url):
                              batch_size=4)  # doesn't fit into 12 GB GPU memory otherwise
     wrapper.image_size = input_size
     return wrapper
+
+
+def convrnn():
+    from candidate_models.base_models.convrnn.convrnn_base import load_median_model
+    return TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
+                             preprocessing_type='convrnn', image_size=224, image_resize=None)
 
 
 class BaseModelPool(UniqueKeyDict):
@@ -412,8 +422,7 @@ class BaseModelPool(UniqueKeyDict):
 
             'dcgan': lambda: dcgan("get_discriminator"),
 
-            'convrnn_224': lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
-                                                     preprocessing_type='convrnn', image_size=224, image_resize=None),
+            'convrnn_224': convrnn,
         }
         # MobileNets
         for version, multiplier, image_size in [
