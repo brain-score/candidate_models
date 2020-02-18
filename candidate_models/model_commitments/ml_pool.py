@@ -7,6 +7,8 @@ from candidate_models.base_models import base_model_pool
 from candidate_models.utils import UniqueKeyDict
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import ModelCommitment, PixelsToDegrees
+from candidate_models.base_models import BaseModelPool
+from candidate_models.model_commitments.vs_layer import visual_search_layer
 
 
 class Hooks:
@@ -262,10 +264,14 @@ model_layers_pool = ModelLayersPool()
 
 
 class MLBrainPool(UniqueKeyDict):
-    def __init__(self):
+    def __init__(self, target_img_size=28, search_image_size=224):
         super(MLBrainPool, self).__init__()
 
-        for basemodel_identifier, activations_model in base_model_pool.items():
+        # for visual search
+        target_model_pool = BaseModelPool(input_size=target_img_size)
+        stimuli_model_pool = BaseModelPool(input_size=search_image_size)
+
+        for (basemodel_identifier, activations_model), (target_model_identifier, target_model), (stimuli_model_identifier, stimuli_model) in zip(base_model_pool.items(), target_model_pool.items(), stimuli_model_pool.items()):
             if basemodel_identifier not in model_layers:
                 continue
             layers = model_layers[basemodel_identifier]
@@ -274,10 +280,28 @@ class MLBrainPool(UniqueKeyDict):
                 if identifier in self:  # already pre-defined
                     continue
 
+                # adding extra attributes for visual search model
+                search_target_model_param = {}
+                search_stimuli_model_param = {}
+                if basemodel_identifier == 'vgg-16': #as vs_layer is implemented only for vgg-16 as of now
+                    search_target_model_param['target_model'] = target_model
+                    search_stimuli_model_param['stimuli_model'] = stimuli_model
+                    search_target_model_param['target_layer'] = visual_search_layer[basemodel_identifier][0] 
+                    search_stimuli_model_param['stimuli_layer'] = visual_search_layer[basemodel_identifier][0]
+                    search_target_model_param['target_img_size'] = target_img_size
+                    search_stimuli_model_param['search_image_size'] = search_image_size
+                else:
+                    search_target_model_param['target_model'] = None
+                    search_stimuli_model_param['stimuli_model'] =  None
+                    search_target_model_param['target_layer'] = None
+                    search_stimuli_model_param['stimuli_layer'] = None
+                    search_target_model_param['target_img_size'] = None
+                    search_stimuli_model_param['search_image_size'] = None
+
                 # enforce early parameter binding: https://stackoverflow.com/a/3431699/2225200
                 self[identifier] = LazyLoad(
-                    lambda identifier=identifier, activations_model=activations_model, layers=layers:
-                    ModelCommitment(identifier=identifier, activations_model=activations_model, layers=layers))
+                    lambda identifier=identifier, activations_model=activations_model, layers=layers, search_target_model_param=search_target_model_param, search_stimuli_model_param=search_stimuli_model_param:
+                    ModelCommitment(identifier=identifier, activations_model=activations_model, layers=layers, search_target_model_param=search_target_model_param, search_stimuli_model_param=search_stimuli_model_param))
 
 
 ml_brain_pool = MLBrainPool()

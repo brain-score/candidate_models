@@ -9,5 +9,5 @@ import brainscore
 
 def test_search():
     model = brain_translated_pool['vgg-16']
-    score = score_model(model_identifier='vgg-16', model=model, benchmark_identifier='klab.Zhang2018-ObjArray')
+    score = score_model(model_identifier='vgg-16', model=model, benchmark_identifier='klab.Zhang2018-object_search')
     assert score.raw.sel(aggregation='center') == approx(0.407328, abs=.005)
