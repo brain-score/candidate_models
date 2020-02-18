@@ -237,6 +237,11 @@ def cornet(*args, **kwargs):  # wrapper to avoid having to import cornet at top-
     return cornet_ctr(*args, **kwargs)
 
 
+def cornetv1(*args, **kwargs):  # wrapper to avoid having to import cornetv1 at top-level
+    from candidate_models.base_models.cornetv1 import cornetv1 as cornetv1_ctr
+    return cornetv1_ctr(*args, **kwargs)
+
+
 def texture_vs_shape(model_identifier, model_name):
     from texture_vs_shape.load_pretrained_models import load_model
     model = load_model(model_name)
@@ -265,7 +270,8 @@ def robust_model(function, image_size):
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = load(weights_path, map_location=lambda storage, location: 'cpu')
+    checkpoint = load(weights_path, map_location='cpu')
+    # checkpoint = load(weights_path)
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
