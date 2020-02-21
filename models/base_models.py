@@ -4,7 +4,7 @@ from models import test_models
 
 
 def get_model_list():
-    return base_model_pool.keys()
+    return list(base_model_pool.keys())
 
 
 def get_model(name):

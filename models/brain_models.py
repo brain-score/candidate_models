@@ -13,7 +13,7 @@ def get_model_list():
     If the submission contains only one model, return a one item list.
     :return: a list of model string names
     """
-    return cornet_brain_pool.keys()
+    return list(cornet_brain_pool.keys())
 
 
 def get_model(name):
