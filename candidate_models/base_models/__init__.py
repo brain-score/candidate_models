@@ -336,8 +336,7 @@ class BaseModelPool(UniqueKeyDict):
     """
 
     def __init__(self):
-        super(BaseModelPool, self).__init__()
-        self._accessed_base_models = set()
+        super(BaseModelPool, self).__init__(reload=True)
 
         _key_functions = {
             'alexnet': lambda: pytorch_model('alexnet', image_size=224),
@@ -442,14 +441,6 @@ class BaseModelPool(UniqueKeyDict):
         # instantiate models with LazyLoad wrapper
         for identifier, function in _key_functions.items():
             self[identifier] = LazyLoad(function)
-
-    def __getitem__(self, basemodel_identifier):
-        if basemodel_identifier in self._accessed_base_models:
-            model = super(BaseModelPool, self).__getitem__(basemodel_identifier)
-            model.unregister_hooks()
-            _logger.warning(f'Model {basemodel_identifier} is accessed again. Delete hooks and continue...')
-        self._accessed_base_models.add(basemodel_identifier)
-        return super(BaseModelPool, self).__getitem__(basemodel_identifier)
 
 
 base_model_pool = BaseModelPool()
