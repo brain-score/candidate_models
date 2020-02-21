@@ -1,5 +1,7 @@
+import logging
+
 import numpy as np
-from submission.utils import UniqueKeyDict
+from brainscore.submission.utils import UniqueKeyDict
 from torch import nn
 from tqdm import tqdm
 from typing import Dict, Tuple
@@ -11,6 +13,7 @@ from candidate_models.base_models import cornet
 from model_tools.brain_transformation.behavior import BehaviorArbiter, LogitsBehavior, ProbabilitiesMapping
 from result_caching import store
 
+_logger = logging.getLogger(__name__)
 
 class CORnetCommitment(BrainModel):
     """
@@ -360,9 +363,8 @@ class CORnetBrainPool(UniqueKeyDict):
                 # only update when actually required, otherwise we'd change the activations_model
                 # of one brain_model at all times
                 if basemodel_identifier in self._accessed_brain_models:
-                    raise ValueError(f"{identifier}'s brain-model {basemodel_identifier} has already been accessed "
-                                     f"in this session. To avoid clashes in the hooks, "
-                                     f"please run {identifier} in a separate session.")
+                    brain_model.activations_model.unregister_hooks()
+                    _logger.warning(f'Brain-Model {basemodel_identifier} is loaded again. Delete hooks and continue...')
                 self._accessed_brain_models.append(basemodel_identifier)
                 # upon accessing the `activations_model`, the Hook will automatically
                 # attach to the `brain_model.activations_model`.

@@ -11,7 +11,7 @@ from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
 from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from model_tools.activations import PytorchWrapper, KerasWrapper
-from submission.utils import UniqueKeyDict
+from brainscore.submission.utils import UniqueKeyDict
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
 
 _logger = logging.getLogger(__name__)
@@ -447,6 +447,7 @@ class BaseModelPool(UniqueKeyDict):
         if basemodel_identifier in self._accessed_base_models:
             model = super(BaseModelPool, self).__getitem__(basemodel_identifier)
             model.unregister_hooks()
+            _logger.warning(f'Model {basemodel_identifier} is accessed again. Delete hooks and continue...')
         self._accessed_base_models.add(basemodel_identifier)
         return super(BaseModelPool, self).__getitem__(basemodel_identifier)
 

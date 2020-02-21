@@ -1,13 +1,13 @@
 import functools
+from typing import Union
+
 import numpy as np
 import pytest
 from pytest import approx
-from typing import Union
 
 from brainscore import score_model
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import base_model_pool
-
 from candidate_models.model_commitments import brain_translated_pool
 from model_tools.activations import PytorchWrapper
 from model_tools.activations.pca import LayerPCA
@@ -137,7 +137,7 @@ class TestBrainTranslated:
         if attach_hook:
             activations_model = model.layer_model._layer_model.activations_model
             LayerPCA.hook(activations_model, n_components=1000)
-            identifier = activations_model.identifier +  "-pca_1000"
+            identifier = activations_model.identifier + "-pca_1000"
             activations_model.identifier = identifier
         score = score_model(model_identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
         assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
@@ -165,13 +165,26 @@ class TestBrainTranslated:
                             benchmark_identifier='dicarlo.Rajalingham2018-i2n')
         assert score.raw.sel(aggregation='center') == approx(expected_score, abs=.005)
 
+    @pytest.mark.parametrize('model_identifier', [
+        'CORnet-S',
+        'alexnet',
+    ])
+    def test_brain_translated_pool_reload(self, model_identifier):
+        activations_model = brain_translated_pool[model_identifier].content.activations_model
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1
+        activations_model = brain_translated_pool[model_identifier].content.activations_model
+        assert len(activations_model._extractor._stimulus_set_hooks) == 0
+        assert len(activations_model._extractor._batch_activations_hooks) == 0
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1
 
-def test_multi_retrieve():
-    activations_model = base_model_pool['alexnet']
-    LayerPCA.hook(activations_model, n_components=1000)
-    assert len(activations_model._extractor._batch_activations_hooks) == 1
-    activations_model = base_model_pool['alexnet']
-    assert len(activations_model._extractor._stimulus_set_hooks) == 0
-    assert len(activations_model._extractor._batch_activations_hooks) == 0
-    LayerPCA.hook(activations_model, n_components=1000)
-    assert len(activations_model._extractor._batch_activations_hooks) == 1
+    def test_base_model_pool_reload(self):
+        activations_model = base_model_pool['alexnet']
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1
+        activations_model = base_model_pool['alexnet']
+        assert len(activations_model._extractor._stimulus_set_hooks) == 0
+        assert len(activations_model._extractor._batch_activations_hooks) == 0
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1
