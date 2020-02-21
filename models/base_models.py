@@ -1,5 +1,6 @@
 from candidate_models.base_models import base_model_pool
 from candidate_models.model_commitments import model_layers
+from models import test_models
 
 
 def get_model_list():
@@ -15,4 +16,6 @@ def get_layers(name):
 
 
 if __name__ == '__main__':
-    print(get_model_list())
+    # Use this method to ensure the correctness of the BaseModel implementations.
+    # It executes a mock run of brain-score benchmarks.
+    test_models.test_base_model(__name__)

@@ -21,7 +21,7 @@ class TestPreselectedLayer:
             activations_model = base_model_pool[model_name]
             if pca_components:
                 LayerPCA.hook(activations_model, n_components=pca_components)
-                activations_model.identifier += "pca_1000"
+                activations_model.identifier += "-pca_1000"
             model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
             model.commit(region, layer)
             model = TemporalIgnore(model)
@@ -116,7 +116,7 @@ class TestPreselectedLayerTemporal:
             activations_model = base_model_pool[model_name]
             if pca_components:
                 LayerPCA.hook(activations_model, n_components=pca_components)
-                activations_model.identifier += "pca_1000"
+                activations_model.identifier += "-pca_1000"
             model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
             model = TemporalIgnore(model)
             model.commit(region, layer)

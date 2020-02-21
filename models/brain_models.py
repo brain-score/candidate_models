@@ -1,10 +1,10 @@
-from brainscore.model_interface import BrainModel
 from candidate_models.model_commitments import cornet_brain_pool
-from test import test_models
+from models import test_models
 
 """
 Template module for a brain model submission to brain-score
 """
+
 
 def get_model_list():
     """
@@ -28,4 +28,6 @@ def get_model(name):
 
 
 if __name__ == '__main__':
-    test_models.test_brain_model(__name__)
+    # Use this method to ensure the correctness of the brain model implementations.
+    # It executes a mock run of brain-score benchmarks.
+    test_models.test_brain_models(__name__)

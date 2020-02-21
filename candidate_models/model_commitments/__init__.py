@@ -7,7 +7,9 @@ from submission.utils import UniqueKeyDict
 
 brain_translated_pool = UniqueKeyDict()
 
-for identifier, model in MLBrainPool(base_model_pool, model_layers).items():
+ml_brain_pool = MLBrainPool(base_model_pool, model_layers)
+
+for identifier, model in ml_brain_pool.items():
     brain_translated_pool[identifier] = model
 
 for identifier, model in cornet_brain_pool.items():
