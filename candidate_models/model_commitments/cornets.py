@@ -356,8 +356,8 @@ class CORnetBrainPool(UniqueKeyDict):
 
         self._accessed_brain_models = []
 
-        for basemodel_identifier, brain_model in model_pool.items():
-            self[basemodel_identifier] = brain_model
+        for identifier, brain_model in model_pool.items():
+            self[identifier] = brain_model
 
 
 cornet_brain_pool = CORnetBrainPool()
