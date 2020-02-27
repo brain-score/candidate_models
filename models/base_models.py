@@ -1,6 +1,6 @@
 from candidate_models.base_models import base_model_pool
 from candidate_models.model_commitments import model_layers
-from brainscore.submission import test_models
+from model_tools import test_models
 
 
 def get_model_list():

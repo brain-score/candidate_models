@@ -1,5 +1,5 @@
 from candidate_models.model_commitments import cornet_brain_pool
-from brainscore.submission import test_models
+from model_tools import test_models
 
 """
 Template module for a brain model submission to brain-score
