@@ -16,6 +16,7 @@ requirements = [
     "tqdm",
     "gitpython",
     "torch",
+    "keras",
     "tensorflow==1.15",
 
     "cornet @ git+https://github.com/dicarlolab/CORnet",
