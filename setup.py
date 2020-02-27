@@ -17,8 +17,9 @@ requirements = [
     "gitpython",
     "torch",
     "keras",
+    "pandas==0.25.3"
     "tensorflow==1.15",
-
+    "Pillow",
     "cornet @ git+https://github.com/dicarlolab/CORnet",
     "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
