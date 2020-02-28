@@ -1,13 +1,14 @@
 import functools
+from typing import Union
+
 import numpy as np
 import pytest
 from pytest import approx
-from typing import Union
 
+from brainscore import score_model
 from brainscore.utils import LazyLoad
-from candidate_models import score_model, brain_translated_pool
 from candidate_models.base_models import base_model_pool
-from candidate_models.model_commitments.ml_pool import Hooks
+from candidate_models.model_commitments import brain_translated_pool
 from model_tools.activations import PytorchWrapper
 from model_tools.activations.pca import LayerPCA
 from model_tools.brain_transformation import LayerMappedModel, TemporalIgnore
@@ -20,7 +21,7 @@ class TestPreselectedLayer:
             activations_model = base_model_pool[model_name]
             if pca_components:
                 LayerPCA.hook(activations_model, n_components=pca_components)
-                activations_model.identifier += Hooks.HOOK_SEPARATOR + "pca_1000"
+                activations_model.identifier += "-pca_1000"
             model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
             model.commit(region, layer)
             model = TemporalIgnore(model)
@@ -33,21 +34,21 @@ class TestPreselectedLayer:
         model = self.layer_candidate('alexnet', layer='features.5', region='V4', pca_components=1000)
         score = score_model(model_identifier='alexnet-f5-pca_1000', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.V4-pls')
-        assert score.raw.sel(aggregation='center').max() == approx(0.656703, abs=0.005)
+        assert score.raw.sel(aggregation='center').max() == approx(0.633703, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_alexnet_conv5_V4(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='V4', pca_components=1000)
         score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.V4-pls')
-        assert score.raw.sel(aggregation='center') == approx(0.533175, abs=0.005)
+        assert score.raw.sel(aggregation='center') == approx(0.490769, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_alexnet_conv5_IT(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
         score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.IT-pls')
-        assert score.raw.sel(aggregation='center') == approx(0.601174, abs=0.005)
+        assert score.raw.sel(aggregation='center') == approx(0.590345, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_alexnet_conv3_IT_mask(self):
@@ -55,7 +56,7 @@ class TestPreselectedLayer:
         np.random.seed(123)
         score = score_model(model_identifier='alexnet-f6', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.IT-mask')
-        assert score.raw.sel(aggregation='center') == approx(0.614621, abs=0.005)
+        assert score.raw.sel(aggregation='center') == approx(0.083593, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_repeat_same_result(self):
@@ -115,7 +116,7 @@ class TestPreselectedLayerTemporal:
             activations_model = base_model_pool[model_name]
             if pca_components:
                 LayerPCA.hook(activations_model, n_components=pca_components)
-                activations_model.identifier += Hooks.HOOK_SEPARATOR + "pca_1000"
+                activations_model.identifier += "-pca_1000"
             model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
             model = TemporalIgnore(model)
             model.commit(region, layer)
@@ -123,45 +124,27 @@ class TestPreselectedLayerTemporal:
 
         return LazyLoad(load)  # lazy-load to avoid loading all models right away
 
-    @pytest.mark.memory_intense
-    def test_alexnet_conv5_IT_temporal(self):
-        model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
-        score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
-                            benchmark_identifier='dicarlo.Majaj2015.temporal.IT-pls')
-        assert score.raw.sel(aggregation='center') == approx(0.277449, abs=0.005)
-        assert len(score.raw.raw['time_bin']) == 12
-
 
 @pytest.mark.private_access
 @pytest.mark.memory_intense
 class TestBrainTranslated:
-    @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
-        ('alexnet--pca_1000', .601174),
-        ('alexnet--degrees', .560698),
-        ('alexnet--degrees-pca_1000', .567),
-        ('CORnet-S', .600),
+    @pytest.mark.parametrize(['model_identifier', 'expected_score', 'attach_hook'], [
+        ('alexnet', .59033, True),
+        ('CORnet-S', .600, False),
     ])
-    def test_Majaj2015ITpls(self, model_identifier, expected_score):
+    def test_Majaj2015ITpls(self, model_identifier, expected_score, attach_hook):
         model = brain_translated_pool[model_identifier]
+        if attach_hook:
+            activations_model = model.layer_model._layer_model.activations_model
+            LayerPCA.hook(activations_model, n_components=1000)
+            identifier = activations_model.identifier + "-pca_1000"
+            activations_model.identifier = identifier
         score = score_model(model_identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
         assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
 
-    @pytest.mark.parametrize(['identifier_suffix', 'benchmark', 'expected_score', 'time_bins'], [
-        ('--pca_1000', 'dicarlo.Majaj2015.temporal.V4-pls', .281565, 12),
-        ('--pca_1000', 'dicarlo.Majaj2015.temporal.IT-pls', .277449, 12),
-        ('--pca_1000', 'movshon.FreemanZiemba2013.temporal.V1-pls', .120222, 25),
-        ('--pca_1000', 'movshon.FreemanZiemba2013.temporal.V2-pls', .138038, 25),
-    ])
-    def test_alexnet_temporal(self, identifier_suffix, benchmark, expected_score, time_bins):
-        identifier = f'alexnet{identifier_suffix}'
-        model = brain_translated_pool[identifier]
-        score = score_model(identifier, benchmark, model=model)
-        assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
-        assert len(score.raw.raw['time_bin']) == time_bins
-
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
         ('CORnet-S', .25),
-        ('CORnet-R2', .298),
+        ('CORnet-R2', .224),
         ('alexnet', np.nan),
     ])
     def test_candidate_Kar2019OST(self, model_identifier, expected_score):
@@ -181,3 +164,27 @@ class TestBrainTranslated:
         score = score_model(model_identifier=model_identifier, model=model,
                             benchmark_identifier='dicarlo.Rajalingham2018-i2n')
         assert score.raw.sel(aggregation='center') == approx(expected_score, abs=.005)
+
+    @pytest.mark.parametrize('model_identifier', [
+        'CORnet-S',
+        'alexnet',
+    ])
+    def test_brain_translated_pool_reload(self, model_identifier):
+        activations_model = brain_translated_pool[model_identifier].content.activations_model
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1
+        activations_model = brain_translated_pool[model_identifier].content.activations_model
+        assert len(activations_model._extractor._stimulus_set_hooks) == 0
+        assert len(activations_model._extractor._batch_activations_hooks) == 0
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1
+
+    def test_base_model_pool_reload(self):
+        activations_model = base_model_pool['alexnet']
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1
+        activations_model = base_model_pool['alexnet']
+        assert len(activations_model._extractor._stimulus_set_hooks) == 0
+        assert len(activations_model._extractor._batch_activations_hooks) == 0
+        LayerPCA.hook(activations_model, n_components=1000)
+        assert len(activations_model._extractor._batch_activations_hooks) == 1

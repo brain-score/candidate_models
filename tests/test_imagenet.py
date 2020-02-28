@@ -4,7 +4,7 @@ import pytest
 from pytest import approx
 
 from brainscore.benchmarks.imagenet import Imagenet2012
-from candidate_models import brain_translated_pool
+from candidate_models.model_commitments import brain_translated_pool
 
 _logger = logging.getLogger(__name__)
 
