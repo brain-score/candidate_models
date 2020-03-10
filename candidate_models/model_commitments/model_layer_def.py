@@ -1,7 +1,6 @@
 import itertools
 
-from candidate_models.base_models import base_model_pool
-from submission.ml_pool import ModelLayers, ModelLayersPool
+from brainscore.submission.ml_pool import ModelLayers
 
 
 def resnet50_layers(bottleneck_version):
@@ -227,7 +226,3 @@ for version, multiplier, image_size in [
         model_layers[identifier] = mobilenet_v1()
     else:
         model_layers[identifier] = mobilenet_v2()
-
-
-
-model_layers_pool = ModelLayersPool(base_model_pool=base_model_pool, model_layers=model_layers)
