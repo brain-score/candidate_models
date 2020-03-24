@@ -72,9 +72,9 @@ class Res3Cell(ConvRNNCell):
                  activation=tf.nn.relu,
                  kernel_initializer='xavier',
                  kernel_initializer_kwargs=None,
-                 bias_initializer=tf.zeros_initializer,
-                 tau_cell_initializer=tf.zeros_initializer,
-                 tau_out_initializer=tf.zeros_initializer,
+                 bias_initializer=tf.compat.v1.zeros_initializer,
+                 tau_cell_initializer=tf.compat.v1.zeros_initializer,
+                 tau_out_initializer=tf.compat.v1.zeros_initializer,
                  tau_trainable=False,
                  weight_decay=None,
                  layer_norm=False,
@@ -159,11 +159,11 @@ class Res3Cell(ConvRNNCell):
 
     def _norm(self, inp, scope):
         shape = inp.get_shape()[-1:]
-        gamma_init = tf.constant_initializer(self._g)
-        beta_init = tf.constant_initializer(self._b)
-        with tf.variable_scope(scope):
-            gamma = tf.get_variable(shape=shape, initializer=gamma_init, name="gamma")
-            beta = tf.get_variable(shape=shape, initializer=beta_init, name="beta")
+        gamma_init = tf.compat.v1.constant_initializer(self._g)
+        beta_init = tf.compat.v1.constant_initializer(self._b)
+        with tf.compat.v1.variable_scope(scope):
+            gamma = tf.compat.v1.get_variable(shape=shape, initializer=gamma_init, name="gamma")
+            beta = tf.compat.v1.get_variable(shape=shape, initializer=beta_init, name="beta")
 
         normalized = tf.contrib.layers.layer_norm(inp, reuse=True, scope=scope)
         return normalized
@@ -181,7 +181,7 @@ class Res3Cell(ConvRNNCell):
 
         next_state = {}
         
-        with tf.variable_scope(type(self).__name__): # "Res3Cell"
+        with tf.compat.v1.variable_scope(type(self).__name__): # "Res3Cell"
             ff_inp = inputs['ff'] # feedforward input
             if 'fb' in inputs.keys():
                 fb_inp = inputs['fb']
@@ -190,7 +190,7 @@ class Res3Cell(ConvRNNCell):
 
             dtype = ff_inp.dtype
 
-            with tf.variable_scope("copy"):
+            with tf.compat.v1.variable_scope("copy"):
                 copy = ff_inp
                 if fb_entry == 'copy':
                     copy += fb_inp
@@ -201,55 +201,55 @@ class Res3Cell(ConvRNNCell):
 
                 next_state['copy'] = copy
 
-            with tf.variable_scope("cell"):
+            with tf.compat.v1.variable_scope("cell"):
                 prev_cell = state['cell']
                 
                 # get weights
-                copy_to_cell_kernel = tf.get_variable("copy_to_cell",
+                copy_to_cell_kernel = tf.compat.v1.get_variable("copy_to_cell",
                                                       [self.ff_filter_size[0], self.ff_filter_size[1], self.in_depth, self.cell_depth],
                                                       dtype=dtype,
                                                       initializer=self._kernel_initializer,
-                                                      regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                      regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
                 
-                cell_to_cell_kernel = tf.get_variable("cell_to_cell",
+                cell_to_cell_kernel = tf.compat.v1.get_variable("cell_to_cell",
                                                       [self.cell_filter_size[0], self.cell_filter_size[1], self.cell_depth, self.cell_depth],
                                                       dtype=dtype,
                                                       initializer=self._kernel_initializer,
-                                                      regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                      regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                cell_bias = tf.get_variable("bias", [self.cell_depth], dtype=dtype, initializer=self._bias_initializer)
+                cell_bias = tf.compat.v1.get_variable("bias", [self.cell_depth], dtype=dtype, initializer=self._bias_initializer)
 
                 if self.tau_gates:
-                    copy_to_cell_gate_kernel = tf.get_variable("copy_to_gate",
+                    copy_to_cell_gate_kernel = tf.compat.v1.get_variable("copy_to_gate",
                                                                [self.gate_filter_size[0], self.gate_filter_size[1], self.in_depth, self.cell_depth],
                                                                dtype=dtype,
                                                                initializer=self._kernel_initializer,
-                                                               regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                               regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                    cell_gate_bias = tf.get_variable("gate_bias", [self.cell_depth], dtype=dtype, initializer=self._bias_initializer)                    
+                    cell_gate_bias = tf.compat.v1.get_variable("gate_bias", [self.cell_depth], dtype=dtype, initializer=self._bias_initializer)                    
 
-                    cell_tau = tf.nn.conv2d(self._activation(copy), copy_to_cell_gate_kernel, strides=[1,1,1,1], padding='SAME')
+                    cell_tau = tf.nn.conv2d(input=self._activation(copy), filters=copy_to_cell_gate_kernel, strides=[1,1,1,1], padding='SAME')
                     cell_tau += cell_gate_bias
                     if self._layer_norm:
                         cell_tau = self._norm(cell_tau, "gate_norm")
                     cell_tau = self._gate_nonlinearity(cell_tau + self._gate_bias)
                     cell_tau = tf.identity(cell_tau, name="tau")
                 else:
-                    cell_tau = tf.get_variable("tau", [self.cell_depth], dtype=dtype, initializer=self._tau_cell_initializer, trainable=self._tau_trainable)                
+                    cell_tau = tf.compat.v1.get_variable("tau", [self.cell_depth], dtype=dtype, initializer=self._tau_cell_initializer, trainable=self._tau_trainable)                
                 # compute next_state['cell']
                 # apply Relu to copy only here
-                cell_input = tf.nn.conv2d(self._activation(copy), copy_to_cell_kernel, strides=[1,1,1,1], padding='SAME')
-                cell_input += tf.nn.conv2d(prev_cell, cell_to_cell_kernel, strides=[1,1,1,1], padding='SAME')
+                cell_input = tf.nn.conv2d(input=self._activation(copy), filters=copy_to_cell_kernel, strides=[1,1,1,1], padding='SAME')
+                cell_input += tf.nn.conv2d(input=prev_cell, filters=cell_to_cell_kernel, strides=[1,1,1,1], padding='SAME')
 
                 # if fbs are to be added to cell, need to alter number of channels
                 if fb_entry == 'cell':
-                    fb_to_cell_kernel = tf.get_variable("fb_to_cell",
+                    fb_to_cell_kernel = tf.compat.v1.get_variable("fb_to_cell",
                                                         [self.cell_filter_size[0], self.cell_filter_size[1], self.in_depth, self.cell_depth],
                                                         dtype=dtype,
                                                         initializer=self._kernel_initializer,
-                                                        regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                        regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                    cell_input += tf.nn.conv2d(fb_inp, fb_to_cell_kernel, strides=[1,1,1,1], padding='SAME')
+                    cell_input += tf.nn.conv2d(input=fb_inp, filters=fb_to_cell_kernel, strides=[1,1,1,1], padding='SAME')
                 
                 cell_input += cell_bias
 
@@ -262,40 +262,40 @@ class Res3Cell(ConvRNNCell):
                 next_state['cell'] = next_cell
 
             # now use cell contents to derive output
-            with tf.variable_scope("out"):
+            with tf.compat.v1.variable_scope("out"):
                 prev_out = state['out']
 
-                cell_to_out_kernel = tf.get_variable("cell_to_out",
+                cell_to_out_kernel = tf.compat.v1.get_variable("cell_to_out",
                                                      [self.ff_filter_size[0], self.ff_filter_size[1], self.cell_depth, self.out_depth],
                                                      dtype=dtype,
                                                      initializer=self._kernel_initializer,
-                                                     regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                     regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                out_bias = tf.get_variable("bias", [self.out_depth], dtype=dtype, initializer=self._bias_initializer)
+                out_bias = tf.compat.v1.get_variable("bias", [self.out_depth], dtype=dtype, initializer=self._bias_initializer)
 
                 if self.tau_gates:
-                    copy_to_out_gate_kernel = tf.get_variable("copy_to_gate",
+                    copy_to_out_gate_kernel = tf.compat.v1.get_variable("copy_to_gate",
                                                                [self.gate_filter_size[0], self.gate_filter_size[1], self.in_depth, self.out_depth],
                                                                dtype=dtype,
                                                                initializer=self._kernel_initializer,
-                                                               regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                               regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                    out_gate_bias = tf.get_variable("gate_bias", [self.out_depth], dtype=dtype, initializer=self._bias_initializer)                    
+                    out_gate_bias = tf.compat.v1.get_variable("gate_bias", [self.out_depth], dtype=dtype, initializer=self._bias_initializer)                    
 
-                    out_tau = tf.nn.conv2d(self._activation(copy), copy_to_out_gate_kernel, strides=[1,1,1,1], padding='SAME')
+                    out_tau = tf.nn.conv2d(input=self._activation(copy), filters=copy_to_out_gate_kernel, strides=[1,1,1,1], padding='SAME')
                     out_tau += out_gate_bias
                     if self._layer_norm:
                         out_tau = self._norm(out_tau, "gate_norm")
                     out_tau = self._gate_nonlinearity(out_tau + self._gate_bias)                
                     out_tau = tf.identity(out_tau, name="tau")
                 else:
-                    out_tau = tf.get_variable("tau", [self.out_depth], dtype=dtype, initializer=self._tau_out_initializer, trainable=self._tau_trainable)
+                    out_tau = tf.compat.v1.get_variable("tau", [self.out_depth], dtype=dtype, initializer=self._tau_out_initializer, trainable=self._tau_trainable)
 
                 # compute next_state['out']
                 if self._delay_cell:
-                    out_input = tf.nn.conv2d(prev_cell, cell_to_out_kernel, strides=[1,1,1,1], padding='SAME')                     
+                    out_input = tf.nn.conv2d(input=prev_cell, filters=cell_to_out_kernel, strides=[1,1,1,1], padding='SAME')                     
                 else:
-                    out_input = tf.nn.conv2d(next_cell, cell_to_out_kernel, strides=[1,1,1,1], padding='SAME') 
+                    out_input = tf.nn.conv2d(input=next_cell, filters=cell_to_out_kernel, strides=[1,1,1,1], padding='SAME') 
                 if fb_entry == 'out':
                     out_input += fb_inp
                 out_input += out_bias
@@ -362,7 +362,7 @@ class tnn_Res3Cell(ConvRNNCell):
             (output, state)
         """
 
-        with tf.variable_scope(self.name_tmp, reuse=self._reuse):
+        with tf.compat.v1.variable_scope(self.name_tmp, reuse=self._reuse):
 
             if inputs is None:
                 inputs = [self.input_init[0](shape=self.harbor_shape, **self.input_init[1])]
@@ -389,7 +389,7 @@ class tnn_Res3Cell(ConvRNNCell):
 
             pre_name_counter = 0
             for function, kwargs in self.pre_memory:
-                with tf.variable_scope("pre_" + str(pre_name_counter), reuse=self._reuse):
+                with tf.compat.v1.variable_scope("pre_" + str(pre_name_counter), reuse=self._reuse):
                     if function.__name__ == "component_conv":
                         # if output has more than one element, pass through ff and fb separately
                         if len(output) == 1:
@@ -417,7 +417,7 @@ class tnn_Res3Cell(ConvRNNCell):
 
             # now pass through the memory machine
             state = self.conv_cell(output, state)
-            with tf.variable_scope("state", reuse=self._reuse):
+            with tf.compat.v1.variable_scope("state", reuse=self._reuse):
                 self.state = {key:tf.identity(value, name=key) for key, value in state.items()}
 
             # output is once again a single tensor
@@ -426,7 +426,7 @@ class tnn_Res3Cell(ConvRNNCell):
             # post memory
             post_name_counter = 0
             for function, kwargs in self.post_memory:
-                with tf.variable_scope("post_" + str(post_name_counter), reuse=self._reuse):
+                with tf.compat.v1.variable_scope("post_" + str(post_name_counter), reuse=self._reuse):
                     if function.__name__ == "component_conv":
                         raise NotImplementedError("trying to use component_conv in post_memory")
                     else:
@@ -513,7 +513,7 @@ class ReciprocalGateCell(ConvRNNCell):
                  cell_to_out=False,
                  kernel_initializer='xavier',
                  kernel_initializer_kwargs=None,
-                 bias_initializer=tf.zeros_initializer,
+                 bias_initializer=tf.compat.v1.zeros_initializer,
                  weight_decay=None,
                  layer_norm=False,
                  norm_gain=1.0,
@@ -660,11 +660,11 @@ class ReciprocalGateCell(ConvRNNCell):
 
     def _norm(self, inp, scope, dtype=tf.float32):
         shape = inp.get_shape()[-1:]
-        gamma_init = tf.constant_initializer(self._g)
-        beta_init = tf.constant_initializer(self._b)
-        with tf.variable_scope(scope):
-            gamma = tf.get_variable(shape=shape, initializer=gamma_init, name="gamma", dtype=dtype)
-            beta = tf.get_variable(shape=shape, initializer=beta_init, name="beta", dtype=dtype)
+        gamma_init = tf.compat.v1.constant_initializer(self._g)
+        beta_init = tf.compat.v1.constant_initializer(self._b)
+        with tf.compat.v1.variable_scope(scope):
+            gamma = tf.compat.v1.get_variable(shape=shape, initializer=gamma_init, name="gamma", dtype=dtype)
+            beta = tf.compat.v1.get_variable(shape=shape, initializer=beta_init, name="beta", dtype=dtype)
 
         normalized = tf.contrib.layers.layer_norm(inp, reuse=True, scope=scope)
         return normalized
@@ -683,48 +683,48 @@ class ReciprocalGateCell(ConvRNNCell):
         else:
             prev_out = state
         
-        with tf.variable_scope(type(self).__name__): # "ReciprocalGateCell"
+        with tf.compat.v1.variable_scope(type(self).__name__): # "ReciprocalGateCell"
 
-            with tf.variable_scope('input'):
+            with tf.compat.v1.variable_scope('input'):
                 
                 if self.feedback_entry == 'input' and fb_input is not None:
                     if self.feedback_depth_separable:
                         fb_input = _ds_conv(fb_input, self.feedback_filter_size, out_depth=inputs.shape.as_list()[-1], bias=True, scope="feedback", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                         inputs += self._feedback_activation(fb_input)
                     else:
-                        fb_to_in_kernel = tf.get_variable("feedback_to_input_weights",
+                        fb_to_in_kernel = tf.compat.v1.get_variable("feedback_to_input_weights",
                                                       [self.feedback_filter_size[0], self.feedback_filter_size[1], fb_input.shape.as_list()[-1], inputs.shape.as_list()[-1]],
                                                       dtype=dtype,
                                                       initializer=self._kernel_initializer,
-                                                      regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                        fb_to_in_bias = tf.get_variable("feedback_to_input_bias", [inputs.shape.as_list()[-1]], initializer=self._bias_initializer)
+                                                      regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                        fb_to_in_bias = tf.compat.v1.get_variable("feedback_to_input_bias", [inputs.shape.as_list()[-1]], initializer=self._bias_initializer)
 
-                        inputs += self._feedback_activation(tf.nn.conv2d(fb_input, fb_to_in_kernel, strides=[1,1,1,1], padding='SAME') + fb_to_in_bias)
+                        inputs += self._feedback_activation(tf.nn.conv2d(input=fb_input, filters=fb_to_in_kernel, strides=[1,1,1,1], padding='SAME') + fb_to_in_bias)
 
                 inputs = self._input_activation(inputs, name="inputs")
 
             if self.use_cell:
-                with tf.variable_scope('cell'):
+                with tf.compat.v1.variable_scope('cell'):
 
                     # cell tau kernel
                     if not self.tau_depth_separable:
-                        cell_to_cell_kernel = tf.get_variable("cell_to_cell_weights",
+                        cell_to_cell_kernel = tf.compat.v1.get_variable("cell_to_cell_weights",
                                                               [self.cell_tau_filter_size[0], self.cell_tau_filter_size[1], self.cell_depth_out, self.cell_depth],
                                                               dtype=dtype,
                                                               initializer=self._kernel_initializer,
-                                                              regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                              regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                        cell_to_cell_bias = tf.get_variable("cell_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
+                        cell_to_cell_bias = tf.compat.v1.get_variable("cell_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
 
                     # gating kernel
                     if not self.gate_depth_separable:
-                        out_to_cell_kernel = tf.get_variable("out_to_cell_weights",
+                        out_to_cell_kernel = tf.compat.v1.get_variable("out_to_cell_weights",
                                                              [self.gate_filter_size[0], self.gate_filter_size[1], self.out_depth, self.cell_depth],
                                                              dtype=dtype,
                                                              initializer=self._kernel_initializer,
-                                                             regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                             regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                        out_to_cell_bias = tf.get_variable("out_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
+                        out_to_cell_bias = tf.compat.v1.get_variable("out_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
 
                     # if cell depth and out depth are different, need to change channel number of input
                     cell_input = tf.zeros_like(prev_cell, dtype=tf.float32, name="cell_input")
@@ -735,87 +735,87 @@ class ReciprocalGateCell(ConvRNNCell):
                         if self.ff_depth_separable:
                             cell_input += _ds_conv(res_input, self.ff_filter_size, out_depth=self.cell_depth, bias=True, scope="res_to_cell", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                         else:
-                            res_to_cell_kernel = tf.get_variable("residual_to_cell_weights",
+                            res_to_cell_kernel = tf.compat.v1.get_variable("residual_to_cell_weights",
                                                                  [self.ff_filter_size[0], self.ff_filter_size[1], res_input.shape.as_list()[-1], self.cell_depth],
                                                                  dtype=dtype,
                                                                  initializer=self._kernel_initializer,
-                                                                 regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                                 regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                            res_to_cell_bias = tf.get_variable("residual_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
+                            res_to_cell_bias = tf.compat.v1.get_variable("residual_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
 
-                            cell_input += tf.nn.conv2d(res_input, res_to_cell_kernel, strides=[1,1,1,1], padding='SAME') + res_to_cell_bias
+                            cell_input += tf.nn.conv2d(input=res_input, filters=res_to_cell_kernel, strides=[1,1,1,1], padding='SAME') + res_to_cell_bias
                     if self.input_to_cell:
                         if self.ff_depth_separable:
                             cell_input += _ds_conv(inputs, self.ff_filter_size, out_depth=self.cell_depth, bias=True, scope="input_to_cell", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                         else:
-                            in_to_cell_kernel = tf.get_variable("input_to_cell_weights",
+                            in_to_cell_kernel = tf.compat.v1.get_variable("input_to_cell_weights",
                                                                 [self.ff_filter_size[0], self.ff_filter_size[1], self.out_depth, self.cell_depth],
                                                                 dtype=dtype,
                                                                 initializer=self._kernel_initializer,
-                                                                regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                                regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                            in_to_cell_bias = tf.get_variable("input_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
+                            in_to_cell_bias = tf.compat.v1.get_variable("input_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
 
-                            cell_input += tf.nn.conv2d(inputs, in_to_cell_kernel, strides=[1,1,1,1], padding='SAME') + in_to_cell_bias
+                            cell_input += tf.nn.conv2d(input=inputs, filters=in_to_cell_kernel, strides=[1,1,1,1], padding='SAME') + in_to_cell_bias
 
                     if fb_input is not None and self.feedback_entry == 'cell':
                         if self.feedback_depth_separable:
                             fb_input = _ds_conv(fb_input, self.feedback_filter_size, out_depth=self.cell_depth, bias=True, scope="feedback", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                             cell_input += self._feedback_activation(fb_input)
                         else:
-                            feedback_to_cell_kernel = tf.get_variable("feedback_to_cell_weights",
+                            feedback_to_cell_kernel = tf.compat.v1.get_variable("feedback_to_cell_weights",
                                                                       [self.feedback_filter_size[0], self.feedback_filter_size[1], fb_input.shape.as_list()[-1], self.cell_depth],
                                                                       dtype=dtype,
                                                                       initializer=self._kernel_initializer,
-                                                                      regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                            feedback_to_cell_bias = tf.get_variable("feedback_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
+                                                                      regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                            feedback_to_cell_bias = tf.compat.v1.get_variable("feedback_to_cell_bias", [self.cell_depth], initializer=self._bias_initializer)
 
                             if fb_input.shape.as_list()[1:3] == prev_cell.shape.as_list()[1:3]:
-                                cell_input += self._feedback_activation(tf.nn.conv2d(fb_input, feedback_to_cell_kernel, strides=[1,1,1,1], padding='SAME') + feedback_to_cell_bias)
+                                cell_input += self._feedback_activation(tf.nn.conv2d(input=fb_input, filters=feedback_to_cell_kernel, strides=[1,1,1,1], padding='SAME') + feedback_to_cell_bias)
                             else:
                                 assert self.feedback_filter_size == fb_input.shape.as_list()[1:3] # only allow fully connected case for now
-                                cell_input += self._feedback_activation(tf.nn.conv2d(fb_input, feedback_to_cell_kernel, strides=[1,1,1,1], padding='VALID') + feedback_to_cell_bias)                
+                                cell_input += self._feedback_activation(tf.nn.conv2d(input=fb_input, filters=feedback_to_cell_kernel, strides=[1,1,1,1], padding='VALID') + feedback_to_cell_bias)                
                     # ops
                     if self.tau_depth_separable:
                         cell_tau = _ds_conv(prev_cell, self.cell_tau_filter_size, bias=True, scope="tau", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                     else:
-                        cell_tau = tf.nn.conv2d(prev_cell, cell_to_cell_kernel, strides=[1,1,1,1], padding='SAME', name="cell_tau") + cell_to_cell_bias + self._tau_bias
+                        cell_tau = tf.nn.conv2d(input=prev_cell, filters=cell_to_cell_kernel, strides=[1,1,1,1], padding='SAME', name="cell_tau") + cell_to_cell_bias + self._tau_bias
                     # cell gate
                     if self.gate_depth_separable:
                         cell_gate = _ds_conv(prev_out, self.gate_filter_size, out_depth=self.cell_depth, bias=True, scope="out_to_cell", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                     else:
-                        cell_gate = tf.nn.conv2d(prev_out, out_to_cell_kernel, strides=[1,1,1,1], padding='SAME', name="cell_gate") + out_to_cell_bias + self._gate_bias
+                        cell_gate = tf.nn.conv2d(input=prev_out, filters=out_to_cell_kernel, strides=[1,1,1,1], padding='SAME', name="cell_gate") + out_to_cell_bias + self._gate_bias
                     if self.input_to_tau:
-                        input_to_cell_tau_kernel = tf.get_variable("input_to_cell_tau_weights",
+                        input_to_cell_tau_kernel = tf.compat.v1.get_variable("input_to_cell_tau_weights",
                                                               [self.cell_tau_filter_size[0], self.cell_tau_filter_size[1], self.out_depth, self.cell_depth],
                                                               dtype=dtype,
                                                               initializer=self._kernel_initializer,
-                                                              regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                        cell_tau += tf.nn.conv2d(inputs, input_to_cell_tau_kernel, strides=[1,1,1,1], padding='SAME')
+                                                              regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                        cell_tau += tf.nn.conv2d(input=inputs, filters=input_to_cell_tau_kernel, strides=[1,1,1,1], padding='SAME')
                     if res_input is not None and self.residual_to_cell_tau:
-                        res_to_cell_tau_kernel = tf.get_variable("residual_to_cell_tau_weights",
+                        res_to_cell_tau_kernel = tf.compat.v1.get_variable("residual_to_cell_tau_weights",
                                                               [self.cell_tau_filter_size[0], self.cell_tau_filter_size[1], res_input.shape.as_list()[-1], self.cell_depth],
                                                               dtype=dtype,
                                                               initializer=self._kernel_initializer,
-                                                              regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                              regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
                         # print("res input to tau", res_input.name, res_input.shape)
-                        cell_tau += tf.nn.conv2d(res_input, res_to_cell_tau_kernel, strides=[1,1,1,1], padding='SAME')
+                        cell_tau += tf.nn.conv2d(input=res_input, filters=res_to_cell_tau_kernel, strides=[1,1,1,1], padding='SAME')
 
                     if self.input_to_gate:
-                        input_to_cell_gate_kernel = tf.get_variable("input_to_cell_gate_weights",
+                        input_to_cell_gate_kernel = tf.compat.v1.get_variable("input_to_cell_gate_weights",
                                                               [self.gate_filter_size[0], self.gate_filter_size[1], self.out_depth, self.cell_depth],
                                                               dtype=dtype,
                                                               initializer=self._kernel_initializer,
-                                                              regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                        cell_gate += tf.nn.conv2d(inputs, input_to_cell_gate_kernel, strides=[1,1,1,1], padding='SAME')
+                                                              regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                        cell_gate += tf.nn.conv2d(input=inputs, filters=input_to_cell_gate_kernel, strides=[1,1,1,1], padding='SAME')
                     if res_input is not None and self.residual_to_cell_gate:
-                        res_to_cell_gate_kernel = tf.get_variable("residual_to_cell_gate_weights",
+                        res_to_cell_gate_kernel = tf.compat.v1.get_variable("residual_to_cell_gate_weights",
                                                               [self.gate_filter_size[0], self.gate_filter_size[1], res_input.shape.as_list()[-1], self.cell_depth],
                                                               dtype=dtype,
                                                               initializer=self._kernel_initializer,
-                                                              regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                              regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
                         # print("res input to gate", res_input.name, res_input.shape)                    
-                        cell_gate += tf.nn.conv2d(res_input, res_to_cell_gate_kernel, strides=[1,1,1,1], padding='SAME')                                        
+                        cell_gate += tf.nn.conv2d(input=res_input, filters=res_to_cell_gate_kernel, strides=[1,1,1,1], padding='SAME')                                        
 
                     cell_tau = self._tau_nonlinearity(cell_tau)
                     cell_gate = self._gate_nonlinearity(cell_gate)
@@ -826,44 +826,44 @@ class ReciprocalGateCell(ConvRNNCell):
                         next_cell = self._norm(next_cell, scope="layer_norm", dtype=dtype)
                     next_cell = self._cell_activation(next_cell)
 
-            with tf.variable_scope('out'):
+            with tf.compat.v1.variable_scope('out'):
 
                 # out tau kernel
                 if not self.tau_depth_separable:
-                    out_to_out_kernel = tf.get_variable("out_to_out_weights",
+                    out_to_out_kernel = tf.compat.v1.get_variable("out_to_out_weights",
                                                         [self.tau_filter_size[0], self.tau_filter_size[1], self.out_depth, self.out_depth],
                                                         dtype=dtype,
                                                         initializer=self._kernel_initializer,
-                                                        regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                        regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                    out_to_out_bias = tf.get_variable("out_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
+                    out_to_out_bias = tf.compat.v1.get_variable("out_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
 
                 # out gate kernelt
                 if self.use_cell:
                     if not self.gate_depth_separable:
-                        cell_to_out_kernel = tf.get_variable("cell_to_out_weights",
+                        cell_to_out_kernel = tf.compat.v1.get_variable("cell_to_out_weights",
                                                              [self.gate_filter_size[0], self.gate_filter_size[1], self.cell_depth_out, self.out_depth],
                                                              dtype=dtype,
                                                              initializer=self._kernel_initializer,
-                                                             regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                             regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
-                        cell_to_out_bias = tf.get_variable("cell_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
+                        cell_to_out_bias = tf.compat.v1.get_variable("cell_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
 
 
                 if self.input_to_out:
                     if self.in_out_depth_separable:
                         out_input = _ds_conv(inputs, self.in_out_filter_size, out_depth=self.out_depth, bias=True, scope="input_to_out", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)                        
                     else:
-                        in_to_out_kernel = tf.get_variable("input_to_out_weights",
+                        in_to_out_kernel = tf.compat.v1.get_variable("input_to_out_weights",
                                                            [self.in_out_filter_size[0], self.in_out_filter_size[1], self.out_depth, self.out_depth],
                                                            dtype=dtype,
                                                            initializer=self._kernel_initializer,
-                                                           regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
+                                                           regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
 
 
-                        in_to_out_bias = tf.get_variable("input_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
+                        in_to_out_bias = tf.compat.v1.get_variable("input_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
 
-                        out_input = tf.nn.conv2d(inputs, in_to_out_kernel, strides=[1,1,1,1], padding='SAME', name="out_input") + in_to_out_bias
+                        out_input = tf.nn.conv2d(input=inputs, filters=in_to_out_kernel, strides=[1,1,1,1], padding='SAME', name="out_input") + in_to_out_bias
                 else:
                     out_input = tf.identity(inputs, name="out_input")
 
@@ -872,7 +872,7 @@ class ReciprocalGateCell(ConvRNNCell):
                     if self.gate_depth_separable:
                         out_input += _ds_conv(prev_cell, self.gate_filter_size, out_depth=self.out_depth, bias=True, scope="cell_to_out", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                     else:
-                        out_input += tf.nn.conv2d(prev_cell, cell_to_out_kernel, strides=[1,1,1,1], padding='SAME', name='out_gate') + cell_to_out_bias + self._gate_bias
+                        out_input += tf.nn.conv2d(input=prev_cell, filters=cell_to_out_kernel, strides=[1,1,1,1], padding='SAME', name='out_gate') + cell_to_out_bias + self._gate_bias
                     
                 if res_input is not None and self.out_residual:
                     out_input = residual_add(out_input, res_input)                    
@@ -882,64 +882,64 @@ class ReciprocalGateCell(ConvRNNCell):
                         fb_input = _ds_conv(fb_input, self.feedback_filter_size, out_depth=self.out_depth, bias=True, scope="feedback", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                         out_input += self._feedback_activation(fb_input)
                     else:
-                        feedback_to_out_kernel = tf.get_variable("feedback_to_out_weights",
+                        feedback_to_out_kernel = tf.compat.v1.get_variable("feedback_to_out_weights",
                                                                   [self.feedback_filter_size[0], self.feedback_filter_size[1], fb_input.shape.as_list()[-1], self.out_depth],
                                                                   dtype=dtype,
                                                                   initializer=self._kernel_initializer,
-                                                                  regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                        feedback_to_out_bias = tf.get_variable("feedback_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
+                                                                  regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                        feedback_to_out_bias = tf.compat.v1.get_variable("feedback_to_out_bias", [self.out_depth], initializer=self._bias_initializer)
 
                         if fb_input.shape.as_list()[1:3] == prev_out.shape.as_list()[1:3]:
-                            out_input += self._feedback_activation(tf.nn.conv2d(fb_input, feedback_to_out_kernel, strides=[1,1,1,1], padding='SAME') + feedback_to_out_bias)
+                            out_input += self._feedback_activation(tf.nn.conv2d(input=fb_input, filters=feedback_to_out_kernel, strides=[1,1,1,1], padding='SAME') + feedback_to_out_bias)
                         else:
                             assert self.feedback_filter_size == fb_input.shape.as_list()[1:3] # only allow fully connected case for now
-                            out_input += self._feedback_activation(tf.nn.conv2d(fb_input, feedback_to_out_kernel, strides=[1,1,1,1], padding='VALID') + feedback_to_out_bias)                        
+                            out_input += self._feedback_activation(tf.nn.conv2d(input=fb_input, filters=feedback_to_out_kernel, strides=[1,1,1,1], padding='VALID') + feedback_to_out_bias)                        
                 # ops
                 if self.tau_depth_separable:
                     out_tau = _ds_conv(prev_out, self.tau_filter_size, bias=True, scope="tau", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                 else:
-                    out_tau = tf.nn.conv2d(prev_out, out_to_out_kernel, strides=[1,1,1,1], padding='SAME', name='out_tau') + out_to_out_bias + self._tau_bias
+                    out_tau = tf.nn.conv2d(input=prev_out, filters=out_to_out_kernel, strides=[1,1,1,1], padding='SAME', name='out_tau') + out_to_out_bias + self._tau_bias
 
                 if self.use_cell and not self.cell_to_out:
                     if self.gate_depth_separable:
                         out_gate = _ds_conv(prev_cell, self.gate_filter_size, out_depth=self.out_depth, bias=True, scope="gate", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)
                     else:
-                        out_gate = tf.nn.conv2d(prev_cell, cell_to_out_kernel, strides=[1,1,1,1], padding='SAME', name='out_gate') + cell_to_out_bias + self._gate_bias
+                        out_gate = tf.nn.conv2d(input=prev_cell, filters=cell_to_out_kernel, strides=[1,1,1,1], padding='SAME', name='out_gate') + cell_to_out_bias + self._gate_bias
                 else:
                     out_gate = tf.zeros(shape=out_input.shape.as_list(), dtype=tf.float32, name='out_gate')
 
                 if self.input_to_tau:
-                    input_to_out_tau_kernel = tf.get_variable("input_to_out_tau_weights",
+                    input_to_out_tau_kernel = tf.compat.v1.get_variable("input_to_out_tau_weights",
                                                           [self.tau_filter_size[0], self.tau_filter_size[1], self.out_depth, self.out_depth],
                                                           dtype=dtype,
                                                           initializer=self._kernel_initializer,
-                                                          regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                    out_tau += tf.nn.conv2d(inputs, input_to_out_tau_kernel, strides=[1,1,1,1], padding='SAME')
+                                                          regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                    out_tau += tf.nn.conv2d(input=inputs, filters=input_to_out_tau_kernel, strides=[1,1,1,1], padding='SAME')
                 if res_input is not None and self.residual_to_out_tau:
-                    res_to_out_tau_kernel = tf.get_variable("residual_to_out_tau_weights",
+                    res_to_out_tau_kernel = tf.compat.v1.get_variable("residual_to_out_tau_weights",
                                                           [self.tau_filter_size[0], self.tau_filter_size[1], res_input.shape.as_list()[-1], self.out_depth],
                                                           dtype=dtype,
                                                           initializer=self._kernel_initializer,
-                                                          regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                    out_tau += tf.nn.conv2d(res_input, res_to_out_tau_kernel, strides=[1,1,1,1], padding='SAME')
+                                                          regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                    out_tau += tf.nn.conv2d(input=res_input, filters=res_to_out_tau_kernel, strides=[1,1,1,1], padding='SAME')
 
                 if self.input_to_gate:
-                    input_to_out_gate_kernel = tf.get_variable("input_to_out_gate_weights",
+                    input_to_out_gate_kernel = tf.compat.v1.get_variable("input_to_out_gate_weights",
                                                           [self.gate_filter_size[0], self.gate_filter_size[1], self.out_depth, self.out_depth],
                                                           dtype=dtype,
                                                           initializer=self._kernel_initializer,
-                                                          regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                    out_gate += tf.nn.conv2d(inputs, input_to_out_gate_kernel, strides=[1,1,1,1], padding='SAME')
+                                                          regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                    out_gate += tf.nn.conv2d(input=inputs, filters=input_to_out_gate_kernel, strides=[1,1,1,1], padding='SAME')
                 if res_input is not None and self.residual_to_out_gate:
                     if self.gate_depth_separable:
                         out_gate += _ds_conv(res_input, self.gate_filter_size, out_depth=self.out_depth, bias=False, scope="residual_to_out_gate", kernel_initializer=self._kernel_initializer, bias_initializer=self._bias_initializer, weight_decay=self._weight_decay)                        
                     else:
-                        res_to_out_gate_kernel = tf.get_variable("residual_to_out_gate_weights",
+                        res_to_out_gate_kernel = tf.compat.v1.get_variable("residual_to_out_gate_weights",
                                                               [self.gate_filter_size[0], self.gate_filter_size[1], res_input.shape.as_list()[-1], self.out_depth],
                                                               dtype=dtype,
                                                               initializer=self._kernel_initializer,
-                                                              regularizer=tf.contrib.layers.l2_regularizer(self._weight_decay))
-                        out_gate += tf.nn.conv2d(res_input, res_to_out_gate_kernel, strides=[1,1,1,1], padding='SAME')
+                                                              regularizer=tf.keras.regularizers.l2(0.5 * (self._weight_decay)))
+                        out_gate += tf.nn.conv2d(input=res_input, filters=res_to_out_gate_kernel, strides=[1,1,1,1], padding='SAME')
 
                 out_tau = self._tau_nonlinearity(out_tau)
                 out_gate = self._gate_nonlinearity(out_gate)
@@ -1010,7 +1010,7 @@ class tnn_ReciprocalGateCell(ConvRNNCell):
             (output, state)
         """
 
-        with tf.variable_scope(self.name_tmp, reuse=self._reuse):
+        with tf.compat.v1.variable_scope(self.name_tmp, reuse=self._reuse):
 
             if inputs is None:
                 inputs = [self.input_init[0](shape=self.harbor_shape, **self.input_init[1])]
@@ -1034,7 +1034,7 @@ class tnn_ReciprocalGateCell(ConvRNNCell):
             res_input = None
             pre_name_counter = 0
             for function, kwargs in self.pre_memory:
-                with tf.variable_scope("pre_" + str(pre_name_counter), reuse=self._reuse):
+                with tf.compat.v1.variable_scope("pre_" + str(pre_name_counter), reuse=self._reuse):
                     if function.__name__ == "component_conv":
                         if kwargs.get('return_input', False):
                             output, res_input = function(output, [inputs[ff_idx]], **kwargs) # component_conv needs to know the inputs
@@ -1054,7 +1054,7 @@ class tnn_ReciprocalGateCell(ConvRNNCell):
 
             post_name_counter = 0
             for function, kwargs in self.post_memory:
-                with tf.variable_scope("post_" + str(post_name_counter), reuse=self._reuse):
+                with tf.compat.v1.variable_scope("post_" + str(post_name_counter), reuse=self._reuse):
                     if function.__name__ == "component_conv":
                        output = function(output, inputs, **kwargs)
                     else:
@@ -1133,25 +1133,25 @@ def _conv(inp, filter_size, out_depth, bias, scope, bias_initializer=None, kerne
   if bias_regularizer is None:
       bias_regularizer = 0.
   if kernel_initializer is None:
-      kernel_initializer = tf.contrib.layers.xavier_initializer()
+      kernel_initializer = tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
   if bias_initializer is None:
-      bias_initializer = tf.contrib.layers.xavier_initializer()
+      bias_initializer = tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
 
   # Now the computation.
-  with tf.variable_scope(scope):
-      kernel = tf.get_variable(
-          "weights", [filter_size[0], filter_size[1], in_depth, out_depth], dtype=dtype, initializer=kernel_initializer, regularizer=tf.contrib.layers.l2_regularizer(kernel_regularizer))
+  with tf.compat.v1.variable_scope(scope):
+      kernel = tf.compat.v1.get_variable(
+          "weights", [filter_size[0], filter_size[1], in_depth, out_depth], dtype=dtype, initializer=kernel_initializer, regularizer=tf.keras.regularizers.l2(0.5 * (kernel_regularizer)))
           
-      out = tf.nn.conv2d(inp, kernel, strides=[1, 1, 1, 1], padding='SAME', data_format=data_format)
+      out = tf.nn.conv2d(input=inp, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', data_format=data_format)
       if not bias:
         return out
       if bias_initializer is None:
-        bias_initializer = tf.constant_initializer(0.0, dtype=dtype)
-      bias_term = tf.get_variable(
+        bias_initializer = tf.compat.v1.constant_initializer(0.0, dtype=dtype)
+      bias_term = tf.compat.v1.get_variable(
           "bias", [out_depth],
           dtype=dtype,
           initializer=bias_initializer,
-          regularizer=tf.contrib.layers.l2_regularizer(bias_regularizer))
+          regularizer=tf.keras.regularizers.l2(0.5 * (bias_regularizer)))
       return out + bias_term        
 
 def _ds_conv(inp, filter_size, bias, scope, out_depth=None, ch_mult=1, bias_initializer=None, kernel_initializer=None, weight_decay=None, data_format='channels_last'):
@@ -1183,30 +1183,30 @@ def _ds_conv(inp, filter_size, bias, scope, out_depth=None, ch_mult=1, bias_init
     if weight_decay is None:
         weight_decay = 0.
     if kernel_initializer is None:
-        kernel_initializer = tf.contrib.layers.xavier_initializer()
+        kernel_initializer = tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
     if bias_initializer is None:
-        bias_initializer = tf.contrib.layers.xavier_initializer()
+        bias_initializer = tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
 
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
 
-        depthwise_filter = tf.get_variable("depthwise_weights",
+        depthwise_filter = tf.compat.v1.get_variable("depthwise_weights",
                                            [ksize[0], ksize[1], in_depth, ch_mult],
                                            dtype=dtype,
                                            initializer=kernel_initializer,
-                                           regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
-        pointwise_filter = tf.get_variable("pointwise_weights",
+                                           regularizer=tf.keras.regularizers.l2(0.5 * (weight_decay)))
+        pointwise_filter = tf.compat.v1.get_variable("pointwise_weights",
                                            [1, 1, in_depth*ch_mult, out_depth],
                                            dtype=dtype,
                                            initializer=kernel_initializer,
-                                           regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+                                           regularizer=tf.keras.regularizers.l2(0.5 * (weight_decay)))
 
-        out = tf.nn.separable_conv2d(inp, depthwise_filter, pointwise_filter, strides=[1,1,1,1], padding='SAME', data_format=data_format, name="ds_conv")
+        out = tf.nn.separable_conv2d(input=inp, depthwise_filter=depthwise_filter, pointwise_filter=pointwise_filter, strides=[1,1,1,1], padding='SAME', data_format=data_format, name="ds_conv")
 
         if not bias:
             return out
         else:
             
-            bias = tf.get_variable("bias",
+            bias = tf.compat.v1.get_variable("bias",
                                    [out_depth],
                                    dtype=dtype,
                                    initializer=bias_initializer)

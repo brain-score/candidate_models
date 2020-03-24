@@ -103,7 +103,7 @@ class TestImagenet:
     def test_top1(self, model, expected_top1, allowed_deviation):
         # clear tf graph
         import tensorflow as tf
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         import keras
         keras.backend.clear_session()
         # run
