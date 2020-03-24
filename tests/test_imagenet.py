@@ -4,7 +4,7 @@ import pytest
 from pytest import approx
 
 from brainscore.benchmarks.imagenet import Imagenet2012
-from candidate_models import brain_translated_pool
+from candidate_models.model_commitments import brain_translated_pool
 
 _logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ class TestImagenet:
     def test_top1(self, model, expected_top1, allowed_deviation):
         # clear tf graph
         import tensorflow as tf
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         import keras
         keras.backend.clear_session()
         # run

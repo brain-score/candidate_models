@@ -1,6 +1,6 @@
 import pytest
 
-from candidate_models import brain_translated_pool
+from candidate_models.model_commitments import brain_translated_pool
 
 
 @pytest.mark.memory_intense

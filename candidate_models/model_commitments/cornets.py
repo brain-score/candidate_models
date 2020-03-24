@@ -1,4 +1,7 @@
+import logging
+
 import numpy as np
+from brainscore.submission.utils import UniqueKeyDict
 from torch import nn
 from tqdm import tqdm
 from typing import Dict, Tuple
@@ -7,11 +10,10 @@ from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coo
 from brainscore.model_interface import BrainModel
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import cornet
-from candidate_models.model_commitments.ml_pool import Hooks
-from candidate_models.utils import UniqueKeyDict
 from model_tools.brain_transformation.behavior import BehaviorArbiter, LogitsBehavior, ProbabilitiesMapping
 from result_caching import store
 
+_logger = logging.getLogger(__name__)
 
 class CORnetCommitment(BrainModel):
     """
@@ -338,7 +340,7 @@ def cornet_r2_brainmodel():
 
 class CORnetBrainPool(UniqueKeyDict):
     def __init__(self):
-        super(CORnetBrainPool, self).__init__()
+        super(CORnetBrainPool, self).__init__(reload=True)
 
         model_pool = {
             'CORnet-Z': LazyLoad(cornet_z_brainmodel),
@@ -360,22 +362,8 @@ class CORnetBrainPool(UniqueKeyDict):
 
         self._accessed_brain_models = []
 
-        for basemodel_identifier, brain_model in model_pool.items():
-            activations_model = LazyLoad(lambda brain_model=brain_model: brain_model.activations_model)
-            for identifier, activations_model in Hooks().iterate_hooks(basemodel_identifier, activations_model):
-                def load(basemodel_identifier=basemodel_identifier, identifier=identifier, brain_model=brain_model):
-                    # only update when actually required, otherwise we'd change the activations_model
-                    # of one brain_model at all times
-                    if basemodel_identifier in self._accessed_brain_models:
-                        raise ValueError(f"{identifier}'s brain-model {basemodel_identifier} has already been accessed "
-                                         f"in this session. To avoid clashes in the hooks, "
-                                         f"please run {identifier} in a separate session.")
-                    self._accessed_brain_models.append(basemodel_identifier)
-                    # upon accessing the `activations_model`, the Hook will automatically
-                    # attach to the `brain_model.activations_model`.
-                    return brain_model
-
-                self[identifier] = LazyLoad(load)
+        for identifier, brain_model in model_pool.items():
+            self[identifier] = brain_model
 
 
 cornet_brain_pool = CORnetBrainPool()

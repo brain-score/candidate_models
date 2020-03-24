@@ -18,7 +18,7 @@ def test_run_logits(model_name):
         import keras
         keras.backend.clear_session()
         import tensorflow as tf
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
 
 @pytest.mark.parametrize(['model_name', 'expected_identifier'], [

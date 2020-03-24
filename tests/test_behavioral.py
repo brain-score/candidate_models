@@ -1,7 +1,8 @@
 import pytest
 from pytest import approx
 
-from candidate_models import brain_translated_pool, score_model
+from brainscore import score_model
+from candidate_models.model_commitments import brain_translated_pool
 
 
 @pytest.mark.memory_intense
