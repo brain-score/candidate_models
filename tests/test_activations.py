@@ -8,9 +8,9 @@ from candidate_models.model_commitments import model_layers
 @pytest.mark.memory_intense
 class TestActivations:
     @pytest.mark.parametrize('model_identifier', [
-        ('alexnet'),
-        ('resnet-101_v2'),
-        ('mobilenet_v2'),
+        'alexnet',
+        'resnet-101_v2',
+        'mobilenet_v2_1.0_224',
     ])
     def test_model(self, model_identifier):
         layers = model_layers[model_identifier]

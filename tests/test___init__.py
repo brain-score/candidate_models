@@ -22,7 +22,7 @@ class TestPreselectedLayer:
             if pca_components:
                 LayerPCA.hook(activations_model, n_components=pca_components)
                 activations_model.identifier += "-pca_1000"
-            model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
+            model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model, visual_degrees=8)
             model.commit(region, layer)
             model = TemporalIgnore(model)
             return model
@@ -56,7 +56,7 @@ class TestPreselectedLayer:
         np.random.seed(123)
         score = score_model(model_identifier='alexnet-f6', model=model,
                             benchmark_identifier='dicarlo.Majaj2015.IT-mask')
-        assert score.raw.sel(aggregation='center') == approx(0.083593, abs=0.005)
+        assert score.raw.sel(aggregation='center') == approx(0.607037, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_repeat_same_result(self):
@@ -99,7 +99,7 @@ class TestPreselectedLayer:
         model_id = 'new_pytorch'
         activations_model = PytorchWrapper(model=MyModel(), preprocessing=preprocessing, identifier=model_id)
         layer = 'relu2'
-        candidate = LayerMappedModel(f"{model_id}-{layer}", activations_model=activations_model)
+        candidate = LayerMappedModel(f"{model_id}-{layer}", activations_model=activations_model, visual_degrees=8)
         candidate.commit('IT', layer)
         candidate = TemporalIgnore(candidate)
 
@@ -143,8 +143,8 @@ class TestBrainTranslated:
         assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
 
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
-        ('CORnet-S', .25),
-        ('CORnet-R2', .224),
+        ('CORnet-S', .240888),
+        ('CORnet-R2', .230859),
         ('alexnet', np.nan),
     ])
     def test_candidate_Kar2019OST(self, model_identifier, expected_score):
