@@ -8,6 +8,7 @@ with open('README.md') as readme_file:
 
 requirements = [
     "xarray<=0.12",
+    "netcdf4==1.5.2",
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
