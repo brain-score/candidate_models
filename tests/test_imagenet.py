@@ -11,6 +11,7 @@ _logger = logging.getLogger(__name__)
 
 @pytest.mark.memory_intense
 @pytest.mark.requires_gpu
+@pytest.mark.slow
 class TestImagenet:
     @pytest.mark.parametrize(['model', 'expected_top1', 'allowed_deviation'], [
         # pytorch: from https://pytorch.org/docs/stable/torchvision/models.html
