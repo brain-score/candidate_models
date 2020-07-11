@@ -2,18 +2,18 @@ import pytest
 
 from brainscore import get_stimulus_set
 from candidate_models.base_models import base_model_pool
-from candidate_models.model_commitments.ml_pool import model_layers
+from candidate_models.model_commitments import model_layers
 
 
 @pytest.mark.memory_intense
 class TestActivations:
-    @pytest.mark.parametrize('model_identifier, layers', [
-        ('alexnet', None),
-        ('resnet-101_v2', None),
-        ('CORnet-S', ['IT.output-t0']),
+    @pytest.mark.parametrize('model_identifier', [
+        'alexnet',
+        'resnet-101_v2',
+        'mobilenet_v2_1.0_224',
     ])
-    def test_model(self, model_identifier, layers):
-        layers = layers or model_layers[model_identifier]
+    def test_model(self, model_identifier):
+        layers = model_layers[model_identifier]
         activations_model = base_model_pool[model_identifier]
         stimulus_set = get_stimulus_set('dicarlo.hvm')
         stimulus_set = stimulus_set[:100]

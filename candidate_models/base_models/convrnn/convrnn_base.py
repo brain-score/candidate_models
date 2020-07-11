@@ -119,7 +119,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
         pres = ([blank] * image_on) +  ([ims] * image_times) + ([blank] * (ntimes - image_off))
         
     # graph building stage
-    with tf.variable_scope('tnn_model'):
+    with tf.compat.v1.variable_scope('tnn_model'):
         if '.json' not in base_name:
             base_name += '.json'
         print('Using base: ', base_name)
@@ -161,7 +161,7 @@ def tnn_base_edges(inputs, train=True, basenet_layers=['conv'+str(l) for l in ra
             # # optional max pooling at end of conv10
             if node == 'conv10':
                 if final_max_pool:
-                    attr['kwargs']['post_memory'][-1] = (tf.nn.max_pool,
+                    attr['kwargs']['post_memory'][-1] = (tf.nn.max_pool2d,
                                                         {'ksize': [1,2,2,1],
                                                          'strides': [1,2,2,1],
                                                          'padding': 'SAME'})

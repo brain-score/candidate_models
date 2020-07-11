@@ -10,8 +10,8 @@ from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
 from candidate_models.base_models.cornet import cornet
 from candidate_models.base_models.convrnn.convrnn_base import load_median_model
-from candidate_models.utils import UniqueKeyDict
 from model_tools.activations import PytorchWrapper, KerasWrapper
+from brainscore.submission.utils import UniqueKeyDict
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
 
 _logger = logging.getLogger(__name__)
@@ -45,7 +45,8 @@ class TFSlimModel:
         import tensorflow as tf
         from nets import nets_factory
 
-        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        tf.compat.v1.reset_default_graph()
+        placeholder = tf.compat.v1.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFSlimModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size)
 
         net_name = net_name or identifier
@@ -55,7 +56,7 @@ class TFSlimModel:
             endpoints['logits'] = endpoints['Logits']
             del endpoints['Logits']
 
-        session = tf.Session()
+        session = tf.compat.v1.Session()
         TFSlimModel._restore_imagenet_weights(identifier, session)
         wrapper = TensorflowSlimWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
                                         batch_size=batch_size, labels_offset=labels_offset)
@@ -71,7 +72,7 @@ class TFSlimModel:
             'vgg': lambda image: vgg_preprocessing.preprocess_image(
                 image, image_size, image_size, resize_side_min=image_size),
             'inception': lambda image: inception_preprocessing.preprocess_for_eval(
-                image, image_size, image_size)
+                image, image_size, image_size, central_fraction=None)
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
@@ -88,7 +89,7 @@ class TFSlimModel:
             # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
-        restorer = tf.train.Saver(var_list)
+        restorer = tf.compat.v1.train.Saver(var_list)
 
         restore_path = TFSlimModel._find_model_weights(name)
         restorer.restore(session, restore_path)
@@ -115,7 +116,7 @@ class TFUtilsModel:
              model_fn_kwargs=None):
         import tensorflow as tf
 
-        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        placeholder = tf.compat.v1.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size,
                                                       image_resize=image_resize)
 
@@ -132,7 +133,7 @@ class TFUtilsModel:
             new_endpoints['logits'] = endpoints
             endpoints = new_endpoints
 
-        session = tf.Session()
+        session = tf.compat.v1.Session()
         TFUtilsModel._restore_imagenet_weights(identifier, session)
         wrapper = TensorflowWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
                                     batch_size=batch_size)
@@ -149,7 +150,7 @@ class TFUtilsModel:
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
-        preprocess = lambda image_path: preprocess_image(tf.read_file(image_path))
+        preprocess = lambda image_path: preprocess_image(tf.io.read_file(image_path))
         preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
         return preprocess
 
@@ -162,7 +163,7 @@ class TFUtilsModel:
             # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
-        restorer = tf.train.Saver(var_list)
+        restorer = tf.compat.v1.train.Saver(var_list)
 
         restore_path = TFUtilsModel._find_model_weights(name)
         restorer.restore(session, restore_path)
@@ -192,7 +193,8 @@ class TFUtilsModel:
         if not os.path.isdir(model_path):
             _logger.debug(f"Downloading weights for {model_name} to {model_path}")
             os.makedirs(model_path)
-            s3.download_folder(f"model-weights/{model_name}", model_path, bucket='brain-score-tfutils-models', region='us-west-1')
+            s3.download_folder(f"model-weights/{model_name}", model_path, bucket='brain-score-tfutils-models',
+                               region='us-west-1')
         fnames = glob.glob(os.path.join(model_path, '*.ckpt*'))
         assert len(fnames) > 0, f"no checkpoint found in {model_path}"
         restore_path = fnames[0].split('.ckpt')[0] + '.ckpt'
@@ -233,6 +235,11 @@ def vggface():
     return wrapper
 
 
+def cornet(*args, **kwargs):  # wrapper to avoid having to import cornet at top-level
+    from candidate_models.base_models.cornet import cornet as cornet_ctr
+    return cornet_ctr(*args, **kwargs)
+
+
 def texture_vs_shape(model_identifier, model_name):
     from texture_vs_shape.load_pretrained_models import load_model
     model = load_model(model_name)
@@ -245,7 +252,7 @@ def texture_vs_shape(model_identifier, model_name):
 
 def robust_model(function, image_size):
     from urllib import request
-    from torch import load
+    import torch
     from model_tools.activations.pytorch import load_preprocess_images
     module = import_module(f'torchvision.models')
     model_ctr = getattr(module, function)
@@ -261,7 +268,7 @@ def robust_model(function, image_size):
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = load(weights_path)
+    checkpoint = torch.load(weights_path, map_location=torch.device('cpu'))
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
@@ -328,6 +335,12 @@ def fixres(model_identifier, model_url):
     return wrapper
 
 
+def convrnn():
+    from candidate_models.base_models.convrnn.convrnn_base import load_median_model
+    return TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
+                             preprocessing_type='convrnn', image_size=224, image_resize=None)
+
+
 class BaseModelPool(UniqueKeyDict):
     """
     Provides a set of standard models.
@@ -335,234 +348,110 @@ class BaseModelPool(UniqueKeyDict):
     """
 
     def __init__(self, input_size=None):
-        super(BaseModelPool, self).__init__()
-        self._accessed_base_models = set()
+        super(BaseModelPool, self).__init__(reload=True)
 
-        if input_size==None:
-            _key_functions = {
-                'alexnet': lambda: pytorch_model('alexnet', image_size=224),
-                'squeezenet1_0': lambda: pytorch_model('squeezenet1_0', image_size=224),
-                'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
-                'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
-                'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
-                'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=224),
-                'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
+        _key_functions = {
+            'alexnet': lambda: pytorch_model('alexnet', image_size=224 if input_size==None else input_size),
+            'squeezenet1_0': lambda: pytorch_model('squeezenet1_0', image_size=224 if input_size==None else input_size),
+            'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224 if input_size==None else input_size),
+            'resnet-18': lambda: pytorch_model('resnet18', image_size=224 if input_size==None else input_size),
+            'resnet-34': lambda: pytorch_model('resnet34', image_size=224 if input_size==None else input_size),
+            'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=224 if input_size==None else input_size),
+            'resnet-50-robust': lambda: robust_model('resnet50', image_size=224 if input_size==None else input_size),
 
-                'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
-                'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),
-                'vggface': vggface,
-                'xception': lambda: keras_model('xception', 'Xception', image_size=299),
-                'densenet-121': lambda: keras_model('densenet', 'DenseNet121', image_size=224),
-                'densenet-169': lambda: keras_model('densenet', 'DenseNet169', image_size=224),
-                'densenet-201': lambda: keras_model('densenet', 'DenseNet201', image_size=224),
+            'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224 if input_size==None else input_size),
+            'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224 if input_size==None else input_size),
+            'vggface': vggface,
+            'xception': lambda: keras_model('xception', 'Xception', image_size=299 if input_size==None else input_size),
+            'densenet-121': lambda: keras_model('densenet', 'DenseNet121', image_size=224 if input_size==None else input_size),
+            'densenet-169': lambda: keras_model('densenet', 'DenseNet169', image_size=224 if input_size==None else input_size),
+            'densenet-201': lambda: keras_model('densenet', 'DenseNet201', image_size=224 if input_size==None else input_size),
 
-                'inception_v1': lambda: TFSlimModel.init('inception_v1', preprocessing_type='inception', image_size=224),
-                'inception_v2': lambda: TFSlimModel.init('inception_v2', preprocessing_type='inception', image_size=224),
-                'inception_v3': lambda: TFSlimModel.init('inception_v3', preprocessing_type='inception', image_size=299),
-                'inception_v4': lambda: TFSlimModel.init('inception_v4', preprocessing_type='inception', image_size=299),
-                'inception_resnet_v2': lambda: TFSlimModel.init('inception_resnet_v2', preprocessing_type='inception',
-                                                                image_size=299),
-                'resnet-50_v1': lambda: TFSlimModel.init('resnet-50_v1', net_name='resnet_v1_50', preprocessing_type='vgg',
-                                                         image_size=224, labels_offset=0),
-                'resnet-101_v1': lambda: TFSlimModel.init('resnet-101_v1', net_name='resnet_v1_101',
-                                                          preprocessing_type='vgg',
-                                                          image_size=224, labels_offset=0),
-                'resnet-152_v1': lambda: TFSlimModel.init('resnet-152_v1', net_name='resnet_v1_152',
-                                                          preprocessing_type='vgg',
-                                                          image_size=224, labels_offset=0),
-                # image_size is 299 for resnet-v2, this is a bug in tf-slim.
-                # see https://github.com/tensorflow/models/tree/8b18491b26e4b8271db757a3245008882ea112b3/research/slim:
-                # "ResNet V2 models use Inception pre-processing and input image size of 299"
-                'resnet-50_v2': lambda: TFSlimModel.init('resnet-50_v2', net_name='resnet_v2_50',
-                                                         preprocessing_type='inception',
-                                                         image_size=299),
-                'resnet-101_v2': lambda: TFSlimModel.init('resnet-101_v2', net_name='resnet_v2_101',
-                                                          preprocessing_type='inception',
-                                                          image_size=299),
-                'resnet-152_v2': lambda: TFSlimModel.init('resnet-152_v2', net_name='resnet_v2_152',
-                                                          preprocessing_type='inception',
-                                                          image_size=299),
-                'nasnet_mobile': lambda: TFSlimModel.init('nasnet_mobile', preprocessing_type='inception', image_size=331),
-                'nasnet_large': lambda: TFSlimModel.init('nasnet_large', preprocessing_type='inception', image_size=331),
-                'pnasnet_large': lambda: TFSlimModel.init('pnasnet_large', preprocessing_type='inception', image_size=331),
-                'bagnet9': lambda: bagnet("bagnet9"),
-                'bagnet17': lambda: bagnet("bagnet17"),
-                'bagnet33': lambda: bagnet("bagnet33"),
-                # CORnets. Note that these are only here for the base_model_pool, their commitment works separately
-                # from the models here due to anatomical alignment.
-                'CORnet-Z': lambda: cornet('CORnet-Z'),
-                'CORnet-R': lambda: cornet('CORnet-R'),
-                'CORnet-S': lambda: cornet('CORnet-S'),
+            'inception_v1': lambda: TFSlimModel.init('inception_v1', preprocessing_type='inception', image_size=224 if input_size==None else input_size),
+            'inception_v2': lambda: TFSlimModel.init('inception_v2', preprocessing_type='inception', image_size=224 if input_size==None else input_size),
+            'inception_v3': lambda: TFSlimModel.init('inception_v3', preprocessing_type='inception', image_size=299 if input_size==None else input_size),
+            'inception_v4': lambda: TFSlimModel.init('inception_v4', preprocessing_type='inception', image_size=299 if input_size==None else input_size),
+            'inception_resnet_v2': lambda: TFSlimModel.init('inception_resnet_v2', preprocessing_type='inception',
+                                                            image_size=299 if input_size==None else input_size),
+            'resnet-50_v1': lambda: TFSlimModel.init('resnet-50_v1', net_name='resnet_v1_50', preprocessing_type='vgg',
+                                                     image_size=224 if input_size==None else input_size, labels_offset=0),
+            'resnet-101_v1': lambda: TFSlimModel.init('resnet-101_v1', net_name='resnet_v1_101',
+                                                      preprocessing_type='vgg',
+                                                      image_size=224 if input_size==None else input_size, labels_offset=0),
+            'resnet-152_v1': lambda: TFSlimModel.init('resnet-152_v1', net_name='resnet_v1_152',
+                                                      preprocessing_type='vgg',
+                                                      image_size=224 if input_size==None else input_size, labels_offset=0),
+            # image_size is 299 for resnet-v2, this is a bug in tf-slim.
+            # see https://github.com/tensorflow/models/tree/8b18491b26e4b8271db757a3245008882ea112b3/research/slim:
+            # "ResNet V2 models use Inception pre-processing and input image size of 299"
+            'resnet-50_v2': lambda: TFSlimModel.init('resnet-50_v2', net_name='resnet_v2_50',
+                                                     preprocessing_type='inception',
+                                                     image_size=299 if input_size==None else input_size),
+            'resnet-101_v2': lambda: TFSlimModel.init('resnet-101_v2', net_name='resnet_v2_101',
+                                                      preprocessing_type='inception',
+                                                      image_size=299 if input_size==None else input_size),
+            'resnet-152_v2': lambda: TFSlimModel.init('resnet-152_v2', net_name='resnet_v2_152',
+                                                      preprocessing_type='inception',
+                                                      image_size=299 if input_size==None else input_size),
+            'nasnet_mobile': lambda: TFSlimModel.init('nasnet_mobile', preprocessing_type='inception', image_size=331 if input_size==None else input_size),
+            'nasnet_large': lambda: TFSlimModel.init('nasnet_large', preprocessing_type='inception', image_size=331 if input_size==None else input_size),
+            'pnasnet_large': lambda: TFSlimModel.init('pnasnet_large', preprocessing_type='inception', image_size=331 if input_size==None else input_size),
+            'bagnet9': lambda: bagnet("bagnet9"),
+            'bagnet17': lambda: bagnet("bagnet17"),
+            'bagnet33': lambda: bagnet("bagnet33"),
 
-                'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
-                                                         model_name='resnet50_trained_on_SIN'),
-                'resnet50-SIN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN',
-                                                            model_name='resnet50_trained_on_SIN_and_IN'),
-                'resnet50-SIN_IN_IN': lambda: texture_vs_shape(
-                    model_identifier='resnet50-SIN_IN_IN',
-                    model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
+            'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
+                                                     model_name='resnet50_trained_on_SIN'),
+            'resnet50-SIN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN',
+                                                        model_name='resnet50_trained_on_SIN_and_IN'),
+            'resnet50-SIN_IN_IN': lambda: texture_vs_shape(
+                model_identifier='resnet50-SIN_IN_IN',
+                model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
 
-                'resnext101_32x8d_wsl': lambda: wsl(8),
-                'resnext101_32x16d_wsl': lambda: wsl(16),
-                'resnext101_32x32d_wsl': lambda: wsl(32),
-                'resnext101_32x48d_wsl': lambda: wsl(48),
+            'resnext101_32x8d_wsl': lambda: wsl(8),
+            'resnext101_32x16d_wsl': lambda: wsl(16),
+            'resnext101_32x32d_wsl': lambda: wsl(32),
+            'resnext101_32x48d_wsl': lambda: wsl(48),
 
-                'fixres_resnext101_32x48d_wsl': lambda: fixres(
-                    'resnext101_32x48d_wsl',
-                    'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
+            'fixres_resnext101_32x48d_wsl': lambda: fixres(
+                'resnext101_32x48d_wsl',
+                'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
 
-                'dcgan': lambda: dcgan("get_discriminator"),
+            'dcgan': lambda: dcgan("get_discriminator"),
 
-                'convrnn_224': lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
-                                                         preprocessing_type='convrnn', image_size=224, image_resize=None),
-            }
-            # MobileNets
-            for version, multiplier, image_size in [
-                # v1
-                (1, 1.0, 224), (1, 1.0, 192), (1, 1.0, 160), (1, 1.0, 128),
-                (1, 0.75, 224), (1, 0.75, 192), (1, 0.75, 160), (1, 0.75, 128),
-                (1, 0.5, 224), (1, 0.5, 192), (1, 0.5, 160), (1, 0.5, 128),
-                (1, 0.25, 224), (1, 0.25, 192), (1, 0.25, 160), (1, 0.25, 128),
-                # v2
-                (2, 1.4, 224),
-                (2, 1.3, 224),
-                (2, 1.0, 224), (2, 1.0, 192), (2, 1.0, 160), (2, 1.0, 128), (2, 1.0, 96),
-                (2, 0.75, 224), (2, 0.75, 192), (2, 0.75, 160), (2, 0.75, 128), (2, 0.75, 96),
-                (2, 0.5, 224), (2, 0.5, 192), (2, 0.5, 160), (2, 0.5, 128), (2, 0.5, 96),
-                (2, 0.35, 224), (2, 0.35, 192), (2, 0.35, 160), (2, 0.35, 128), (2, 0.35, 96),
-            ]:
-                identifier = f"mobilenet_v{version}_{multiplier}_{image_size}"
-                if (version == 1 and multiplier in [.75, .5, .25]) or (version == 2 and multiplier == 1.4):
-                    net_name = f"mobilenet_v{version}_{multiplier * 100:03.0f}"
-                else:
-                    net_name = f"mobilenet_v{version}"
-                # arg=arg default value enforces closure:
-                # https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
-                _key_functions[identifier] = \
-                    lambda identifier=identifier, image_size=image_size, net_name=net_name, \
-                           multiplier=multiplier: TFSlimModel.init(
-                        identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
-                        model_ctr_kwargs={'depth_multiplier': multiplier})
+            'convrnn_224': convrnn,
+        }
+        # MobileNets
+        for version, multiplier, image_size in [
+            # v1
+            (1, 1.0, 224), (1, 1.0, 192), (1, 1.0, 160), (1, 1.0, 128),
+            (1, 0.75, 224), (1, 0.75, 192), (1, 0.75, 160), (1, 0.75, 128),
+            (1, 0.5, 224), (1, 0.5, 192), (1, 0.5, 160), (1, 0.5, 128),
+            (1, 0.25, 224), (1, 0.25, 192), (1, 0.25, 160), (1, 0.25, 128),
+            # v2
+            (2, 1.4, 224),
+            (2, 1.3, 224),
+            (2, 1.0, 224), (2, 1.0, 192), (2, 1.0, 160), (2, 1.0, 128), (2, 1.0, 96),
+            (2, 0.75, 224), (2, 0.75, 192), (2, 0.75, 160), (2, 0.75, 128), (2, 0.75, 96),
+            (2, 0.5, 224), (2, 0.5, 192), (2, 0.5, 160), (2, 0.5, 128), (2, 0.5, 96),
+            (2, 0.35, 224), (2, 0.35, 192), (2, 0.35, 160), (2, 0.35, 128), (2, 0.35, 96),
+        ]:
+            identifier = f"mobilenet_v{version}_{multiplier}_{image_size}"
+            if (version == 1 and multiplier in [.75, .5, .25]) or (version == 2 and multiplier == 1.4):
+                net_name = f"mobilenet_v{version}_{multiplier * 100:03.0f}"
+            else:
+                net_name = f"mobilenet_v{version}"
+            # arg=arg default value enforces closure:
+            # https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
+            _key_functions[identifier] = \
+                lambda identifier=identifier, image_size=image_size, net_name=net_name, \
+                       multiplier=multiplier: TFSlimModel.init(
+                    identifier, preprocessing_type='inception', image_size=image_size, net_name=net_name,
+                    model_ctr_kwargs={'depth_multiplier': multiplier})
 
-            # instantiate models with LazyLoad wrapper
-            for identifier, function in _key_functions.items():
-                self[identifier] = LazyLoad(function)
-        else:
-            _key_functions = {
-                'alexnet': lambda: pytorch_model('alexnet', image_size=input_size),
-                'squeezenet1_0': lambda: pytorch_model('squeezenet1_0', image_size=input_size),
-                'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=input_size),
-                'resnet-18': lambda: pytorch_model('resnet18', image_size=input_size),
-                'resnet-34': lambda: pytorch_model('resnet34', image_size=input_size),
-                'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=input_size),
-                'resnet-50-robust': lambda: robust_model('resnet50', image_size=input_size),
-
-                'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=input_size),
-                'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=input_size),
-                'vggface': vggface,
-                'xception': lambda: keras_model('xception', 'Xception', image_size=input_size),
-                'densenet-121': lambda: keras_model('densenet', 'DenseNet121', image_size=input_size),
-                'densenet-169': lambda: keras_model('densenet', 'DenseNet169', image_size=input_size),
-                'densenet-201': lambda: keras_model('densenet', 'DenseNet201', image_size=input_size),
-
-                'inception_v1': lambda: TFSlimModel.init('inception_v1', preprocessing_type='inception', image_size=input_size),
-                'inception_v2': lambda: TFSlimModel.init('inception_v2', preprocessing_type='inception', image_size=input_size),
-                'inception_v3': lambda: TFSlimModel.init('inception_v3', preprocessing_type='inception', image_size=input_size),
-                'inception_v4': lambda: TFSlimModel.init('inception_v4', preprocessing_type='inception', image_size=input_size),
-                'inception_resnet_v2': lambda: TFSlimModel.init('inception_resnet_v2', preprocessing_type='inception',
-                                                                image_size=input_size),
-                'resnet-50_v1': lambda: TFSlimModel.init('resnet-50_v1', net_name='resnet_v1_50', preprocessing_type='vgg',
-                                                         image_size=input_size, labels_offset=0),
-                'resnet-101_v1': lambda: TFSlimModel.init('resnet-101_v1', net_name='resnet_v1_101',
-                                                          preprocessing_type='vgg',
-                                                          image_size=input_size, labels_offset=0),
-                'resnet-152_v1': lambda: TFSlimModel.init('resnet-152_v1', net_name='resnet_v1_152',
-                                                          preprocessing_type='vgg',
-                                                          image_size=input_size, labels_offset=0),
-                # image_size is 299 for resnet-v2, this is a bug in tf-slim.
-                # see https://github.com/tensorflow/models/tree/8b18491b26e4b8271db757a3245008882ea112b3/research/slim:
-                # "ResNet V2 models use Inception pre-processing and input image size of 299"
-                'resnet-50_v2': lambda: TFSlimModel.init('resnet-50_v2', net_name='resnet_v2_50',
-                                                         preprocessing_type='inception',
-                                                         image_size=input_size),
-                'resnet-101_v2': lambda: TFSlimModel.init('resnet-101_v2', net_name='resnet_v2_101',
-                                                          preprocessing_type='inception',
-                                                          image_size=input_size),
-                'resnet-152_v2': lambda: TFSlimModel.init('resnet-152_v2', net_name='resnet_v2_152',
-                                                          preprocessing_type='inception',
-                                                          image_size=input_size),
-                'nasnet_mobile': lambda: TFSlimModel.init('nasnet_mobile', preprocessing_type='inception', image_size=input_size),
-                'nasnet_large': lambda: TFSlimModel.init('nasnet_large', preprocessing_type='inception', image_size=input_size),
-                'pnasnet_large': lambda: TFSlimModel.init('pnasnet_large', preprocessing_type='inception', image_size=input_size),
-                'bagnet9': lambda: bagnet("bagnet9"),
-                'bagnet17': lambda: bagnet("bagnet17"),
-                'bagnet33': lambda: bagnet("bagnet33"),
-                # CORnets. Note that these are only here for the base_model_pool, their commitment works separately
-                # from the models here due to anatomical alignment.
-                'CORnet-Z': lambda: cornet('CORnet-Z'),
-                'CORnet-R': lambda: cornet('CORnet-R'),
-                'CORnet-S': lambda: cornet('CORnet-S'),
-
-                'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
-                                                         model_name='resnet50_trained_on_SIN'),
-                'resnet50-SIN_IN': lambda: texture_vs_shape(model_identifier='resnet50-SIN_IN',
-                                                            model_name='resnet50_trained_on_SIN_and_IN'),
-                'resnet50-SIN_IN_IN': lambda: texture_vs_shape(
-                    model_identifier='resnet50-SIN_IN_IN',
-                    model_name='resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN'),
-
-                'resnext101_32x8d_wsl': lambda: wsl(8),
-                'resnext101_32x16d_wsl': lambda: wsl(16),
-                'resnext101_32x32d_wsl': lambda: wsl(32),
-                'resnext101_32x48d_wsl': lambda: wsl(48),
-
-                'fixres_resnext101_32x48d_wsl': lambda: fixres(
-                    'resnext101_32x48d_wsl',
-                    'https://dl.fbaipublicfiles.com/FixRes_data/FixRes_Pretrained_Models/ResNeXt_101_32x48d.pth'),
-
-                'dcgan': lambda: dcgan("get_discriminator"),
-
-                'convrnn_224': lambda: TFUtilsModel.init(load_median_model, 'convrnn_224', tnn_model=True,
-                                                         preprocessing_type='convrnn', image_size=224, image_resize=None),
-            }
-            # MobileNets
-            for version, multiplier, image_size in [
-                # v1
-                (1, 1.0, 224), (1, 1.0, 192), (1, 1.0, 160), (1, 1.0, 128),
-                (1, 0.75, 224), (1, 0.75, 192), (1, 0.75, 160), (1, 0.75, 128),
-                (1, 0.5, 224), (1, 0.5, 192), (1, 0.5, 160), (1, 0.5, 128),
-                (1, 0.25, 224), (1, 0.25, 192), (1, 0.25, 160), (1, 0.25, 128),
-                # v2
-                (2, 1.4, 224),
-                (2, 1.3, 224),
-                (2, 1.0, 224), (2, 1.0, 192), (2, 1.0, 160), (2, 1.0, 128), (2, 1.0, 96),
-                (2, 0.75, 224), (2, 0.75, 192), (2, 0.75, 160), (2, 0.75, 128), (2, 0.75, 96),
-                (2, 0.5, 224), (2, 0.5, 192), (2, 0.5, 160), (2, 0.5, 128), (2, 0.5, 96),
-                (2, 0.35, 224), (2, 0.35, 192), (2, 0.35, 160), (2, 0.35, 128), (2, 0.35, 96),
-            ]:
-                identifier = f"mobilenet_v{version}_{multiplier}_{image_size}"
-                if (version == 1 and multiplier in [.75, .5, .25]) or (version == 2 and multiplier == 1.4):
-                    net_name = f"mobilenet_v{version}_{multiplier * 100:03.0f}"
-                else:
-                    net_name = f"mobilenet_v{version}"
-                # arg=arg default value enforces closure:
-                # https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
-                _key_functions[identifier] = \
-                    lambda identifier=identifier, image_size=input_size, net_name=net_name, \
-                           multiplier=multiplier: TFSlimModel.init(
-                        identifier, preprocessing_type='inception', image_size=input_size, net_name=net_name,
-                        model_ctr_kwargs={'depth_multiplier': multiplier})
-
-            # instantiate models with LazyLoad wrapper
-            for identifier, function in _key_functions.items():
-                self[identifier] = LazyLoad(function)
-
-    def __getitem__(self, basemodel_identifier):
-        if basemodel_identifier in self._accessed_base_models:
-            raise ValueError(f"can retrieve each base model only once per session due to possible hook clashes - "
-                             f"{basemodel_identifier} has already been retrieved")
-        self._accessed_base_models.add(basemodel_identifier)
-        return super(BaseModelPool, self).__getitem__(basemodel_identifier)
+        # instantiate models with LazyLoad wrapper
+        for identifier, function in _key_functions.items():
+            self[identifier] = LazyLoad(function)
 
 
 base_model_pool = BaseModelPool()
