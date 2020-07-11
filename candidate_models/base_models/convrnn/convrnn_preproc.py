@@ -29,23 +29,23 @@ def get_resize_scale(height, width, crop_size=224, smallest_side=256):
     """
     Get the resize scale so that the shortest side is `smallest_side`
     """
-    smallest_side = tf.convert_to_tensor(smallest_side, dtype=tf.int32)
+    smallest_side = tf.convert_to_tensor(value=smallest_side, dtype=tf.int32)
 
-    height = tf.to_float(height)
-    width = tf.to_float(width)
-    smallest_side = tf.to_float(smallest_side)
+    height = tf.cast(height, dtype=tf.float32)
+    width = tf.cast(width, dtype=tf.float32)
+    smallest_side = tf.cast(smallest_side, dtype=tf.float32)
 
     scale = tf.cond(
-            tf.greater(height, width),
-            lambda: smallest_side / width,
-            lambda: smallest_side / height)
+            pred=tf.greater(height, width),
+            true_fn=lambda: smallest_side / width,
+            false_fn=lambda: smallest_side / height)
     return scale
 
 def resize_cast_to_uint8(image, crop_size=224):
     image = tf.cast(
-            tf.image.resize_bilinear(
+            tf.image.resize(
                 [image],
-                [crop_size, crop_size])[0],
+                [crop_size, crop_size], method=tf.image.ResizeMethod.BILINEAR)[0],
             dtype=tf.uint8)
     image.set_shape([crop_size, crop_size, 3])
     return image
@@ -78,5 +78,5 @@ def preprocess_for_eval(image_string, resize=None, crop_size=224, smallest_side=
     image = color_normalize(image)
 
     if resize is not None:
-        image = tf.image.resize_images(image, [resize, resize], align_corners=True)
+        image = tf.image.resize(image, [resize, resize])
     return image

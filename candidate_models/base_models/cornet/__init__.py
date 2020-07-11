@@ -40,7 +40,7 @@ def cornet(identifier, separate_time=True):
     model = model_ctr()
 
     WEIGHT_MAPPING = {
-        'Z': 'cornet_z_epoch25.pth.tar',
+        'Z': 'cornet_z-5c427c9c.pth',
         'R': 'cornet_r_epoch25.pth.tar',
         'S': 'cornet_s_epoch43.pth.tar',
         'R2': 'cornet_r2_epoch_60.pth.tar',
