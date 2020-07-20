@@ -341,6 +341,12 @@ def convrnn():
                              preprocessing_type='convrnn', image_size=224, image_resize=None)
 
 
+def unsupervised_vvs(identifier):
+    from candidate_models.base_models.unsupervised_vvs import ModelBuilder
+    build = ModelBuilder()
+    return build(identifier)
+
+
 class BaseModelPool(UniqueKeyDict):
     """
     Provides a set of standard models.
@@ -420,6 +426,8 @@ class BaseModelPool(UniqueKeyDict):
             'dcgan': lambda: dcgan("get_discriminator"),
 
             'convrnn_224': convrnn,
+
+            'resnet18-supervised': lambda: unsupervised_vvs('resnet18-supervised'),
         }
         # MobileNets
         for version, multiplier, image_size in [

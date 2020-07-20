@@ -28,18 +28,22 @@ def resnext101_layers():
              for block, block_units in enumerate([3, 4, 23, 3]) for unit in range(block_units)] +
             ['avgpool'])
 
+
 def mobilenet_v1():
     return ['Conv2d_0'] + list(itertools.chain(
         *[[f'Conv2d_{i + 1}_depthwise', f'Conv2d_{i + 1}_pointwise'] for i in range(13)])) + ['AvgPool_1a']
 
+
 def mobilenet_v2():
     return ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool']
 
+
 def bagnet():
     return (['relu'] +
-           [f'layer{layer + 1}.{block}.relu' for layer, blocks in
+            [f'layer{layer + 1}.{block}.relu' for layer, blocks in
              enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
-           ['avgpool'] )
+            ['avgpool'])
+
 
 layers = {
     'alexnet':
@@ -183,9 +187,9 @@ layers = {
         ['AvgPool_1a'],
     'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
     'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
-    'bagnet9':  bagnet(),
-    'bagnet17':  bagnet(),
-    'bagnet33':  bagnet(),
+    'bagnet9': bagnet(),
+    'bagnet17': bagnet(),
+    'bagnet33': bagnet(),
     'resnext101_32x8d_wsl': resnext101_layers(),
     'resnext101_32x16d_wsl': resnext101_layers(),
     'resnext101_32x32d_wsl': resnext101_layers(),
@@ -194,6 +198,9 @@ layers = {
     'dcgan': ['main.0', 'main.2', 'main.5', 'main.8', 'main.12'],
     # ConvRNNs
     'convrnn_224': ['logits'],
+    # Unsupervised VVS
+    'resnet18-supervised': ['encode_1.conv', 'encode_1', 'encode_2', 'encode_3', 'encode_4', 'encode_5',
+                            'encode_6', 'encode_7', 'encode_8', 'encode_9'],
 }
 
 model_layers = ModelLayers(layers)
@@ -205,7 +212,6 @@ for sin_model in ['resnet50-SIN', 'resnet50-SIN_IN', 'resnet50-SIN_IN_IN']:
          for seq, bottlenecks in enumerate([3, 4, 6, 3], start=1)
          for bottleneck in range(bottlenecks)] + \
         ['avgpool']
-
 
 for version, multiplier, image_size in [
     # v1
@@ -222,7 +228,7 @@ for version, multiplier, image_size in [
     (2, 0.35, 224), (2, 0.35, 192), (2, 0.35, 160), (2, 0.35, 128), (2, 0.35, 96),
 ]:
     identifier = f"mobilenet_v{version}_{multiplier}_{image_size}"
-    if version ==1:
+    if version == 1:
         model_layers[identifier] = mobilenet_v1()
     else:
         model_layers[identifier] = mobilenet_v2()
