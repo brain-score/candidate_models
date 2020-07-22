@@ -27,7 +27,7 @@ def MLSearchPool(target_img_size=28, search_image_size=224):
     vs_model_param['stim_pool'] = stimuli_model_pool
     vs_model_param['model_layers'] = visual_search_layer
     vs_model_param['tar_size'] = target_img_size
-    vs_model_param['stim_size'] = stimuli_img_size
+    vs_model_param['stim_size'] = search_image_size
 
     ml_search_pool = MLBrainPool(base_model_pool, model_layers, vs_model_param=vs_model_param)
 
