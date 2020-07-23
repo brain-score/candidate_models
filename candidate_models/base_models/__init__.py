@@ -8,8 +8,10 @@ import numpy as np
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
-from candidate_models.utils import UniqueKeyDict
+from candidate_models.base_models.cornet import cornet
+from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from model_tools.activations import PytorchWrapper, KerasWrapper
+from brainscore.submission.utils import UniqueKeyDict
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
 
 _logger = logging.getLogger(__name__)
@@ -43,7 +45,8 @@ class TFSlimModel:
         import tensorflow as tf
         from nets import nets_factory
 
-        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        tf.compat.v1.reset_default_graph()
+        placeholder = tf.compat.v1.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFSlimModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size)
 
         net_name = net_name or identifier
@@ -53,7 +56,7 @@ class TFSlimModel:
             endpoints['logits'] = endpoints['Logits']
             del endpoints['Logits']
 
-        session = tf.Session()
+        session = tf.compat.v1.Session()
         TFSlimModel._restore_imagenet_weights(identifier, session)
         wrapper = TensorflowSlimWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
                                         batch_size=batch_size, labels_offset=labels_offset)
@@ -69,7 +72,7 @@ class TFSlimModel:
             'vgg': lambda image: vgg_preprocessing.preprocess_image(
                 image, image_size, image_size, resize_side_min=image_size),
             'inception': lambda image: inception_preprocessing.preprocess_for_eval(
-                image, image_size, image_size)
+                image, image_size, image_size, central_fraction=None)
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
@@ -86,7 +89,7 @@ class TFSlimModel:
             # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
-        restorer = tf.train.Saver(var_list)
+        restorer = tf.compat.v1.train.Saver(var_list)
 
         restore_path = TFSlimModel._find_model_weights(name)
         restorer.restore(session, restore_path)
@@ -113,7 +116,7 @@ class TFUtilsModel:
              model_fn_kwargs=None):
         import tensorflow as tf
 
-        placeholder = tf.placeholder(dtype=tf.string, shape=[batch_size])
+        placeholder = tf.compat.v1.placeholder(dtype=tf.string, shape=[batch_size])
         preprocess = TFUtilsModel._init_preprocessing(placeholder, preprocessing_type, image_size=image_size,
                                                       image_resize=image_resize)
 
@@ -130,7 +133,7 @@ class TFUtilsModel:
             new_endpoints['logits'] = endpoints
             endpoints = new_endpoints
 
-        session = tf.Session()
+        session = tf.compat.v1.Session()
         TFUtilsModel._restore_imagenet_weights(identifier, session)
         wrapper = TensorflowWrapper(identifier=identifier, endpoints=endpoints, inputs=placeholder, session=session,
                                     batch_size=batch_size)
@@ -147,7 +150,7 @@ class TFUtilsModel:
         }
         assert preprocessing_type in preprocessing_types
         preprocess_image = preprocessing_types[preprocessing_type]
-        preprocess = lambda image_path: preprocess_image(tf.read_file(image_path))
+        preprocess = lambda image_path: preprocess_image(tf.io.read_file(image_path))
         preprocess = tf.map_fn(preprocess, placeholder, dtype=tf.float32)
         return preprocess
 
@@ -160,7 +163,7 @@ class TFUtilsModel:
             # https://github.com/tensorflow/models/blob/a6494752575fad4d95e92698dbfb88eb086d8526/research/slim/nets/mobilenet/mobilenet_example.ipynb
             ema = tf.train.ExponentialMovingAverage(0.999)
             var_list = ema.variables_to_restore()
-        restorer = tf.train.Saver(var_list)
+        restorer = tf.compat.v1.train.Saver(var_list)
 
         restore_path = TFUtilsModel._find_model_weights(name)
         restorer.restore(session, restore_path)
@@ -249,7 +252,7 @@ def texture_vs_shape(model_identifier, model_name):
 
 def robust_model(function, image_size):
     from urllib import request
-    from torch import load
+    import torch
     from model_tools.activations.pytorch import load_preprocess_images
     module = import_module(f'torchvision.models')
     model_ctr = getattr(module, function)
@@ -265,7 +268,7 @@ def robust_model(function, image_size):
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = load(weights_path)
+    checkpoint = torch.load(weights_path, map_location=torch.device('cpu'))
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
@@ -345,8 +348,7 @@ class BaseModelPool(UniqueKeyDict):
     """
 
     def __init__(self):
-        super(BaseModelPool, self).__init__()
-        self._accessed_base_models = set()
+        super(BaseModelPool, self).__init__(reload=True)
 
         _key_functions = {
             'alexnet': lambda: pytorch_model('alexnet', image_size=224),
@@ -397,11 +399,6 @@ class BaseModelPool(UniqueKeyDict):
             'bagnet9': lambda: bagnet("bagnet9"),
             'bagnet17': lambda: bagnet("bagnet17"),
             'bagnet33': lambda: bagnet("bagnet33"),
-            # CORnets. Note that these are only here for the base_model_pool, their commitment works separately
-            # from the models here due to anatomical alignment.
-            'CORnet-Z': lambda: cornet('CORnet-Z'),
-            'CORnet-R': lambda: cornet('CORnet-R'),
-            'CORnet-S': lambda: cornet('CORnet-S'),
 
             'resnet50-SIN': lambda: texture_vs_shape(model_identifier='resnet50-SIN',
                                                      model_name='resnet50_trained_on_SIN'),
@@ -455,13 +452,6 @@ class BaseModelPool(UniqueKeyDict):
         # instantiate models with LazyLoad wrapper
         for identifier, function in _key_functions.items():
             self[identifier] = LazyLoad(function)
-
-    def __getitem__(self, basemodel_identifier):
-        if basemodel_identifier in self._accessed_base_models:
-            raise ValueError(f"can retrieve each base model only once per session due to possible hook clashes - "
-                             f"{basemodel_identifier} has already been retrieved")
-        self._accessed_base_models.add(basemodel_identifier)
-        return super(BaseModelPool, self).__getitem__(basemodel_identifier)
 
 
 base_model_pool = BaseModelPool()

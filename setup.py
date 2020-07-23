@@ -8,13 +8,19 @@ with open('README.md') as readme_file:
 
 requirements = [
     "xarray<=0.12",
+    "netcdf4==1.5.2",
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
     "result_caching @ git+https://github.com/mschrimpf/result_caching",
     "networkx==1.11",
     "tqdm",
-
+    "gitpython",
+    "torch",
+    "keras",
+    "pandas==0.25.3",
+    "tensorflow==1.15",
+    "Pillow",
     "cornet @ git+https://github.com/dicarlolab/CORnet",
     "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
