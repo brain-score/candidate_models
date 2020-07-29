@@ -45,6 +45,11 @@ def bagnet():
             ['avgpool'])
 
 
+def unsup_vvs_res18():
+    return ['encode_1.conv', 'encode_1', 'encode_2', 'encode_3', 'encode_4', 'encode_5',
+            'encode_6', 'encode_7', 'encode_8', 'encode_9']
+
+
 layers = {
     'alexnet':
         [  # conv-relu-[pool]{1,2,3,4,5}
@@ -199,8 +204,11 @@ layers = {
     # ConvRNNs
     'convrnn_224': ['logits'],
     # Unsupervised VVS
-    'resnet18-supervised': ['encode_1.conv', 'encode_1', 'encode_2', 'encode_3', 'encode_4', 'encode_5',
-                            'encode_6', 'encode_7', 'encode_8', 'encode_9'],
+    'resnet18-supervised': unsup_vvs_res18(),
+    'resnet18-la': unsup_vvs_res18(),
+    'resnet18-ir': unsup_vvs_res18(),
+    'resnet18-ae': unsup_vvs_res18(),
+    'resnet18-cpc': unsup_vvs_res18(),
 }
 
 model_layers = ModelLayers(layers)

@@ -5,14 +5,19 @@ from candidate_models.base_models.unsupervised_vvs import tf_model_loader
 from candidate_models.base_models.unsupervised_vvs.cleaned_network_builder import get_network_outputs
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
 from model_tools.activations.tensorflow import load_resize_image
-from neural_fit.cleaned_network_builder import get_network_outputs
+from unsup_vvs.neural_fit.cleaned_network_builder import get_network_outputs
 
 TF_RES18_LAYERS = ['encode_1.conv'] + ['encode_%i' % i for i in range(1, 10)]
 
 
 class ModelBuilder:
     CKPT_PATH = {
-        'resnet18-supervised': '/braintree/home/msch/unsup_vvs/neural_fit/checkpoint-505505/checkpoint-505505',
+        #'resnet18-supervised': '/braintree/home/msch/unsup_vvs/neural_fit/checkpoint-505505/checkpoint-505505',
+        'resnet18-supervised': '/mnt/fs4/chengxuz/brainscore_model_caches/cate_aug/res18/exp_seed0/checkpoint-505505',
+        'resnet18-la': '/mnt/fs4/chengxuz/brainscore_model_caches/irla_and_others/res18/la_s1/checkpoint-2502500',
+        'resnet18-ir': '/mnt/fs4/chengxuz/brainscore_model_caches/irla_and_others/res18/ir_s1/checkpoint-2502500',
+        'resnet18-ae': '/mnt/fs4/chengxuz/brainscore_model_caches/other_tasks/res18/ae/checkpoint-1301300',
+        'resnet18-cpc': '/mnt/fs4/chengxuz/tpu_ckpts/cpc/model.ckpt-1301300',
     }
 
     def __call__(self, identifier):

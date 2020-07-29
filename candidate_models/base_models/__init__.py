@@ -428,6 +428,10 @@ class BaseModelPool(UniqueKeyDict):
             'convrnn_224': convrnn,
 
             'resnet18-supervised': lambda: unsupervised_vvs('resnet18-supervised'),
+            'resnet18-la': lambda: unsupervised_vvs('resnet18-la'),
+            'resnet18-ir': lambda: unsupervised_vvs('resnet18-ir'),
+            'resnet18-ae': lambda: unsupervised_vvs('resnet18-ae'),
+            'resnet18-cpc': lambda: unsupervised_vvs('resnet18-cpc'),
         }
         # MobileNets
         for version, multiplier, image_size in [

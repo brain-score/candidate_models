@@ -5,16 +5,16 @@ import sys
 import tensorflow as tf
 from argparse import Namespace
 
-import network_training.cmd_parser as cmd_parser
-from network_training.models.config_parser import get_network_cfg
-from network_training.models.instance_task.model.instance_model \
+import unsup_vvs.network_training.cmd_parser as cmd_parser
+from unsup_vvs.network_training.models.config_parser import get_network_cfg
+from unsup_vvs.network_training.models.instance_task.model.instance_model \
     import resnet_embedding
-from network_training.models.mean_teacher_utils import \
+from unsup_vvs.network_training.models.mean_teacher_utils import \
     ema_variable_scope, name_variable_scope
-from network_training.models.model_blocks import NoramlNetfromConv
-from network_training.models.model_builder import ModelBuilder
-from network_training.models.rp_col_utils import rgb_to_lab
-from neural_fit.brainscore_mask.bs_fit_utils import color_normalize
+from unsup_vvs.network_training.models.model_blocks import NoramlNetfromConv
+from unsup_vvs.network_training.models.model_builder import ModelBuilder
+from unsup_vvs.network_training.models.rp_col_utils import rgb_to_lab
+from unsup_vvs.neural_fit.brainscore_mask.bs_fit_utils import color_normalize
 
 MEAN_RGB = [0.485, 0.456, 0.406]
 
