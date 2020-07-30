@@ -1,19 +1,14 @@
 import json
 import tensorflow as tf
-
-from candidate_models.base_models.unsupervised_vvs import tf_model_loader
-from candidate_models.base_models.unsupervised_vvs.cleaned_network_builder import get_network_outputs
-from model_tools.activations.tensorflow import TensorflowSlimWrapper
-from model_tools.activations.tensorflow import load_resize_image
 from unsup_vvs.neural_fit.cleaned_network_builder import get_network_outputs
 
-TF_RES18_LAYERS = ['encode_1.conv'] + ['encode_%i' % i for i in range(1, 10)]
+from model_tools.activations.tensorflow import TensorflowSlimWrapper
+from model_tools.activations.tensorflow import load_resize_image
 
 
 class ModelBuilder:
     CKPT_PATH = {
-        #'resnet18-supervised': '/braintree/home/msch/unsup_vvs/neural_fit/checkpoint-505505/checkpoint-505505',
-        'resnet18-supervised': '/mnt/fs4/chengxuz/brainscore_model_caches/cate_aug/res18/exp_seed0/checkpoint-505505',
+        'resnet18-supervised': '/braintree/home/msch/unsup_vvs/checkpoint-505505',
         'resnet18-la': '/mnt/fs4/chengxuz/brainscore_model_caches/irla_and_others/res18/la_s1/checkpoint-2502500',
         'resnet18-ir': '/mnt/fs4/chengxuz/brainscore_model_caches/irla_and_others/res18/ir_s1/checkpoint-2502500',
         'resnet18-ae': '/mnt/fs4/chengxuz/brainscore_model_caches/other_tasks/res18/ae/checkpoint-1301300',
@@ -32,7 +27,6 @@ class ModelBuilder:
         img_path_placeholder = tf.placeholder(
             dtype=tf.string,
             shape=[batch_size])
-        # with tf.device('/gpu:0'):
         ending_points = self._build_model_ending_points(
             img_paths=img_path_placeholder, prep_type=prep_type, model_type=model_type)
 
@@ -42,7 +36,6 @@ class ModelBuilder:
         self.img_path_placeholder = img_path_placeholder
         self.SESS = SESS
         self.identifier = identifier
-        self.layers = TF_RES18_LAYERS
         return self._build_activations_model(batch_size=batch_size)
 
     def _build_model_ending_points(self, img_paths, prep_type, model_type,
