@@ -1,9 +1,16 @@
+from models.bibtex_entries import entries
+
 from candidate_models.model_commitments import cornet_brain_pool
-from model_tools import test_models
+from model_tools.check_submission import check_models
 
 """
 Template module for a brain model submission to brain-score
 """
+
+def get_bibtex(model_identifier):
+    if model_identifier in entries:
+        return entries[model_identifier]
+    return ''
 
 
 def get_model_list():
@@ -30,4 +37,4 @@ def get_model(name):
 if __name__ == '__main__':
     # Use this method to ensure the correctness of the brain model implementations.
     # It executes a mock run of brain-score benchmarks.
-    test_models.check_brain_models(__name__)
+    check_models.check_brain_models(__name__)
