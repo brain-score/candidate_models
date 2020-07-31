@@ -46,8 +46,7 @@ def bagnet():
 
 
 def unsup_vvs_res18():
-    return ['encode_1.conv', 'encode_1', 'encode_2', 'encode_3', 'encode_4', 'encode_5',
-            'encode_6', 'encode_7', 'encode_8', 'encode_9']
+    return ['encode_1.conv'] + [f'encode_{i}' for i in range(1, 10)]
 
 
 layers = {

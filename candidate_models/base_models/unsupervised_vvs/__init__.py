@@ -5,12 +5,10 @@ import logging
 import requests
 import tarfile
 
-from candidate_models.base_models.unsupervised_vvs import tf_model_loader
-from candidate_models.base_models.unsupervised_vvs.cleaned_network_builder import get_network_outputs
-from candidate_models import s3
+from unsup_vvs.neural_fit.cleaned_network_builder import get_network_outputs
+
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
 from model_tools.activations.tensorflow import load_resize_image
-from unsup_vvs.neural_fit.cleaned_network_builder import get_network_outputs
 
 TF_RES18_LAYERS = ['encode_1.conv'] + ['encode_%i' % i for i in range(1, 10)]
 _logger = logging.getLogger(__name__)
@@ -61,7 +59,6 @@ class ModelBuilder:
         img_path_placeholder = tf.placeholder(
             dtype=tf.string,
             shape=[batch_size])
-        # with tf.device('/gpu:0'):
         ending_points = self._build_model_ending_points(
             img_paths=img_path_placeholder, prep_type=prep_type, model_type=model_type)
 
@@ -71,7 +68,6 @@ class ModelBuilder:
         self.img_path_placeholder = img_path_placeholder
         self.SESS = SESS
         self.identifier = identifier
-        self.layers = TF_RES18_LAYERS
         return self._build_activations_model(batch_size=batch_size)
 
     def _build_model_ending_points(self, img_paths, prep_type, model_type,
