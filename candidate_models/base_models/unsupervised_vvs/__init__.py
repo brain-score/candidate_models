@@ -1,24 +1,56 @@
 import json
 import tensorflow as tf
+import os
+import logging
+import requests
+import tarfile
+
 from unsup_vvs.neural_fit.cleaned_network_builder import get_network_outputs
 
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
 from model_tools.activations.tensorflow import load_resize_image
 
+TF_RES18_LAYERS = ['encode_1.conv'] + ['encode_%i' % i for i in range(1, 10)]
+_logger = logging.getLogger(__name__)
+
 
 class ModelBuilder:
     CKPT_PATH = {
-        'resnet18-supervised': '/braintree/home/msch/unsup_vvs/checkpoint-505505',
-        'resnet18-la': '/mnt/fs4/chengxuz/brainscore_model_caches/irla_and_others/res18/la_s1/checkpoint-2502500',
-        'resnet18-ir': '/mnt/fs4/chengxuz/brainscore_model_caches/irla_and_others/res18/ir_s1/checkpoint-2502500',
-        'resnet18-ae': '/mnt/fs4/chengxuz/brainscore_model_caches/other_tasks/res18/ae/checkpoint-1301300',
-        'resnet18-cpc': '/mnt/fs4/chengxuz/tpu_ckpts/cpc/model.ckpt-1301300',
+        'resnet18-supervised': 'http://visualmaster-models.s3.amazonaws.com/supervised/seed0/checkpoint-505505.tar',
+        'resnet18-la': 'http://visualmaster-models.s3.amazonaws.com/la/seed1/checkpoint-2502500.tar',
+        'resnet18-ir': 'http://visualmaster-models.s3.amazonaws.com/ir/seed1/checkpoint-2502500.tar',
+        'resnet18-ae': 'http://visualmaster-models.s3.amazonaws.com/ae/seed0/checkpoint-1301300.tar',
+        'resnet18-cpc': 'http://visualmaster-models.s3.amazonaws.com/cpc/seed0/model.ckpt-1301300.tar',
     }
 
     def __call__(self, identifier):
         if identifier not in self.CKPT_PATH:
             raise ValueError(f"No known checkpoint for identifier {identifier}")
-        return self.__get_tf_model(identifier=identifier, load_from_ckpt=self.CKPT_PATH[identifier])
+        load_from_ckpt = self.__get_ckpt_from_aws(identifier)
+        return self.__get_tf_model(identifier=identifier, load_from_ckpt=load_from_ckpt)
+
+    def __get_ckpt_from_aws(self, identifier):
+        framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+        weightsdir_path = os.path.join(framework_home, 'model-weights', 'unsup_vvs', identifier)
+        aws_path = self.CKPT_PATH[identifier]
+        weight_data_name = os.path.basename(aws_path)[:-3] + 'data-00000-of-00001'
+        weights_path = os.path.join(weightsdir_path, weight_data_name)
+        if os.path.exists(weights_path):
+            _logger.debug(f"Using cached weights at {weights_path}")
+        else:
+            _logger.debug(f"Downloading weights for {identifier} to {weights_path}")
+            import pdb ; pdb.set_trace()
+            os.makedirs(weightsdir_path, exist_ok=True)
+            tar_path = os.path.join(
+                    weightsdir_path, os.path.basename(aws_path))
+            r = requests.get(aws_path, allow_redirects=True)
+            with open(tar_path, 'wb') as tar_file:
+                tar_file.write(r.content)
+            tar = tarfile.open(tar_path)
+            with tarfile.open(tar_path) as tar:
+                tar.extractall(path=weightsdir_path)
+            os.remove(tar_path)
+        return os.path.join(weightsdir_path, os.path.basename(aws_path)[:-4])
 
     def __get_tf_model(self,
                        identifier, load_from_ckpt,
