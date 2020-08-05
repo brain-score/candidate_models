@@ -339,7 +339,7 @@ def convrnn():
                              preprocessing_type='convrnn', image_size=224, image_resize=None)
 
 
-def unsupervised_vvs(identifier):
+def unsupervised_vvs_model(identifier):
     from candidate_models.base_models.unsupervised_vvs import ModelBuilder
     build = ModelBuilder()
     return build(identifier)
@@ -425,11 +425,11 @@ class BaseModelPool(UniqueKeyDict):
 
             'convrnn_224': convrnn,
 
-            'resnet18-supervised': lambda: unsupervised_vvs('resnet18-supervised'),
-            'resnet18-la': lambda: unsupervised_vvs('resnet18-la'),
-            'resnet18-ir': lambda: unsupervised_vvs('resnet18-ir'),
-            'resnet18-ae': lambda: unsupervised_vvs('resnet18-ae'),
-            'resnet18-cpc': lambda: unsupervised_vvs('resnet18-cpc'),
+            'resnet18-supervised': lambda: unsupervised_vvs_model('resnet18-supervised'),
+            'resnet18-la': lambda: unsupervised_vvs_model('resnet18-la'),
+            'resnet18-ir': lambda: unsupervised_vvs_model('resnet18-ir'),
+            'resnet18-ae': lambda: unsupervised_vvs_model('resnet18-ae'),
+            'resnet18-cpc': lambda: unsupervised_vvs_model('resnet18-cpc'),
         }
         # MobileNets
         for version, multiplier, image_size in [
