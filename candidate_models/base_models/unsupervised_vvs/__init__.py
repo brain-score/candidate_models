@@ -1,10 +1,9 @@
 import json
-import tensorflow as tf
-import os
 import logging
+import os
 import requests
 import tarfile
-
+import tensorflow as tf
 from unsup_vvs.neural_fit.cleaned_network_builder import get_network_outputs
 
 from model_tools.activations.tensorflow import TensorflowSlimWrapper
@@ -39,14 +38,12 @@ class ModelBuilder:
             _logger.debug(f"Using cached weights at {weights_path}")
         else:
             _logger.debug(f"Downloading weights for {identifier} to {weights_path}")
-            import pdb ; pdb.set_trace()
             os.makedirs(weightsdir_path, exist_ok=True)
             tar_path = os.path.join(
-                    weightsdir_path, os.path.basename(aws_path))
+                weightsdir_path, os.path.basename(aws_path))
             r = requests.get(aws_path, allow_redirects=True)
             with open(tar_path, 'wb') as tar_file:
                 tar_file.write(r.content)
-            tar = tarfile.open(tar_path)
             with tarfile.open(tar_path) as tar:
                 tar.extractall(path=weightsdir_path)
             os.remove(tar_path)
