@@ -130,16 +130,19 @@ class TestPreselectedLayerTemporal:
 class TestBrainTranslated:
     @pytest.mark.parametrize(['model_identifier', 'expected_score', 'attach_hook'], [
         ('alexnet', .59033, True),
+        ('resnet18-supervised', .596013, False),
+        ('resnet18-la', .60152, False),
+        ('resnet18-ae', .373528, False),
         ('CORnet-S', .600, False),
     ])
-    def test_Majaj2015ITpls(self, model_identifier, expected_score, attach_hook):
+    def test_MajajHong2015ITpls(self, model_identifier, expected_score, attach_hook):
         model = brain_translated_pool[model_identifier]
         if attach_hook:
             activations_model = model.layer_model._layer_model.activations_model
             LayerPCA.hook(activations_model, n_components=1000)
             identifier = activations_model.identifier + "-pca_1000"
             activations_model.identifier = identifier
-        score = score_model(model_identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
+        score = score_model(model_identifier, 'dicarlo.MajajHong2015.IT-pls', model=model)
         assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
 
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
