@@ -49,6 +49,22 @@ def unsup_vvs_res18():
     return ['encode_1.conv'] + [f'encode_{i}' for i in range(1, 10)]
 
 
+def unsup_vvs_pt_res18():
+    return ['relu', 'maxpool'] +\
+           ['layer1.0.relu', 'layer1.1.relu'] +\
+           ['layer2.0.relu', 'layer2.1.relu'] +\
+           ['layer3.0.relu', 'layer3.1.relu'] +\
+           ['layer4.0.relu', 'layer4.1.relu']
+
+
+def prednet():
+    num_layers = 4
+    return ['A_%i' % i for i in range(1, num_layers)] \
+            + ['Ahat_%i' % i for i in range(1, num_layers)] \
+            + ['E_%i' % i for i in range(1, num_layers)] \
+            + ['R_%i' % i for i in range(1, num_layers)]
+
+
 layers = {
     'alexnet':
         [  # conv-relu-[pool]{1,2,3,4,5}
@@ -208,6 +224,13 @@ layers = {
     'resnet18-ir': unsup_vvs_res18(),
     'resnet18-ae': unsup_vvs_res18(),
     'resnet18-cpc': unsup_vvs_res18(),
+    'resnet18-color': unsup_vvs_res18(),
+    'resnet18-rp': unsup_vvs_res18(),
+    'resnet18-depth': unsup_vvs_res18(),
+    'prednet': prednet(),
+    'resnet18-simclr': unsup_vvs_res18()[1:],
+    'resnet18-deepcluster': unsup_vvs_pt_res18(),
+    'resnet18-cmc': unsup_vvs_pt_res18(),
 }
 
 model_layers = ModelLayers(layers)
