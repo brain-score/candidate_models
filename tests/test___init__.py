@@ -33,21 +33,21 @@ class TestPreselectedLayer:
     def test_alexnet_conv2_V4(self):
         model = self.layer_candidate('alexnet', layer='features.5', region='V4', pca_components=1000)
         score = score_model(model_identifier='alexnet-f5-pca_1000', model=model,
-                            benchmark_identifier='dicarlo.Majaj2015.V4-pls')
+                            benchmark_identifier='dicarlo.MajajHong2015.V4-pls')
         assert score.raw.sel(aggregation='center').max() == approx(0.633703, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_alexnet_conv5_V4(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='V4', pca_components=1000)
         score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
-                            benchmark_identifier='dicarlo.Majaj2015.V4-pls')
+                            benchmark_identifier='dicarlo.MajajHong2015.V4-pls')
         assert score.raw.sel(aggregation='center') == approx(0.490769, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_alexnet_conv5_IT(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
         score = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
-                            benchmark_identifier='dicarlo.Majaj2015.IT-pls')
+                            benchmark_identifier='dicarlo.MajajHong2015.IT-pls')
         assert score.raw.sel(aggregation='center') == approx(0.590345, abs=0.005)
 
     @pytest.mark.memory_intense
@@ -55,16 +55,16 @@ class TestPreselectedLayer:
         model = self.layer_candidate('alexnet', layer='features.6', region='IT', pca_components=None)
         np.random.seed(123)
         score = score_model(model_identifier='alexnet-f6', model=model,
-                            benchmark_identifier='dicarlo.Majaj2015.IT-mask')
+                            benchmark_identifier='dicarlo.MajajHong2015.IT-mask')
         assert score.raw.sel(aggregation='center') == approx(0.607037, abs=0.005)
 
     @pytest.mark.memory_intense
     def test_repeat_same_result(self):
         model = self.layer_candidate('alexnet', layer='features.12', region='IT', pca_components=1000)
         score1 = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
-                             benchmark_identifier='dicarlo.Majaj2015.IT-pls')
+                             benchmark_identifier='dicarlo.MajajHong2015.IT-pls')
         score2 = score_model(model_identifier='alexnet-f12-pca_1000', model=model,
-                             benchmark_identifier='dicarlo.Majaj2015.IT-pls')
+                             benchmark_identifier='dicarlo.MajajHong2015.IT-pls')
         assert (score1 == score2).all()
 
     def test_newmodel_pytorch(self):
@@ -104,7 +104,7 @@ class TestPreselectedLayer:
         candidate = TemporalIgnore(candidate)
 
         ceiled_score = score_model(model_identifier=model_id, model=candidate,
-                                   benchmark_identifier='dicarlo.Majaj2015.IT-pls')
+                                   benchmark_identifier='dicarlo.MajajHong2015.IT-pls')
         score = ceiled_score.raw
         assert score.sel(aggregation='center') == approx(.0820823, abs=.01)
 
@@ -132,14 +132,14 @@ class TestBrainTranslated:
         ('alexnet', .59033, True),
         ('CORnet-S', .600, False),
     ])
-    def test_Majaj2015ITpls(self, model_identifier, expected_score, attach_hook):
+    def test_MajajHong2015ITpls(self, model_identifier, expected_score, attach_hook):
         model = brain_translated_pool[model_identifier]
         if attach_hook:
             activations_model = model.layer_model._layer_model.activations_model
             LayerPCA.hook(activations_model, n_components=1000)
             identifier = activations_model.identifier + "-pca_1000"
             activations_model.identifier = identifier
-        score = score_model(model_identifier, 'dicarlo.Majaj2015.IT-pls', model=model)
+        score = score_model(model_identifier, 'dicarlo.MajajHong2015.IT-pls', model=model)
         assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
 
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [

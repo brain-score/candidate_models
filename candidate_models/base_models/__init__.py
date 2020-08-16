@@ -8,8 +8,6 @@ import numpy as np
 
 from brainscore.utils import LazyLoad, fullname
 from candidate_models import s3
-from candidate_models.base_models.cornet import cornet
-from candidate_models.base_models.convrnn.convrnn_base import load_median_model
 from model_tools.activations import PytorchWrapper, KerasWrapper
 from brainscore.submission.utils import UniqueKeyDict
 from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlimWrapper
@@ -17,12 +15,12 @@ from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlim
 _logger = logging.getLogger(__name__)
 
 
-def pytorch_model(function, image_size):
+def torchvision_model(identifier, image_size):
     module = import_module(f'torchvision.models')
-    model_ctr = getattr(module, function)
+    model_ctr = getattr(module, identifier)
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
-    wrapper = PytorchWrapper(identifier=function, model=model_ctr(pretrained=True), preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=identifier, model=model_ctr(pretrained=True), preprocessing=preprocessing)
     wrapper.image_size = image_size
     return wrapper
 
@@ -351,12 +349,12 @@ class BaseModelPool(UniqueKeyDict):
         super(BaseModelPool, self).__init__(reload=True)
 
         _key_functions = {
-            'alexnet': lambda: pytorch_model('alexnet', image_size=224),
-            'squeezenet1_0': lambda: pytorch_model('squeezenet1_0', image_size=224),
-            'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
-            'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
-            'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
-            'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=224),
+            'alexnet': lambda: torchvision_model('alexnet', image_size=224),
+            'squeezenet1_0': lambda: torchvision_model('squeezenet1_0', image_size=224),
+            'squeezenet1_1': lambda: torchvision_model('squeezenet1_1', image_size=224),
+            'resnet-18': lambda: torchvision_model('resnet18', image_size=224),
+            'resnet-34': lambda: torchvision_model('resnet34', image_size=224),
+            'resnet-50-pytorch': lambda: torchvision_model('resnet50', image_size=224),
             'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
 
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
