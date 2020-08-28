@@ -115,6 +115,22 @@ layers = {
          'layer3.4.conv3', 'layer3.5.conv3'] +
         ['layer4.0.downsample.0', 'layer4.1.conv3', 'layer4.2.conv3'] +
         ['avgpool'],
+    'voneresnet-50':
+        ['vone_block'] +
+        ['model.layer1.0.conv3', 'model.layer1.1.conv3', 'model.layer1.2.conv3'] +
+        ['model.layer2.0.downsample.0', 'model.layer2.1.conv3', 'model.layer2.2.conv3', 'model.layer2.3.conv3'] +
+        ['model.layer3.0.downsample.0', 'model.layer3.1.conv3', 'model.layer3.2.conv3', 'model.layer3.3.conv3',
+         'model.layer3.4.conv3', 'model.layer3.5.conv3'] +
+        ['model.layer4.0.downsample.0', 'model.layer4.1.conv3', 'model.layer4.2.conv3'] +
+        ['model.avgpool'],
+    'voneresnet-50-robust':
+        ['vone_block'] +
+        ['model.layer1.0.conv3', 'model.layer1.1.conv3', 'model.layer1.2.conv3'] +
+        ['model.layer2.0.downsample.0', 'model.layer2.1.conv3', 'model.layer2.2.conv3', 'model.layer2.3.conv3'] +
+        ['model.layer3.0.downsample.0', 'model.layer3.1.conv3', 'model.layer3.2.conv3', 'model.layer3.3.conv3',
+         'model.layer3.4.conv3', 'model.layer3.5.conv3'] +
+        ['model.layer4.0.downsample.0', 'model.layer4.1.conv3', 'model.layer4.2.conv3'] +
+        ['model.avgpool'],
     'resnet-50-robust':
         ['conv1'] +
         ['layer1.0.conv3', 'layer1.1.conv3', 'layer1.2.conv3'] +
