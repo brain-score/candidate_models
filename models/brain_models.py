@@ -35,6 +35,8 @@ def get_model(name):
 
 
 if __name__ == '__main__':
+    st = ' '
+    print(st.join(get_model_list()))
     # Use this method to ensure the correctness of the brain model implementations.
     # It executes a mock run of brain-score benchmarks.
     check_models.check_brain_models(__name__)

@@ -1,17 +1,16 @@
 from candidate_models.base_models import base_model_pool
 from candidate_models.model_commitments import model_layers
 from model_tools.check_submission import check_models
-from models.bibtex_entries import entries
+from models.bibtex_entries import find_entry
 
 
 def get_bibtex(model_identifier):
-    if model_identifier in entries:
-        return entries[model_identifier]
-    return ''
+    return find_entry(model_identifier)
 
 
 def get_model_list():
-    return list(base_model_pool.keys())
+    return ['vgg-16', 'resnet-101_v1']
+    # return list(base_model_pool.keys())
 
 
 def get_model(name):

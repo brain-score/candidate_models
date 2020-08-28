@@ -15,6 +15,7 @@ title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Re
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
 year = {2018},
 month={sep},
+url = {https://papers.nips.cc/paper/9441-brain-like-object-recognition-with-high-performing-shallow-recurrent-anns}
 }
 ",0.747,
 CORnet-R,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
@@ -22,6 +23,7 @@ title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Re
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
 year = {2018},
 month={sep},
+url = {https://www.biorxiv.org/content/early/2018/09/04/408385}
 }
 ",0.56,
 CORnet-Z,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
@@ -29,6 +31,7 @@ title = {CORnet: Modeling the Neural and Behavioral Mechanisms of Core Object Re
 author = {Jonas Kubilius and Martin Schrimpf and Aran Nayebi and Daniel Bear and Daniel L. K. Yamins and James J. DiCarlo},
 year = {2018},
 month={sep},
+url = {https://www.biorxiv.org/content/early/2018/09/04/408385},
 }
 ",0.47,
 CORnet-R2,https://www.biorxiv.org/content/early/2018/09/04/408385,"@incollection{Kubilius2018CORnet,
@@ -43,14 +46,16 @@ squeezenet1_0,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
     Journal = {arXiv:1602.07360},
     Year = {2016},
-    Month = {feb}
+    Month = {feb},
+    url = {https://arxiv.org/abs/1602.07360}
 }",0.575,
 squeezenet1_1,https://arxiv.org/abs/1602.07360,"@article{SqueezeNet,
     Author = {Forrest N. Iandola and Song Han and Matthew W. Moskewicz and Khalid Ashraf and William J. Dally and Kurt Keutzer},
     Title = {SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and $<$0.5MB model size},
     Journal = {arXiv:1602.07360},
     Year = {2016},
-    Month = {feb}
+    Month = {feb},
+    url = {https://arxiv.org/abs/1602.07360}
 }",0.575,
 xception,https://arxiv.org/abs/1610.02357,"@article{DBLP:journals/corr/Chollet16a,
   author    = {Fran{\c{c}}ois Chollet},
@@ -401,6 +406,7 @@ vggface,https://www.robots.ox.ac.uk/~vgg/publications/2015/Parkhi15/parkhi15.pdf
   booktitle={British Machine Vision Conference},
   year={2015},
   month = {sep},
+  url = {https://www.robots.ox.ac.uk/~vgg/publications/2015/Parkhi15/parkhi15.pdf}
 }",,
 bagnet9,https://openreview.net/forum?id=SkfMWhAqYQ,"@inproceedings{
 brendel2018approximating,
@@ -1353,28 +1359,32 @@ author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaim
 title = {Exploring the Limits of Weakly Supervised Pretraining},
 booktitle = {The European Conference on Computer Vision (ECCV)},
 month = {sep},
-year = {2018}
+year = {2018},
+url = {https://arxiv.org/pdf/1906.06423.pdf}
 } ",0.822,0.964
 resnext101_32x8d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
 author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
 title = {Exploring the Limits of Weakly Supervised Pretraining},
 booktitle = {The European Conference on Computer Vision (ECCV)},
 month = {sep},
-year = {2018}
+year = {2018},
+url = {https://arxiv.org/pdf/1906.06423.pdf},
 } ",0.842,0.972
 resnext101_32x16d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
 author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
 title = {Exploring the Limits of Weakly Supervised Pretraining},
 booktitle = {The European Conference on Computer Vision (ECCV)},
 month = {sep},
-year = {2018}
+year = {2018},
+url = {http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html}
 } ",0.851,0.975
 resnext101_32x32d_wsl,http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html,"@InProceedings{Mahajan2018ECCV,
 author = {Mahajan, Dhruv and Girshick, Ross and Ramanathan, Vignesh and He, Kaiming and Paluri, Manohar and Li, Yixuan and Bharambe, Ashwin and van der Maaten, Laurens},
 title = {Exploring the Limits of Weakly Supervised Pretraining},
 booktitle = {The European Conference on Computer Vision (ECCV)},
 month = {sep},
-year = {2018}
+year = {2018},
+url = {http://openaccess.thecvf.com/content_ECCV_2018/html/Dhruv_Mahajan_Exploring_the_Limits_ECCV_2018_paper.html}
 } ",0.854,0.976
 fixres_resnext101_32x48d_wsl,http://papers.nips.cc/paper/9035-fixing-the-train-test-resolution-discrepancy,"@incollection{NIPS2019_9035,
 title = {Fixing the train-test resolution discrepancy},

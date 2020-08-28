@@ -17,7 +17,7 @@ requirements = [
     "tqdm",
     "gitpython",
     "torch",
-    "keras",
+    "keras==2.3.1",
     "pandas==0.25.3",
     "tensorflow==1.15",
     "Pillow",

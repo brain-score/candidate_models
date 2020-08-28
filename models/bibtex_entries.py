@@ -1,17 +1,19 @@
+import csv
+import os
+
+entries = {}
 
 
+def find_entry(model):
+    if len(entries) == 0:
+        with open(f'{os.path.dirname(__file__)}/../candidate_models/base_models/models.csv') as refs:
+            csv_reader = csv.reader(refs, delimiter=',')
+            line_count = 0
+            for row in csv_reader:
+                if line_count > 0:
+                    entries[row[0]] = row[2]
+                line_count += 1
 
-
-entries = {
-    'alexnet': """@incollection{NIPS2012_4824,
-                title = {ImageNet Classification with Deep Convolutional Neural Networks},
-                author = {Alex Krizhevsky and Sutskever, Ilya and Hinton, Geoffrey E},
-                booktitle = {Advances in Neural Information Processing Systems 25},
-                editor = {F. Pereira and C. J. C. Burges and L. Bottou and K. Q. Weinberger},
-                pages = {1097--1105},
-                year = {2012},
-                publisher = {Curran Associates, Inc.},
-                url = {http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf}
-                }""",
-    'next': '...'
-}
+    if model in entries:
+        return entries[model]
+    return ''

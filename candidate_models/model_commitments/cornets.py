@@ -65,7 +65,7 @@ class CORnetCommitment(BrainModel):
             return self.behavior_model.look_at(stimuli)
         else:
             # cache, since piecing times together is not too fast unfortunately
-            return self.look_at_cached(self.identifier, stimuli.name, stimuli)
+            return self.look_at_cached(self.identifier, stimuli.identifier, stimuli)
 
     @store(identifier_ignore=['stimuli'])
     def look_at_cached(self, model_identifier, stimuli_identifier, stimuli):
