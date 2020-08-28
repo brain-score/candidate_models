@@ -9,8 +9,7 @@ def get_bibtex(model_identifier):
 
 
 def get_model_list():
-    return ['vgg-16', 'resnet-101_v1']
-    # return list(base_model_pool.keys())
+    return list(base_model_pool.keys())
 
 
 def get_model(name):
