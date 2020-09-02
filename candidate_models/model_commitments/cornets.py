@@ -15,6 +15,14 @@ from result_caching import store
 
 _logger = logging.getLogger(__name__)
 
+CORNET_S_TIMEMAPPING = {
+        'V1': (50, 100, 1),
+        'V2': (70, 100, 2),
+        # 'V2': (20, 50, 2),  # MS: This follows from the movshon anesthesized-monkey recordings, so might not hold up
+        'V4': (90, 50, 4),
+        'IT': (100, 100, 2),
+    }
+
 class CORnetCommitment(BrainModel):
     """
     CORnet commitment where only the model interface is implemented and behavioral readouts are attached.
@@ -52,6 +60,7 @@ class CORnetCommitment(BrainModel):
         return self._visual_degrees
 
     def start_recording(self, recording_target, time_bins):
+        self.recording_target = recording_target
         self.recording_layers = [layer for layer in self.layers if layer.startswith(recording_target)]
         self.recording_time_bins = time_bins
 
@@ -71,7 +80,10 @@ class CORnetCommitment(BrainModel):
     def look_at_cached(self, model_identifier, stimuli_identifier, stimuli):
         responses = self.activations_model(stimuli, layers=self.recording_layers)
         # map time
-        regions = set(responses['region'].values)
+        if hasattr(self, 'recording_target'):
+            regions = set([self.recording_target])
+        else:
+            regions = set(responses['region'].values)
         if len(regions) > 1:
             raise NotImplementedError("cannot handle more than one simultaneous region")
         region = list(regions)[0]
@@ -142,13 +154,7 @@ def cornet_z_brainmodel():
 
 def cornet_s_brainmodel():
     # map region -> (time_start, time_step_size, timesteps)
-    time_mappings = {
-        'V1': (50, 100, 1),
-        'V2': (70, 100, 2),
-        # 'V2': (20, 50, 2),  # MS: This follows from the movshon anesthesized-monkey recordings, so might not hold up
-        'V4': (90, 50, 4),
-        'IT': (100, 100, 2),
-    }
+    time_mappings = CORNET_S_TIMEMAPPING
     return CORnetCommitment(identifier='CORnet-S', activations_model=cornet('CORnet-S'),
                             layers=['V1.output-t0'] +
                                    [f'{area}.output-t{timestep}'
