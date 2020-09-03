@@ -22,6 +22,7 @@ requirements = [
     "tensorflow==1.15",
     "Pillow",
     "cornet @ git+https://github.com/dicarlolab/CORnet",
+    "vonenet @ git+https://github.com/dicarlolab/vonenet",
     "bagnets @ git+https://github.com/mschrimpf/bag-of-local-features-models.git",
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
     "Fixing-the-train-test-resolution-discrepancy-scripts @ git+https://github.com/mschrimpf/FixRes.git",
