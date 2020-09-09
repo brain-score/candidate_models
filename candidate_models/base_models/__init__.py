@@ -15,12 +15,12 @@ from model_tools.activations.tensorflow import TensorflowWrapper, TensorflowSlim
 _logger = logging.getLogger(__name__)
 
 
-def pytorch_model(function, image_size):
+def torchvision_model(identifier, image_size):
     module = import_module(f'torchvision.models')
-    model_ctr = getattr(module, function)
+    model_ctr = getattr(module, identifier)
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
-    wrapper = PytorchWrapper(identifier=function, model=model_ctr(pretrained=True), preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=identifier, model=model_ctr(pretrained=True), preprocessing=preprocessing)
     wrapper.image_size = image_size
     return wrapper
 
@@ -248,6 +248,32 @@ def texture_vs_shape(model_identifier, model_name):
     return wrapper
 
 
+def voneresnet(model_name='resnet50'):
+    from vonenet import get_model
+    model = get_model(model_name)
+    model = model.module
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=224,
+                                      normalize_mean=(0.5, 0.5, 0.5), normalize_std=(0.5, 0.5, 0.5))
+    from candidate_models.base_models.stochastic import StochasticPytorchWrapper
+    wrapper = StochasticPytorchWrapper(identifier=model_name, model=model, preprocessing=preprocessing)
+    wrapper.image_size = 224
+    return wrapper
+
+
+def vonecornet(model_name='cornets'):
+    from vonenet import get_model
+    model = get_model(model_name)
+    model = model.module
+    from model_tools.activations.pytorch import load_preprocess_images
+    preprocessing = functools.partial(load_preprocess_images, image_size=224,
+                                      normalize_mean=(0.5, 0.5, 0.5), normalize_std=(0.5, 0.5, 0.5))
+    from candidate_models.base_models.stochastic import StochasticTemporalPytorchWrapper
+    wrapper = StochasticTemporalPytorchWrapper(identifier=model_name, model=model, preprocessing=preprocessing)
+    wrapper.image_size = 224
+    return wrapper
+
+
 def robust_model(function, image_size):
     from urllib import request
     import torch
@@ -273,7 +299,7 @@ def robust_model(function, image_size):
     weights = {k: weights[k] for k in list(weights.keys())[2:]}
     model.load_state_dict(weights)
     # wrap model with pytorch wrapper
-    wrapper = PytorchWrapper(identifier=function, model=model, preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=function+'-robust', model=model, preprocessing=preprocessing)
     wrapper.image_size = image_size
     return wrapper
 
@@ -355,13 +381,15 @@ class BaseModelPool(UniqueKeyDict):
         super(BaseModelPool, self).__init__(reload=True)
 
         _key_functions = {
-            'alexnet': lambda: pytorch_model('alexnet', image_size=224),
-            'squeezenet1_0': lambda: pytorch_model('squeezenet1_0', image_size=224),
-            'squeezenet1_1': lambda: pytorch_model('squeezenet1_1', image_size=224),
-            'resnet-18': lambda: pytorch_model('resnet18', image_size=224),
-            'resnet-34': lambda: pytorch_model('resnet34', image_size=224),
-            'resnet-50-pytorch': lambda: pytorch_model('resnet50', image_size=224),
+            'alexnet': lambda: torchvision_model('alexnet', image_size=224),
+            'squeezenet1_0': lambda: torchvision_model('squeezenet1_0', image_size=224),
+            'squeezenet1_1': lambda: torchvision_model('squeezenet1_1', image_size=224),
+            'resnet-18': lambda: torchvision_model('resnet18', image_size=224),
+            'resnet-34': lambda: torchvision_model('resnet34', image_size=224),
+            'resnet-50-pytorch': lambda: torchvision_model('resnet50', image_size=224),
             'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
+            'voneresnet-50': lambda: voneresnet(model_name='resnet50'),
+            'voneresnet-50-robust': lambda: voneresnet(model_name='resnet50_at'),
 
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
             'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),
