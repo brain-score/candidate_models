@@ -365,6 +365,12 @@ def convrnn():
                              preprocessing_type='convrnn', image_size=224, image_resize=None)
 
 
+def unsupervised_vvs_model(identifier):
+    from candidate_models.base_models.unsupervised_vvs import ModelBuilder
+    build = ModelBuilder()
+    return build(identifier)
+
+
 class BaseModelPool(UniqueKeyDict):
     """
     Provides a set of standard models.
@@ -446,6 +452,19 @@ class BaseModelPool(UniqueKeyDict):
             'dcgan': lambda: dcgan("get_discriminator"),
 
             'convrnn_224': convrnn,
+
+            'resnet18-supervised': lambda: unsupervised_vvs_model('resnet18-supervised'),
+            'resnet18-local_aggregation': lambda: unsupervised_vvs_model('resnet18-la'),
+            'resnet18-instance_recognition': lambda: unsupervised_vvs_model('resnet18-ir'),
+            'resnet18-autoencoder': lambda: unsupervised_vvs_model('resnet18-ae'),
+            'resnet18-contrastive_predictive': lambda: unsupervised_vvs_model('resnet18-cpc'),
+            'resnet18-colorization': lambda: unsupervised_vvs_model('resnet18-color'),
+            'resnet18-relative_position': lambda: unsupervised_vvs_model('resnet18-rp'),
+            'resnet18-depth_prediction': lambda: unsupervised_vvs_model('resnet18-depth'),
+            'prednet': lambda: unsupervised_vvs_model('prednet'),
+            'resnet18-simclr': lambda: unsupervised_vvs_model('resnet18-simclr'),
+            'resnet18-deepcluster': lambda: unsupervised_vvs_model('resnet18-deepcluster'),
+            'resnet18-contrastive_multiview': lambda: unsupervised_vvs_model('resnet18-cmc'),
         }
         # MobileNets
         for version, multiplier, image_size in [
