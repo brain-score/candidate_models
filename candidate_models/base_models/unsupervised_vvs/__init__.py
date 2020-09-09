@@ -242,7 +242,10 @@ class ModelBuilder:
 
         def _do_sobel(images):
             device = torch.device("cpu")
-            images = torch.autograd.Variable(torch.from_numpy(images).cuda())
+            images = torch.from_numpy(images)
+            if torch.cuda.is_available():
+                images = images.cuda()
+            images = torch.autograd.Variable(images)
             images = sobel_filter(images)
             images = images.float().to(device).numpy()
             return images

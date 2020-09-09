@@ -220,17 +220,17 @@ layers = {
     'convrnn_224': ['logits'],
     # Unsupervised VVS
     'resnet18-supervised': unsup_vvs_res18(),
-    'resnet18-la': unsup_vvs_res18(),
-    'resnet18-ir': unsup_vvs_res18(),
-    'resnet18-ae': unsup_vvs_res18(),
-    'resnet18-cpc': unsup_vvs_res18(),
-    'resnet18-color': unsup_vvs_res18(),
-    'resnet18-rp': unsup_vvs_res18(),
-    'resnet18-depth': unsup_vvs_res18(),
+    'resnet18-local_aggregation': unsup_vvs_res18(),
+    'resnet18-instance_recognition': unsup_vvs_res18(),
+    'resnet18-autoencoder': unsup_vvs_res18(),
+    'resnet18-contrastive_predictive': unsup_vvs_res18(),
+    'resnet18-colorization': unsup_vvs_res18(),
+    'resnet18-relative_position': unsup_vvs_res18(),
+    'resnet18-depth_prediction': unsup_vvs_res18(),
     'prednet': prednet(),
     'resnet18-simclr': unsup_vvs_res18()[1:],
     'resnet18-deepcluster': unsup_vvs_pt_res18(),
-    'resnet18-cmc': unsup_vvs_pt_res18(),
+    'resnet18-contrastive_multiview': unsup_vvs_pt_res18(),
 }
 
 model_layers = ModelLayers(layers)

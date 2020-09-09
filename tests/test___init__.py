@@ -131,8 +131,8 @@ class TestBrainTranslated:
     @pytest.mark.parametrize(['model_identifier', 'expected_score', 'attach_hook'], [
         ('alexnet', .59033, True),
         ('resnet18-supervised', .596013, False),
-        ('resnet18-la', .60152, False),
-        ('resnet18-ae', .373528, False),
+        ('resnet18-local_aggregation', .60152, False),
+        ('resnet18-autoencoder', .373528, False),
         ('CORnet-S', .600, False),
     ])
     def test_MajajHong2015ITpls(self, model_identifier, expected_score, attach_hook):

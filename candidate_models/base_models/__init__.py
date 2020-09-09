@@ -426,17 +426,17 @@ class BaseModelPool(UniqueKeyDict):
             'convrnn_224': convrnn,
 
             'resnet18-supervised': lambda: unsupervised_vvs_model('resnet18-supervised'),
-            'resnet18-la': lambda: unsupervised_vvs_model('resnet18-la'),
-            'resnet18-ir': lambda: unsupervised_vvs_model('resnet18-ir'),
-            'resnet18-ae': lambda: unsupervised_vvs_model('resnet18-ae'),
-            'resnet18-cpc': lambda: unsupervised_vvs_model('resnet18-cpc'),
-            'resnet18-color': lambda: unsupervised_vvs_model('resnet18-color'),
-            'resnet18-rp': lambda: unsupervised_vvs_model('resnet18-rp'),
-            'resnet18-depth': lambda: unsupervised_vvs_model('resnet18-depth'),
+            'resnet18-local_aggregation': lambda: unsupervised_vvs_model('resnet18-la'),
+            'resnet18-instance_recognition': lambda: unsupervised_vvs_model('resnet18-ir'),
+            'resnet18-autoencoder': lambda: unsupervised_vvs_model('resnet18-ae'),
+            'resnet18-contrastive_predictive': lambda: unsupervised_vvs_model('resnet18-cpc'),
+            'resnet18-colorization': lambda: unsupervised_vvs_model('resnet18-color'),
+            'resnet18-relative_position': lambda: unsupervised_vvs_model('resnet18-rp'),
+            'resnet18-depth_prediction': lambda: unsupervised_vvs_model('resnet18-depth'),
             'prednet': lambda: unsupervised_vvs_model('prednet'),
             'resnet18-simclr': lambda: unsupervised_vvs_model('resnet18-simclr'),
             'resnet18-deepcluster': lambda: unsupervised_vvs_model('resnet18-deepcluster'),
-            'resnet18-cmc': lambda: unsupervised_vvs_model('resnet18-cmc'),
+            'resnet18-contrastive_multiview': lambda: unsupervised_vvs_model('resnet18-cmc'),
         }
         # MobileNets
         for version, multiplier, image_size in [
