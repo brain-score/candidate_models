@@ -17,7 +17,7 @@ requirements = [
     "tqdm",
     "gitpython",
     "torch",
-    "keras",
+    "keras==2.3.1",
     "pandas==0.25.3",
     "tensorflow==1.15",
     "Pillow",
@@ -29,6 +29,7 @@ requirements = [
     "dcgan @ git+https://github.com/franzigeiger/dcgan.git",
     "tfutils @ git+https://github.com/neuroailab/tfutils.git",
     "tnn @ git+https://github.com/neuroailab/tnn.git",
+    "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git@bs_latest",
 ]
 
 setup(

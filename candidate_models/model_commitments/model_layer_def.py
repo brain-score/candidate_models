@@ -28,18 +28,42 @@ def resnext101_layers():
              for block, block_units in enumerate([3, 4, 23, 3]) for unit in range(block_units)] +
             ['avgpool'])
 
+
 def mobilenet_v1():
     return ['Conv2d_0'] + list(itertools.chain(
         *[[f'Conv2d_{i + 1}_depthwise', f'Conv2d_{i + 1}_pointwise'] for i in range(13)])) + ['AvgPool_1a']
 
+
 def mobilenet_v2():
     return ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool']
 
+
 def bagnet():
     return (['relu'] +
-           [f'layer{layer + 1}.{block}.relu' for layer, blocks in
+            [f'layer{layer + 1}.{block}.relu' for layer, blocks in
              enumerate([2, 3, 5, 2]) for block in range(blocks + 1)] +
-           ['avgpool'] )
+            ['avgpool'])
+
+
+def unsup_vvs_res18():
+    return ['encode_1.conv'] + [f'encode_{i}' for i in range(1, 10)]
+
+
+def unsup_vvs_pt_res18():
+    return ['relu', 'maxpool'] +\
+           ['layer1.0.relu', 'layer1.1.relu'] +\
+           ['layer2.0.relu', 'layer2.1.relu'] +\
+           ['layer3.0.relu', 'layer3.1.relu'] +\
+           ['layer4.0.relu', 'layer4.1.relu']
+
+
+def prednet():
+    num_layers = 4
+    return ['A_%i' % i for i in range(1, num_layers)] \
+            + ['Ahat_%i' % i for i in range(1, num_layers)] \
+            + ['E_%i' % i for i in range(1, num_layers)] \
+            + ['R_%i' % i for i in range(1, num_layers)]
+
 
 layers = {
     'alexnet':
@@ -199,9 +223,9 @@ layers = {
         ['AvgPool_1a'],
     'mobilenet_v2': ['layer_1'] + [f'layer_{i + 1}/output' for i in range(1, 18)] + ['global_pool'],
     'basenet': ['basenet-layer_v4', 'basenet-layer_pit', 'basenet-layer_ait'],
-    'bagnet9':  bagnet(),
-    'bagnet17':  bagnet(),
-    'bagnet33':  bagnet(),
+    'bagnet9': bagnet(),
+    'bagnet17': bagnet(),
+    'bagnet33': bagnet(),
     'resnext101_32x8d_wsl': resnext101_layers(),
     'resnext101_32x16d_wsl': resnext101_layers(),
     'resnext101_32x32d_wsl': resnext101_layers(),
@@ -210,6 +234,19 @@ layers = {
     'dcgan': ['main.0', 'main.2', 'main.5', 'main.8', 'main.12'],
     # ConvRNNs
     'convrnn_224': ['logits'],
+    # Unsupervised VVS
+    'resnet18-supervised': unsup_vvs_res18(),
+    'resnet18-local_aggregation': unsup_vvs_res18(),
+    'resnet18-instance_recognition': unsup_vvs_res18(),
+    'resnet18-autoencoder': unsup_vvs_res18(),
+    'resnet18-contrastive_predictive': unsup_vvs_res18(),
+    'resnet18-colorization': unsup_vvs_res18(),
+    'resnet18-relative_position': unsup_vvs_res18(),
+    'resnet18-depth_prediction': unsup_vvs_res18(),
+    'prednet': prednet(),
+    'resnet18-simclr': unsup_vvs_res18()[1:],
+    'resnet18-deepcluster': unsup_vvs_pt_res18(),
+    'resnet18-contrastive_multiview': unsup_vvs_pt_res18(),
 }
 
 model_layers = ModelLayers(layers)
@@ -221,7 +258,6 @@ for sin_model in ['resnet50-SIN', 'resnet50-SIN_IN', 'resnet50-SIN_IN_IN']:
          for seq, bottlenecks in enumerate([3, 4, 6, 3], start=1)
          for bottleneck in range(bottlenecks)] + \
         ['avgpool']
-
 
 for version, multiplier, image_size in [
     # v1
@@ -238,7 +274,7 @@ for version, multiplier, image_size in [
     (2, 0.35, 224), (2, 0.35, 192), (2, 0.35, 160), (2, 0.35, 128), (2, 0.35, 96),
 ]:
     identifier = f"mobilenet_v{version}_{multiplier}_{image_size}"
-    if version ==1:
+    if version == 1:
         model_layers[identifier] = mobilenet_v1()
     else:
         model_layers[identifier] = mobilenet_v2()
