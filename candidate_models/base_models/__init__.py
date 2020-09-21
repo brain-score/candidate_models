@@ -256,7 +256,7 @@ def voneresnet(model_name='resnet50'):
     preprocessing = functools.partial(load_preprocess_images, image_size=224,
                                       normalize_mean=(0.5, 0.5, 0.5), normalize_std=(0.5, 0.5, 0.5))
     from candidate_models.base_models.stochastic import StochasticPytorchWrapper
-    wrapper = StochasticPytorchWrapper(identifier=model_name, model=model, preprocessing=preprocessing)
+    wrapper = StochasticPytorchWrapper(identifier='vone'+model_name, model=model, preprocessing=preprocessing)
     wrapper.image_size = 224
     return wrapper
 
@@ -269,7 +269,7 @@ def vonecornet(model_name='cornets'):
     preprocessing = functools.partial(load_preprocess_images, image_size=224,
                                       normalize_mean=(0.5, 0.5, 0.5), normalize_std=(0.5, 0.5, 0.5))
     from candidate_models.base_models.stochastic import StochasticTemporalPytorchWrapper
-    wrapper = StochasticTemporalPytorchWrapper(identifier=model_name, model=model, preprocessing=preprocessing)
+    wrapper = StochasticTemporalPytorchWrapper(identifier='vone'+model_name, model=model, preprocessing=preprocessing)
     wrapper.image_size = 224
     return wrapper
 
