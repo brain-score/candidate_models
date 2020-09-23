@@ -1,16 +1,14 @@
 import logging
-
 import numpy as np
-from brainscore.submission.utils import UniqueKeyDict
 from torch import nn
 from tqdm import tqdm
 from typing import Dict, Tuple
 
 from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
-from brainscore.model_interface import BrainModel
+from brainscore.submission.utils import UniqueKeyDict
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import cornet
-from model_tools.brain_transformation.behavior import BehaviorArbiter, LogitsBehavior, ProbabilitiesMapping
+from model_tools.brain_transformation import ModelCommitment
 from result_caching import store
 
 _logger = logging.getLogger(__name__)
@@ -23,7 +21,8 @@ CORNET_S_TIMEMAPPING = {
         'IT': (100, 100, 2),
     }
 
-class CORnetCommitment(BrainModel):
+
+class CORnetCommitment(ModelCommitment):
     """
     CORnet commitment where only the model interface is implemented and behavioral readouts are attached.
     Importantly, layer-region commitments do not occur due to the anatomical pre-mapping.
@@ -31,50 +30,29 @@ class CORnetCommitment(BrainModel):
     time-bin for the model.
     """
 
-    def __init__(self, identifier, activations_model, layers,
-                 time_mapping: Dict[str, Dict[int, Tuple[int, int]]], behavioral_readout_layer=None,
-                 visual_degrees=8):
+    def __init__(self, *args, time_mapping: Dict[str, Dict[int, Tuple[int, int]]], **kwargs):
         """
         :param time_mapping: mapping from region -> {model_timestep -> (time_bin_start, time_bin_end)}
         """
-        self.layers = layers
-        self.region_assemblies = {}
-        self.activations_model = activations_model
+        super(CORnetCommitment, self).__init__(*args, **kwargs)
         self.time_mapping = time_mapping
         self.recording_layers = None
         self.recording_time_bins = None
-        self.identifier = identifier
-
-        logits_behavior = LogitsBehavior(
-            identifier=identifier, activations_model=TemporalIgnore(activations_model))
-        behavioral_readout_layer = behavioral_readout_layer or layers[-1]
-        probabilities_behavior = ProbabilitiesMapping(
-            identifier=identifier, activations_model=TemporalIgnore(activations_model), layer=behavioral_readout_layer)
-        self.behavior_model = BehaviorArbiter({BrainModel.Task.label: logits_behavior,
-                                               BrainModel.Task.probabilities: probabilities_behavior})
-        self.do_behavior = False
-
-        self._visual_degrees = visual_degrees
-
-    def visual_degrees(self) -> int:
-        return self._visual_degrees
+        # deal with activations_model returning a time_bin
+        for key, executor in self.behavior_model.mapping.items():
+            executor.activations_model = TemporalIgnore(executor.activations_model)
 
     def start_recording(self, recording_target, time_bins):
         self.recording_target = recording_target
         self.recording_layers = [layer for layer in self.layers if layer.startswith(recording_target)]
         self.recording_time_bins = time_bins
 
-    def start_task(self, task: BrainModel.Task, *args, **kwargs):
-        if task != BrainModel.Task.passive:
-            self.behavior_model.start_task(task, *args, **kwargs)
-            self.do_behavior = True
-
-    def look_at(self, stimuli):
+    def look_at(self, stimuli, number_of_trials=1):
         if self.do_behavior:
-            return self.behavior_model.look_at(stimuli)
+            return super(CORnetCommitment, self).look_at(stimuli, number_of_trials=number_of_trials)
         else:
             # cache, since piecing times together is not too fast unfortunately
-            return self.look_at_cached(self.identifier, stimuli.identifier, stimuli)
+            return self.look_at_cached(self.identifier, stimuli.identifier, stimuli)  # ignore number_of_trials
 
     @store(identifier_ignore=['stimuli'])
     def look_at_cached(self, model_identifier, stimuli_identifier, stimuli):
