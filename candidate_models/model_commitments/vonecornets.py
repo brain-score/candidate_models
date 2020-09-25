@@ -16,6 +16,17 @@ class VOneCORnetCommitment(CORnetCommitment):
             self.recording_layers = [layer for layer in self.layers if recording_target in layer]
         self.recording_time_bins = time_bins
 
+    def look_at(self, stimuli, number_of_trials=1):
+        stimuli_identifier = stimuli.identifier
+        for trial_number in range(number_of_trials):
+            stimuli.identifier = stimuli_identifier + '-trial' + '{0:02d}'.format(trial_number)
+            if trial_number == 0:
+                activations = super().look_at(stimuli, number_of_trials=1)
+            else:
+                activations += super().look_at(stimuli, number_of_trials=1)
+        stimuli.identifier = stimuli_identifier
+        return activations/number_of_trials
+
 
 def vonecornet_s_brainmodel():
     # map region -> (time_start, time_step_size, timesteps)
