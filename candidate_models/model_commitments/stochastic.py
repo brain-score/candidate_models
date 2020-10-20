@@ -1,4 +1,7 @@
 from model_tools.brain_transformation import ModelCommitment
+import warnings
+from brainscore.utils import LazyLoad
+from brainscore.submission.utils import UniqueKeyDict
 
 
 class StochasticModelCommitment(ModelCommitment):
@@ -17,3 +20,24 @@ class StochasticModelCommitment(ModelCommitment):
                 activations += super().look_at(stimuli, number_of_trials=1)
         stimuli.identifier = stimuli_identifier
         return activations/number_of_trials
+
+
+class StochasticBrainPool(UniqueKeyDict):
+    def __init__(self, base_model_pool, model_layers, reload=True):
+        super(StochasticBrainPool, self).__init__(reload)
+        self.reload = True
+        for basemodel_identifier, activations_model in base_model_pool.items():
+            if basemodel_identifier not in model_layers:
+                warnings.warn(f"{basemodel_identifier} not found in model_layers")
+                continue
+            model_layer = model_layers[basemodel_identifier]
+
+            def load(identifier=basemodel_identifier, activations_model=activations_model, layers=model_layer):
+                assert hasattr(activations_model, 'reload')
+                activations_model.reload()
+                from candidate_models.model_commitments.stochastic import StochasticModelCommitment
+                brain_model = StochasticModelCommitment(identifier=identifier, activations_model=activations_model,
+                                                        layers=layers)
+                return brain_model
+
+            self[basemodel_identifier] = LazyLoad(load)
