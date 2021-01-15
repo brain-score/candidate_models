@@ -99,8 +99,8 @@ class TestPreselectedLayer:
         model_id = 'new_pytorch'
         activations_model = PytorchWrapper(model=MyModel(), preprocessing=preprocessing, identifier=model_id)
         layer = 'relu2'
-        candidate = LayerMappedModel(f"{model_id}-{layer}", activations_model=activations_model, visual_degrees=8)
-        candidate.commit('IT', layer)
+        candidate = LayerMappedModel(f"{model_id}-{layer}", activations_model=activations_model, visual_degrees=8,
+                                     region_layer_map={'IT': layer})
         candidate = TemporalIgnore(candidate)
 
         ceiled_score = score_model(model_identifier=model_id, model=candidate,
