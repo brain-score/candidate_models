@@ -7,7 +7,6 @@ with open('README.md') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "xarray<=0.12",
     "netcdf4==1.5.2",
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
@@ -27,7 +26,7 @@ requirements = [
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
     "Fixing-the-train-test-resolution-discrepancy-scripts @ git+https://github.com/mschrimpf/FixRes.git",
     "dcgan @ git+https://github.com/franzigeiger/dcgan.git",
-    "tfutils @ git+https://github.com/neuroailab/tfutils.git",
+    # "tfutils @ git+https://github.com/neuroailab/tfutils.git",
     "tnn @ git+https://github.com/neuroailab/tnn.git",
     "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git@bs_latest",
 ]
