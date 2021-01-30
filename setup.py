@@ -17,7 +17,6 @@ requirements = [
     "gitpython",
     "torch",
     "keras==2.3.1",
-    "pandas==0.25.3",
     "tensorflow==1.15",
     "Pillow",
     "cornet @ git+https://github.com/dicarlolab/CORnet",
