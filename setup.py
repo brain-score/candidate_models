@@ -7,7 +7,7 @@ with open('README.md') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "netcdf4==1.5.2",
+    "netcdf4",
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
