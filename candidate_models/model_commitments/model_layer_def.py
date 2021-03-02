@@ -73,20 +73,35 @@ def prednet():
 
 
 layers = {
-    'alexnet':
-        [  # conv-relu-[pool]{1,2,3,4,5}
-            'features.2', 'features.5', 'features.7', 'features.9', 'features.12',
-            'classifier.2', 'classifier.5'],  # fc-[relu]{6,7,8}
+    'alexnet': 
+        [f'features.{i}' for i in [1,2,4,5,7,9,11,12]] + 
+        [f'classifier.{i}' for i in [2,5]],  # fc-[relu]{6,7,8}
     'vgg-16': [f'block{i + 1}_pool' for i in range(5)] + ['fc1', 'fc2'],
     'vgg-19': [f'block{i + 1}_pool' for i in range(5)] + ['fc1', 'fc2'],
-    'vgg-11-pt': [f'features.{i}' for i in [1,2,4,5,7,9,10,12,14,15,17,19,20]] + ['classifier.1', 'classifier.4'],
-    'vgg-11-bn-pt': [f'features.{i}' for i in [2,3,6,7,10,13,14,17,20,21,24,27,28]] + ['classifier.1', 'classifier.4'],
-    'vgg-13-pt': [f'features.{i}' for i in [1,3,4,6,8,9,11,13,14,16,18,19,21,23,24]] + ['classifier.1', 'classifier.4'],
-    'vgg-13-bn-pt': [f'features.{i}' for i in [2,5,6,9,12,13,16,19,20,23,26,27,30,33,34]] + ['classifier.1', 'classifier.4'],
-    'vgg-16-pt': [f'features.{i}' for i in [1,3,4,6,8,9,11,13,15,16,18,20,21,23,25,27,29,30]] + ['classifier.1', 'classifier.4'],
-    'vgg-16-bn-pt': [f'features.{i}' for i in [2,5,6,9,12,13,16,19,22,23,26,29,32,33,36,39,42,43]] + ['classifier.1', 'classifier.4'],
-    'vgg-19-pt': [f'features.{i}' for i in [1,3,4,6,8,9,11,13,15,17,18,20,22,24,26,27,29,31,33,35,36]] + ['classifier.1', 'classifier.4'],
-    'vgg-19-bn-pt': [f'features.{i}' for i in [2,5,6,9,12,13,16,19,22,25,26,29,32,35,38,39,42,45,48,51,52]] + ['classifier.1', 'classifier.4'],
+    'vgg-11-pt': 
+        [f'features.{i}' for i in [1,2,4,5,7,9,10,12,14,15,17,19,20]] + 
+        ['classifier.1', 'classifier.4'],
+    'vgg-11-bn-pt': 
+        [f'features.{i}' for i in [2,3,6,7,10,13,14,17,20,21,24,27,28]] + 
+        ['classifier.1', 'classifier.4'],
+    'vgg-13-pt': 
+        [f'features.{i}' for i in [1,3,4,6,8,9,11,13,14,16,18,19,21,23,24]] + 
+        ['classifier.1', 'classifier.4'],
+    'vgg-13-bn-pt': 
+        [f'features.{i}' for i in [2,5,6,9,12,13,16,19,20,23,26,27,30,33,34]] + 
+        ['classifier.1', 'classifier.4'],
+    'vgg-16-pt': 
+        [f'features.{i}' for i in [1,3,4,6,8,9,11,13,15,16,18,20,21,23,25,27,29,30]] + 
+        ['classifier.1', 'classifier.4'],
+    'vgg-16-bn-pt': 
+        [f'features.{i}' for i in [2,5,6,9,12,13,16,19,22,23,26,29,32,33,36,39,42,43]] + 
+        ['classifier.1', 'classifier.4'],
+    'vgg-19-pt': 
+        [f'features.{i}' for i in [1,3,4,6,8,9,11,13,15,17,18,20,22,24,26,27,29,31,33,35,36]] + 
+        ['classifier.1', 'classifier.4'],
+    'vgg-19-bn-pt': 
+        [f'features.{i}' for i in [2,5,6,9,12,13,16,19,22,25,26,29,32,35,38,39,42,45,48,51,52]] + 
+        ['classifier.1', 'classifier.4'],
     'squeezenet1_0':
         ['features.' + layer for layer in
          # max pool + fire outputs (ignoring pools)
