@@ -7,8 +7,7 @@ with open('README.md') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "xarray<=0.12",
-    "netcdf4==1.5.2",
+    "netcdf4",
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
@@ -18,7 +17,6 @@ requirements = [
     "gitpython",
     "torch",
     "keras==2.3.1",
-    "pandas==0.25.3",
     "tensorflow==1.15",
     "Pillow",
     "cornet @ git+https://github.com/dicarlolab/CORnet",
@@ -27,7 +25,7 @@ requirements = [
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
     "Fixing-the-train-test-resolution-discrepancy-scripts @ git+https://github.com/mschrimpf/FixRes.git",
     "dcgan @ git+https://github.com/franzigeiger/dcgan.git",
-    "tfutils @ git+https://github.com/neuroailab/tfutils.git",
+    # "tfutils @ git+https://github.com/neuroailab/tfutils.git",
     "tnn @ git+https://github.com/neuroailab/tnn.git",
     "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git@bs_latest",
 ]
@@ -51,7 +49,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     test_suite='tests',
 )
