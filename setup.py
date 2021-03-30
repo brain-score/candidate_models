@@ -20,6 +20,7 @@ requirements = [
     "keras==2.3.1",
     "pandas==0.25.3",
     "tensorflow==1.15",
+    "h5py<3",  # keras/tensorflow versions do not work with h5py >=3 https://stackoverflow.com/a/64635871/2225200
     "Pillow",
     "cornet @ git+https://github.com/dicarlolab/CORnet",
     "vonenet @ git+https://github.com/dicarlolab/vonenet",
