@@ -134,6 +134,7 @@ class TestBrainTranslated:
         ('resnet18-local_aggregation', .60152, False),
         ('resnet18-autoencoder', .373528, False),
         ('CORnet-S', .600, False),
+        ('VOneCORnet-S', .610, False),
     ])
     def test_MajajHong2015ITpls(self, model_identifier, expected_score, attach_hook):
         model = brain_translated_pool[model_identifier]
@@ -161,6 +162,7 @@ class TestBrainTranslated:
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
         ('CORnet-S', .382),
         ('alexnet', .253),
+        ('VOneCORnet-S', .351538),
     ])
     def test_Rajalingham2018i2n(self, model_identifier, expected_score):
         model = brain_translated_pool[model_identifier]

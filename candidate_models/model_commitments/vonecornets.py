@@ -10,6 +10,7 @@ _logger = logging.getLogger(__name__)
 
 class VOneCORnetCommitment(CORnetCommitment):
     def start_recording(self, recording_target, time_bins):
+        self.recording_target = recording_target
         if recording_target == 'V1':
             self.recording_layers = ['vone_block.output-t0']
         else:
@@ -27,11 +28,12 @@ class VOneCORnetCommitment(CORnetCommitment):
         stimuli.identifier = stimuli_identifier
         return activations/number_of_trials
 
+    # def start_recording(self):
 
 def vonecornet_s_brainmodel():
     # map region -> (time_start, time_step_size, timesteps)
     time_mappings = CORNET_S_TIMEMAPPING
-    return VOneCORnetCommitment(identifier='CORnet-S', activations_model=vonecornet('cornets'),
+    return VOneCORnetCommitment(identifier='VOneCORnet-S', activations_model=vonecornet('cornets'),
                                 layers=['vone_block.output-t0'] + [f'model.{area}.output-t{timestep}'
                                                                    for area, timesteps in
                                                                    [('V2', range(2)), ('V4', range(4)), ('IT', range(2))]
