@@ -458,7 +458,6 @@ class BaseModelPool(UniqueKeyDict):
             'resnet18-relative_position': lambda: unsupervised_vvs_model('resnet18-rp'),
             'resnet18-depth_prediction': lambda: unsupervised_vvs_model('resnet18-depth'),
             'prednet': lambda: unsupervised_vvs_model('prednet'),
-            'resnet18-simclr': lambda: unsupervised_vvs_model('resnet18-simclr'),
             'resnet18-deepcluster': lambda: unsupervised_vvs_model('resnet18-deepcluster'),
             'resnet18-contrastive_multiview': lambda: unsupervised_vvs_model('resnet18-cmc'),
         }
