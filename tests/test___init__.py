@@ -150,6 +150,7 @@ class TestBrainTranslated:
         ('CORnet-S', .240888),
         ('CORnet-R2', .230859),
         ('alexnet', np.nan),
+        ('VOneCORnet-S', .23107),
     ])
     def test_candidate_Kar2019OST(self, model_identifier, expected_score):
         model = brain_translated_pool[model_identifier]
@@ -162,7 +163,7 @@ class TestBrainTranslated:
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
         ('CORnet-S', .382),
         ('alexnet', .253),
-        ('VOneCORnet-S', .351538),
+        ('VOneCORnet-S', .351538), # Should be updated once the ProbabilitiesMapping accepts multiple trials
     ])
     def test_Rajalingham2018i2n(self, model_identifier, expected_score):
         model = brain_translated_pool[model_identifier]
