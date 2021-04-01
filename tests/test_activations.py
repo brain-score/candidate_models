@@ -20,7 +20,6 @@ class TestActivations:
         'resnet18-relative_position',
         'resnet18-depth_prediction',
         'prednet',
-        'resnet18-simclr',
         'resnet18-deepcluster',
         'resnet18-contrastive_multiview',
     ])

@@ -128,6 +128,13 @@ class TestPreselectedLayerTemporal:
 @pytest.mark.private_access
 @pytest.mark.memory_intense
 class TestBrainTranslated:
+    def setup_method(self):
+        # reset graph to get variable names back
+        import keras
+        keras.backend.clear_session()
+        import tensorflow as tf
+        tf.compat.v1.reset_default_graph()
+
     @pytest.mark.parametrize(['model_identifier', 'expected_score', 'attach_hook'], [
         ('alexnet', .59033, True),
         ('resnet18-supervised', .596013, False),
