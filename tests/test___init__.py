@@ -22,8 +22,8 @@ class TestPreselectedLayer:
             if pca_components:
                 LayerPCA.hook(activations_model, n_components=pca_components)
                 activations_model.identifier += "-pca_1000"
-            model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model, visual_degrees=8)
-            model.commit(region, layer)
+            model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model, visual_degrees=8,
+                                     region_layer_map={region: layer})
             model = TemporalIgnore(model)
             return model
 
@@ -107,22 +107,6 @@ class TestPreselectedLayer:
                                    benchmark_identifier='dicarlo.MajajHong2015.IT-pls')
         score = ceiled_score.raw
         assert score.sel(aggregation='center') == approx(.0820823, abs=.01)
-
-
-@pytest.mark.private_access
-class TestPreselectedLayerTemporal:
-    def layer_candidate(self, model_name, layer, region, pca_components: Union[None, int] = 1000):
-        def load(model_name=model_name, layer=layer, region=region, pca_components=pca_components):
-            activations_model = base_model_pool[model_name]
-            if pca_components:
-                LayerPCA.hook(activations_model, n_components=pca_components)
-                activations_model.identifier += "-pca_1000"
-            model = LayerMappedModel(f"{model_name}-{layer}", activations_model=activations_model)
-            model = TemporalIgnore(model)
-            model.commit(region, layer)
-            return model
-
-        return LazyLoad(load)  # lazy-load to avoid loading all models right away
 
 
 @pytest.mark.private_access
