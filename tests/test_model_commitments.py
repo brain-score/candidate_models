@@ -11,6 +11,9 @@ class TestBestLayers:
     ])
     def test(self, model_identifier, expected):
         model = brain_translated_pool[model_identifier]
-        for region in expected:  # need to first initialize mapping (only run lazily)
-            model.start_recording(region, [(70, 170)])
-        assert model.layer_model.region_layer_map == expected
+        mismatch = {}
+        for region, expected_layer in expected.items():
+            actual_layer = model.layer_model.region_layer_map[region]
+            if actual_layer != expected_layer:
+                mismatch[region] = f"expected {expected_layer}, got {actual_layer}"
+        assert not mismatch, f"mismatched mapping: {mismatch}"
