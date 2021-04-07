@@ -27,7 +27,7 @@ requirements = [
     "dcgan @ git+https://github.com/franzigeiger/dcgan.git",
     # "tfutils @ git+https://github.com/neuroailab/tfutils.git",
     "tnn @ git+https://github.com/neuroailab/tnn.git",
-    "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git@bs_latest",
+    "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git",
 ]
 
 setup(
