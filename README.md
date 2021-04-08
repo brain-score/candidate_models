@@ -128,3 +128,21 @@ if i != len(conv_defs['spec']) - 1 or multiplier >= 1:
 ```
 This is already done in [@qbilius' fork of tensorflow/models](https://github.com/qbilius/models).
 </details>
+
+
+<details>
+<summary>Installation error due to version mismatch after re-submission.</summary>
+
+Error message e.g. 
+```
+ERROR: Cannot install brain-score and candidate-models==0.1.0 because these package versions have conflicting dependencies.
+The conflict is caused by:
+    candidate-models 0.1.0 depends on pandas==0.25.3
+    brainio-base 0.1.0 depends on pandas>=1.2.0
+```
+
+This can happen when re-submitting a model because the underlying submission.zip might point to versions that were okay at the time, but are in conflict after updates to the brain-score framework. For instance, old versions of candidate-models specified pandas==0.25.3 which was removed in newer versions and leads to old versions being incompatible with newer specifications of pandas in BrainIO.
+
+The best solution is to re-submit a zip file without those version conflicts. Ideally submissions should avoid specifying any versions themselves as much as possible to prevent this error.
+We have also been updating the zip files internally on the server, but this is not a long-term solution.
+</details>
