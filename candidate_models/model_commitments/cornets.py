@@ -90,7 +90,7 @@ class CORnetCommitment(ModelCommitment):
             }, dims=bin_responses.dims)
             time_responses.append(bin_responses)
         responses = merge_data_arrays(time_responses)
-        responses = fix_timebin_naming(responses)
+        responses = fix_timebin_naming(responses)  # work around xarray merge bug introduced in 0.16.2
         return responses
 
 
