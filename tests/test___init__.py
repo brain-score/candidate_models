@@ -156,6 +156,7 @@ class TestBrainTranslated:
         ('alexnet', .253),
         ('VOneCORnet-S', .356),
         ('voneresnet-50', .371),
+        ('voneresnet-50-robust', .386),
     ])
     def test_Rajalingham2018i2n(self, model_identifier, expected_score):
         model = brain_translated_pool[model_identifier]
