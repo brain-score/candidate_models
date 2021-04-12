@@ -494,14 +494,14 @@ class BaseModelPool(UniqueKeyDict):
             self[identifier] = LazyLoad(function)
 
 
-class StochasticModelPool(UniqueKeyDict):
+class VOneNetModelPool(UniqueKeyDict):
     """
     Provides a set of stochastic models.
     Each entry maps from `name` to an activations extractor.
     """
 
     def __init__(self):
-        super(StochasticModelPool, self).__init__(reload=True)
+        super(VOneNetModelPool, self).__init__(reload=True)
 
         _key_functions = {
             'voneresnet-50': lambda: voneresnet(model_name='resnet50'),
@@ -514,4 +514,4 @@ class StochasticModelPool(UniqueKeyDict):
 
 
 base_model_pool = BaseModelPool()
-stochastic_model_pool = StochasticModelPool()
+vonenet_model_pool = VOneNetModelPool()

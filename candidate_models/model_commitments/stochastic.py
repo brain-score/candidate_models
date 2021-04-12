@@ -20,13 +20,10 @@ class StochasticModelCommitment(ModelCommitment):
                                                         layers=layers, region_layer_map=region_layer_map,
                                                         visual_degrees=visual_degrees)
 
-
     def look_at(self, stimuli, number_of_trials=1):
         stimuli_identifier = stimuli.identifier
-        print(number_of_trials)
         for trial_number in range(number_of_trials):
             stimuli.identifier = stimuli_identifier + '-trial' + f'{trial_number:03d}'
-            print(stimuli.identifier)
             if trial_number == 0:
                 activations = super().look_at(stimuli, number_of_trials=1)
                 if not activations.values.flags['WRITEABLE']:
@@ -35,6 +32,13 @@ class StochasticModelCommitment(ModelCommitment):
                 activations += super().look_at(stimuli, number_of_trials=1)
         stimuli.identifier = stimuli_identifier
         return activations/number_of_trials
+
+
+class VOneNetModelCommitment(StochasticModelCommitment):
+    def __init__(self, identifier, activations_model, layers, visual_degrees=8):
+        super(VOneNetModelCommitment, self).__init__(identifier=identifier, activations_model=activations_model,
+                                                            layers=layers, visual_degrees=visual_degrees)
+        self.layer_model.region_layer_map['V1'] = 'vone_block.output'
 
 
 class StochasticLayerSelection(LayerSelection):
@@ -56,10 +60,8 @@ class StochasticLayerScores(LayerScores):
 class StochasticLayerMappedModel(LayerMappedModel):
     def run_activations(self, stimuli, layers, number_of_trials):
         stimuli_identifier = stimuli.identifier
-        print(number_of_trials)
         for trial_number in range(number_of_trials):
             stimuli.identifier = stimuli_identifier + '-trial' + f'{trial_number:03d}'
-            print(stimuli.identifier)
             if trial_number == 0:
                 activations = self.activations_model(stimuli, layers=layers)
             else:
@@ -68,9 +70,9 @@ class StochasticLayerMappedModel(LayerMappedModel):
         return activations / number_of_trials
 
 
-class StochasticBrainPool(UniqueKeyDict):
+class VOneNetBrainPool(UniqueKeyDict):
     def __init__(self, base_model_pool, model_layers, reload=True):
-        super(StochasticBrainPool, self).__init__(reload)
+        super(VOneNetBrainPool, self).__init__(reload)
         self.reload = True
         for basemodel_identifier, activations_model in base_model_pool.items():
             if basemodel_identifier not in model_layers:
@@ -81,9 +83,8 @@ class StochasticBrainPool(UniqueKeyDict):
             def load(identifier=basemodel_identifier, activations_model=activations_model, layers=model_layer):
                 assert hasattr(activations_model, 'reload')
                 activations_model.reload()
-                from candidate_models.model_commitments.stochastic import StochasticModelCommitment
-                brain_model = StochasticModelCommitment(identifier=identifier, activations_model=activations_model,
-                                                        layers=layers)
+                brain_model = VOneNetModelCommitment(identifier=identifier, activations_model=activations_model,
+                                                            layers=layers)
                 return brain_model
 
             self[basemodel_identifier] = LazyLoad(load)
