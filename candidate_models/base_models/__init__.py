@@ -506,6 +506,7 @@ class VOneNetModelPool(UniqueKeyDict):
         _key_functions = {
             'voneresnet-50': lambda: voneresnet(model_name='resnet50'),
             'voneresnet-50-robust': lambda: voneresnet(model_name='resnet50_at'),
+            'voneresnet-50-non_stochastic': lambda: voneresnet(model_name='resnet50_ns'),
         }
 
         # instantiate models with LazyLoad wrapper

@@ -4,6 +4,9 @@ import warnings
 from brainscore.utils import LazyLoad
 from brainscore.submission.utils import UniqueKeyDict
 
+STOCHASTIC_MODELS = {'voneresnet-50': True, 'voneresnet-50-non_stochastic':True, 'voneresnet-50-non_stochastic':False}
+
+
 class StochasticModelCommitment(ModelCommitment):
     """
     Similar to ModelCommitment but gets model activations multiple times depending on the number of trials. To be
@@ -11,14 +14,14 @@ class StochasticModelCommitment(ModelCommitment):
     """
 
     def __init__(self, identifier, activations_model, layers, visual_degrees=8):
-        layer_selection = StochasticLayerSelection(model_identifier=identifier,
-                                                   activations_model=activations_model, layers=layers,
-                                                   visual_degrees=visual_degrees)
-        region_layer_map = RegionLayerMap(layer_selection=layer_selection,
-                                          region_benchmarks=STANDARD_REGION_BENCHMARKS)
-        super(StochasticModelCommitment, self).__init__(identifier=identifier, activations_model=activations_model,
-                                                        layers=layers, region_layer_map=region_layer_map,
-                                                        visual_degrees=visual_degrees)
+            layer_selection = StochasticLayerSelection(model_identifier=identifier,
+                                                       activations_model=activations_model, layers=layers,
+                                                       visual_degrees=visual_degrees)
+            region_layer_map = RegionLayerMap(layer_selection=layer_selection,
+                                              region_benchmarks=STANDARD_REGION_BENCHMARKS)
+            super(StochasticModelCommitment, self).__init__(identifier=identifier, activations_model=activations_model,
+                                                            layers=layers, region_layer_map=region_layer_map,
+                                                            visual_degrees=visual_degrees)
 
     def look_at(self, stimuli, number_of_trials=1):
         stimuli_identifier = stimuli.identifier
@@ -34,11 +37,15 @@ class StochasticModelCommitment(ModelCommitment):
         return activations/number_of_trials
 
 
-class VOneNetModelCommitment(StochasticModelCommitment):
-    def __init__(self, identifier, activations_model, layers, visual_degrees=8):
-        super(VOneNetModelCommitment, self).__init__(identifier=identifier, activations_model=activations_model,
-                                                            layers=layers, visual_degrees=visual_degrees)
-        self.layer_model.region_layer_map['V1'] = 'vone_block.output'
+def get_vonenet_commitment(identifier, activations_model, layers, visual_degrees=8, stochastic=True):
+    if stochastic:
+        model_commitment = StochasticModelCommitment(identifier=identifier, activations_model=activations_model,
+                                                     layers=layers, visual_degrees=visual_degrees)
+    else:
+        model_commitment = ModelCommitment(identifier=identifier, activations_model=activations_model,
+                                                     layers=layers, visual_degrees=visual_degrees)
+    model_commitment.layer_model.region_layer_map['V1'] = 'vone_block.output'
+    return model_commitment
 
 
 class StochasticLayerSelection(LayerSelection):
@@ -83,8 +90,8 @@ class VOneNetBrainPool(UniqueKeyDict):
             def load(identifier=basemodel_identifier, activations_model=activations_model, layers=model_layer):
                 assert hasattr(activations_model, 'reload')
                 activations_model.reload()
-                brain_model = VOneNetModelCommitment(identifier=identifier, activations_model=activations_model,
-                                                            layers=layers)
+                brain_model = get_vonenet_commitment(identifier=identifier, activations_model=activations_model,
+                                                            layers=layers, stochastic=STOCHASTIC_MODELS[identifier])
                 return brain_model
 
             self[basemodel_identifier] = LazyLoad(load)
