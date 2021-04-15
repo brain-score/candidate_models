@@ -4,7 +4,7 @@ import warnings
 from brainscore.utils import LazyLoad
 from brainscore.submission.utils import UniqueKeyDict
 
-STOCHASTIC_MODELS = {'voneresnet-50': True, 'voneresnet-50-non_stochastic':True, 'voneresnet-50-non_stochastic':False}
+STOCHASTIC_MODELS = {'voneresnet-50': True, 'voneresnet-50-robust':True, 'voneresnet-50-non_stochastic':False}
 
 
 class StochasticModelCommitment(ModelCommitment):
