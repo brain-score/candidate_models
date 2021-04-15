@@ -11,14 +11,13 @@ requirements = [
     "brain-score @ git+https://github.com/brain-score/brain-score",
     "model-tools @ git+https://github.com/brain-score/model-tools",
     "numpy",
-    "result_caching @ git+https://github.com/mschrimpf/result_caching",
+    "result_caching @ git+https://github.com/brain-score/result_caching",
     "networkx==1.11",
     "tqdm",
     "gitpython",
     "torch",
     "keras==2.3.1",
     "tensorflow==1.15",
-    "h5py<3",  # keras/tensorflow versions do not work with h5py >=3 https://stackoverflow.com/a/64635871/2225200
     "Pillow",
     "cornet @ git+https://github.com/dicarlolab/CORnet",
     "vonenet @ git+https://github.com/dicarlolab/vonenet",
@@ -26,7 +25,6 @@ requirements = [
     "texture_vs_shape @ git+https://github.com/mschrimpf/texture-vs-shape.git",
     "Fixing-the-train-test-resolution-discrepancy-scripts @ git+https://github.com/mschrimpf/FixRes.git",
     "dcgan @ git+https://github.com/franzigeiger/dcgan.git",
-    # "tfutils @ git+https://github.com/neuroailab/tfutils.git",
     "tnn @ git+https://github.com/neuroailab/tnn.git",
     "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git@bs_latest",
 ]
