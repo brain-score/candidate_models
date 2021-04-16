@@ -273,10 +273,9 @@ def vonecornet(model_name='cornets'):
     wrapper.image_size = 224
     return wrapper
 
-
-def robust_model(function, image_size):
+def GoN_model(function, train, image_size):
     from urllib import request
-    import torch
+    import torch 
     from model_tools.activations.pytorch import load_preprocess_images
     module = import_module(f'torchvision.models')
     model_ctr = getattr(module, function)
@@ -286,20 +285,69 @@ def robust_model(function, image_size):
     framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
     weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR',
                                 os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
-    weights_path = os.path.join(weightsdir_path, 'resnet-50-robust')
+    weights_id = 'resnet-50-' + train
+    weights_path = os.path.join(weightsdir_path, weights_id)
     if not os.path.isfile(weights_path):
-        url = 'http://andrewilyas.com/ImageNet.pt'
+        weight_urls = {
+            'resnet-50-GNTsig0.5': 'https://github.com/bethgelab/game-of-noise/releases/download/v1.0/Gauss_sigma_0.5_Model.pth',
+            'resnet-50-ANT3x3_SIN': 'https://github.com/bethgelab/game-of-noise/releases/download/v1.0/ANT3x3_SIN_Model.pth',
+        } 
+        assert weights_id in weight_urls
+        url = weight_urls[weights_id]
+        _logger.debug(f"Downloading weights for resnet-50-GoN from {url} to {weights_path}")
+        os.makedirs(weightsdir_path, exist_ok=True)
+        request.urlretrieve(url, weights_path)
+
+    if torch.cuda.is_available():
+        checkpoint = torch.load(weights_path)
+    else:
+        checkpoint = torch.load(weights_path, map_location=torch.device('cpu'))
+
+    # process weights -- remove the attacker and prepocessing weights
+    model.load_state_dict(checkpoint['model_state_dict'])
+    # wrap model with pytorch wrapper
+    wrapper = PytorchWrapper(identifier=weights_id, model=model, preprocessing=preprocessing)
+    wrapper.image_size = image_size
+    return wrapper
+
+def robust_model(function, penalty, eps, image_size):
+    from urllib import request
+    import torch 
+    from model_tools.activations.pytorch import load_preprocess_images
+    module = import_module(f'torchvision.models')
+    model_ctr = getattr(module, function)
+    model = model_ctr()
+    preprocessing = functools.partial(load_preprocess_images, image_size=image_size)
+    # load weights
+    framework_home = os.path.expanduser(os.getenv('CM_HOME', '~/.candidate_models'))
+    weightsdir_path = os.getenv('CM_TSLIM_WEIGHTS_DIR',
+                                os.path.join(framework_home, 'model-weights', 'resnet-50-robust'))
+    weights_id = 'resnet-50-robust-' + penalty + '-' + eps
+    weights_path = os.path.join(weightsdir_path, weights_id)
+    if not os.path.isfile(weights_path):
+        weight_urls = {
+            'resnet-50-robust-l2-3': 'https://www.dropbox.com/s/knf4uimlqsi1yz8/imagenet_l2_3_0.pt?dl=1',
+            'resnet-50-robust-linf-4': 'https://www.dropbox.com/s/axfuary2w1cnyrg/imagenet_linf_4.pt?dl=1',
+            'resnet-50-robust-linf-8': 'https://www.dropbox.com/s/yxn15a9zklz3s8q/imagenet_linf_8.pt?dl=1',
+        } 
+        assert weights_id in weight_urls
+        url = weight_urls[weights_id]
         _logger.debug(f"Downloading weights for resnet-50-robust from {url} to {weights_path}")
         os.makedirs(weightsdir_path, exist_ok=True)
         request.urlretrieve(url, weights_path)
-    checkpoint = torch.load(weights_path, map_location=torch.device('cpu'))
+
+    if torch.cuda.is_available():
+        checkpoint = torch.load(weights_path)
+    else:
+        checkpoint = torch.load(weights_path, map_location=torch.device('cpu'))
+
     # process weights -- remove the attacker and prepocessing weights
     weights = checkpoint['model']
     weights = {k[len('module.model.'):]: v for k, v in weights.items() if 'attacker' not in k}
     weights = {k: weights[k] for k in list(weights.keys())[2:]}
     model.load_state_dict(weights)
     # wrap model with pytorch wrapper
-    wrapper = PytorchWrapper(identifier=function+'-robust', model=model, preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier=weights_id, model=model, preprocessing=preprocessing)
     wrapper.image_size = image_size
     return wrapper
 
@@ -382,12 +430,37 @@ class BaseModelPool(UniqueKeyDict):
 
         _key_functions = {
             'alexnet': lambda: torchvision_model('alexnet', image_size=224),
+            'vgg-11-pt': lambda: torchvision_model('vgg11', image_size=224),
+            'vgg-11-bn-pt': lambda: torchvision_model('vgg11_bn', image_size=224),
+            'vgg-13-pt': lambda: torchvision_model('vgg13', image_size=224),
+            'vgg-13-bn-pt': lambda: torchvision_model('vgg13_bn', image_size=224),
+            'vgg-16-pt': lambda: torchvision_model('vgg16', image_size=224),
+            'vgg-16-bn-pt': lambda: torchvision_model('vgg16_bn', image_size=224),
+            'vgg-19-pt': lambda: torchvision_model('vgg19', image_size=224),
+            'vgg-19-bn-pt': lambda: torchvision_model('vgg19_bn', image_size=224),
             'squeezenet1_0': lambda: torchvision_model('squeezenet1_0', image_size=224),
             'squeezenet1_1': lambda: torchvision_model('squeezenet1_1', image_size=224),
-            'resnet-18': lambda: torchvision_model('resnet18', image_size=224),
-            'resnet-34': lambda: torchvision_model('resnet34', image_size=224),
-            'resnet-50-pytorch': lambda: torchvision_model('resnet50', image_size=224),
-            'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
+            'resnet-18-pt': lambda: torchvision_model('resnet18', image_size=224),
+            'resnet-34-pt': lambda: torchvision_model('resnet34', image_size=224),
+            'resnet-50-pt': lambda: torchvision_model('resnet50', image_size=224),
+            'resnet-101-pt': lambda: torchvision_model('resnet101', image_size=224),
+            'resnet-152-pt': lambda: torchvision_model('resnet152', image_size=224),
+            'densenet-121-pt': lambda: torchvision_model('densenet121', image_size=224),
+            'densenet-169-pt': lambda: torchvision_model('densenet169', image_size=224),
+            'densenet-201-pt': lambda: torchvision_model('densenet201', image_size=224),
+            'densenet-161-pt': lambda: torchvision_model('densenet161', image_size=224),
+            'resnext-50-32x4d-pt': lambda: torchvision_model('resnext50_32x4d', image_size=224),
+            'resnext-101-32x8d-pt': lambda: torchvision_model('resnext101_32x8d', image_size=224),
+            'wide-resnet-50-pt': lambda: torchvision_model('wide_resnet50_2', image_size=224),
+            'wide-resnet-101-pt': lambda: torchvision_model('wide_resnet101_2', image_size=224),
+
+            'resnet-50-robust-l2-3': lambda: robust_model('resnet50', penalty='l2', eps='3', image_size=224),
+            'resnet-50-robust-linf-4': lambda: robust_model('resnet50', penalty='linf', eps='4', image_size=224),
+            'resnet-50-robust-linf-8': lambda: robust_model('resnet50', penalty='linf', eps='8', image_size=224),
+
+            'resnet-50-GNTsig0.5': lambda: GoN_model('resnet50', train='GNTsig0.5', image_size=224),
+            'resnet-50-ANT3x3_SIN': lambda: GoN_model('resnet50', train='ANT3x3_SIN', image_size=224),
+
             'voneresnet-50': lambda: voneresnet(model_name='resnet50'),
             'voneresnet-50-robust': lambda: voneresnet(model_name='resnet50_at'),
 
