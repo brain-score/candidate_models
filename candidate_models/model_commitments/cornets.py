@@ -1,25 +1,26 @@
+from typing import Dict, Tuple
+
 import logging
 import numpy as np
 from torch import nn
 from tqdm import tqdm
-from typing import Dict, Tuple
 
 from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
 from brainscore.submission.utils import UniqueKeyDict
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import cornet
 from model_tools.brain_transformation import ModelCommitment
+from model_tools.brain_transformation.temporal import fix_timebin_naming
 from result_caching import store
 
 _logger = logging.getLogger(__name__)
 
 CORNET_S_TIMEMAPPING = {
-        'V1': (50, 100, 1),
-        'V2': (70, 100, 2),
-        # 'V2': (20, 50, 2),  # MS: This follows from the movshon anesthesized-monkey recordings, so might not hold up
-        'V4': (90, 50, 4),
-        'IT': (100, 100, 2),
-    }
+    'V1': (50, 100, 1),
+    'V2': (70, 100, 2),
+    'V4': (90, 50, 4),
+    'IT': (100, 100, 2),
+}
 
 
 class CORnetCommitment(ModelCommitment):
@@ -52,7 +53,10 @@ class CORnetCommitment(ModelCommitment):
             return super(CORnetCommitment, self).look_at(stimuli, number_of_trials=number_of_trials)
         else:
             # cache, since piecing times together is not too fast unfortunately
-            return self.look_at_cached(self.identifier, stimuli.identifier, stimuli)  # ignore number_of_trials
+            stimuli_identifier = None
+            if hasattr(stimuli, 'identifier'):
+                stimuli_identifier = stimuli.identifier
+            return self.look_at_cached(self.identifier, stimuli_identifier, stimuli)  # ignore number_of_trials
 
     @store(identifier_ignore=['stimuli'])
     def look_at_cached(self, model_identifier, stimuli_identifier, stimuli):
@@ -86,6 +90,7 @@ class CORnetCommitment(ModelCommitment):
             }, dims=bin_responses.dims)
             time_responses.append(bin_responses)
         responses = merge_data_arrays(time_responses)
+        responses = fix_timebin_naming(responses)  # work around xarray merge bug introduced in 0.16.2
         return responses
 
 
