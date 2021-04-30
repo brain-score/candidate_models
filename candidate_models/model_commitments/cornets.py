@@ -1,9 +1,9 @@
-from typing import Dict, Tuple
-
+import functools
 import logging
 import numpy as np
 from torch import nn
 from tqdm import tqdm
+from typing import Dict, Tuple
 
 from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
 from brainscore.submission.utils import UniqueKeyDict
@@ -52,14 +52,19 @@ class CORnetCommitment(ModelCommitment):
         if self.do_behavior:
             return super(CORnetCommitment, self).look_at(stimuli, number_of_trials=number_of_trials)
         else:
-            # cache, since piecing times together is not too fast unfortunately
-            stimuli_identifier = None
-            if hasattr(stimuli, 'identifier'):
-                stimuli_identifier = stimuli.identifier
-            return self.look_at_cached(self.identifier, stimuli_identifier, stimuli)  # ignore number_of_trials
+            if hasattr(stimuli, 'identifier') and stimuli.identifier is not None and stimuli.identifier is not False:
+                # cache, since piecing times together is not too fast unfortunately
+                look_at_fnc = functools.partial(self.look_at_temporal_cached,
+                                                model_identifier=self.identifier, stimuli_identifier=stimuli.identifier)
+            else:
+                look_at_fnc = self.look_at_temporal
+            return look_at_fnc(stimuli=stimuli)  # ignore number_of_trials
 
     @store(identifier_ignore=['stimuli'])
-    def look_at_cached(self, model_identifier, stimuli_identifier, stimuli):
+    def look_at_temporal_cached(self, model_identifier, stimuli_identifier, stimuli):
+        return self.look_at_temporal(stimuli=stimuli)
+
+    def look_at_temporal(self, stimuli):
         responses = self.activations_model(stimuli, layers=self.recording_layers)
         # map time
         if hasattr(self, 'recording_target'):
