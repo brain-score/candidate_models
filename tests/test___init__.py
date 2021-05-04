@@ -133,13 +133,13 @@ class TestBrainTranslated:
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
         ('CORnet-S', approx(.240888, abs=.002)),
         ('CORnet-R2', approx(.230859, abs=.002)),
-        ('alexnet', np.nan),
+        ('alexnet', None),
         ('VOneCORnet-S', approx(.23107, abs=.01)),
     ])
     def test_candidate_Kar2019OST(self, model_identifier, expected_score):
         model = brain_translated_pool[model_identifier]
         score = score_model(model_identifier=model_identifier, model=model, benchmark_identifier='dicarlo.Kar2019-ost')
-        if not np.isnan(expected_score):
+        if expected_score is not None:
             assert score.raw.sel(aggregation='center') == expected_score
         else:
             assert np.isnan(score.raw.sel(aggregation='center'))
