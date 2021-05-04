@@ -1,3 +1,4 @@
+import functools
 import logging
 import numpy as np
 from torch import nn
@@ -9,17 +10,17 @@ from brainscore.submission.utils import UniqueKeyDict
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import cornet
 from model_tools.brain_transformation import ModelCommitment
+from model_tools.brain_transformation.temporal import fix_timebin_naming
 from result_caching import store
 
 _logger = logging.getLogger(__name__)
 
 CORNET_S_TIMEMAPPING = {
-        'V1': (50, 100, 1),
-        'V2': (70, 100, 2),
-        # 'V2': (20, 50, 2),  # MS: This follows from the movshon anesthesized-monkey recordings, so might not hold up
-        'V4': (90, 50, 4),
-        'IT': (100, 100, 2),
-    }
+    'V1': (50, 100, 1),
+    'V2': (70, 100, 2),
+    'V4': (90, 50, 4),
+    'IT': (100, 100, 2),
+}
 
 
 class CORnetCommitment(ModelCommitment):
@@ -51,11 +52,19 @@ class CORnetCommitment(ModelCommitment):
         if self.do_behavior:
             return super(CORnetCommitment, self).look_at(stimuli, number_of_trials=number_of_trials)
         else:
-            # cache, since piecing times together is not too fast unfortunately
-            return self.look_at_cached(self.identifier, stimuli.identifier, stimuli)  # ignore number_of_trials
+            if hasattr(stimuli, 'identifier') and stimuli.identifier is not None and stimuli.identifier is not False:
+                # cache, since piecing times together is not too fast unfortunately
+                look_at_fnc = functools.partial(self.look_at_temporal_cached,
+                                                model_identifier=self.identifier, stimuli_identifier=stimuli.identifier)
+            else:
+                look_at_fnc = self.look_at_temporal
+            return look_at_fnc(stimuli=stimuli)  # ignore number_of_trials
 
     @store(identifier_ignore=['stimuli'])
-    def look_at_cached(self, model_identifier, stimuli_identifier, stimuli):
+    def look_at_temporal_cached(self, model_identifier, stimuli_identifier, stimuli):
+        return self.look_at_temporal(stimuli=stimuli)
+
+    def look_at_temporal(self, stimuli):
         responses = self.activations_model(stimuli, layers=self.recording_layers)
         # map time
         if hasattr(self, 'recording_target'):
@@ -86,6 +95,7 @@ class CORnetCommitment(ModelCommitment):
             }, dims=bin_responses.dims)
             time_responses.append(bin_responses)
         responses = merge_data_arrays(time_responses)
+        responses = fix_timebin_naming(responses)  # work around xarray merge bug introduced in 0.16.2
         return responses
 
 

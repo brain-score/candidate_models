@@ -1,5 +1,6 @@
 
 from candidate_models.model_commitments.cornets import CORnetCommitment, _build_time_mappings, CORNET_S_TIMEMAPPING
+import functools
 import logging
 
 from candidate_models.base_models import vonecornet
