@@ -26,7 +26,8 @@ class StochasticModelCommitment(ModelCommitment):
     def look_at(self, stimuli, number_of_trials=1):
         stimuli_identifier = stimuli.identifier
         for trial_number in range(number_of_trials):
-            stimuli.identifier = stimuli_identifier + '-trial' + f'{trial_number:03d}'
+            if stimuli_identifier:
+                stimuli.identifier = stimuli_identifier + '-trial' + f'{trial_number:03d}'
             if trial_number == 0:
                 activations = super().look_at(stimuli, number_of_trials=1)
                 if not activations.values.flags['WRITEABLE']:
@@ -68,7 +69,8 @@ class StochasticLayerMappedModel(LayerMappedModel):
     def run_activations(self, stimuli, layers, number_of_trials):
         stimuli_identifier = stimuli.identifier
         for trial_number in range(number_of_trials):
-            stimuli.identifier = stimuli_identifier + '-trial' + f'{trial_number:03d}'
+            if stimuli_identifier:
+                stimuli.identifier = stimuli_identifier + '-trial' + f'{trial_number:03d}'
             if trial_number == 0:
                 activations = self.activations_model(stimuli, layers=layers)
             else:
