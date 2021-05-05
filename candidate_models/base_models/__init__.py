@@ -255,8 +255,7 @@ def voneresnet(model_name='resnet50'):
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=224,
                                       normalize_mean=(0.5, 0.5, 0.5), normalize_std=(0.5, 0.5, 0.5))
-    from candidate_models.base_models.stochastic import StochasticPytorchWrapper
-    wrapper = StochasticPytorchWrapper(identifier='vone'+model_name, model=model, preprocessing=preprocessing)
+    wrapper = PytorchWrapper(identifier='vone'+model_name, model=model, preprocessing=preprocessing)
     wrapper.image_size = 224
     return wrapper
 
@@ -268,8 +267,8 @@ def vonecornet(model_name='cornets'):
     from model_tools.activations.pytorch import load_preprocess_images
     preprocessing = functools.partial(load_preprocess_images, image_size=224,
                                       normalize_mean=(0.5, 0.5, 0.5), normalize_std=(0.5, 0.5, 0.5))
-    from candidate_models.base_models.stochastic import StochasticTemporalPytorchWrapper
-    wrapper = StochasticTemporalPytorchWrapper(identifier='vone'+model_name, model=model, preprocessing=preprocessing)
+    from candidate_models.base_models.cornet import TemporalPytorchWrapper
+    wrapper = TemporalPytorchWrapper(identifier='vone'+model_name, model=model, preprocessing=preprocessing)
     wrapper.image_size = 224
     return wrapper
 
@@ -388,9 +387,6 @@ class BaseModelPool(UniqueKeyDict):
             'resnet-34': lambda: torchvision_model('resnet34', image_size=224),
             'resnet-50-pytorch': lambda: torchvision_model('resnet50', image_size=224),
             'resnet-50-robust': lambda: robust_model('resnet50', image_size=224),
-            'voneresnet-50': lambda: voneresnet(model_name='resnet50'),
-            'voneresnet-50-robust': lambda: voneresnet(model_name='resnet50_at'),
-
             'vgg-16': lambda: keras_model('vgg16', 'VGG16', image_size=224),
             'vgg-19': lambda: keras_model('vgg19', 'VGG19', image_size=224),
             'vggface': vggface,
@@ -499,4 +495,25 @@ class BaseModelPool(UniqueKeyDict):
             self[identifier] = LazyLoad(function)
 
 
+class VOneNetModelPool(UniqueKeyDict):
+    """
+    Provides a set of stochastic models.
+    Each entry maps from `name` to an activations extractor.
+    """
+
+    def __init__(self):
+        super(VOneNetModelPool, self).__init__(reload=True)
+
+        _key_functions = {
+            'voneresnet-50': lambda: voneresnet(model_name='resnet50'),
+            'voneresnet-50-robust': lambda: voneresnet(model_name='resnet50_at'),
+            'voneresnet-50-non_stochastic': lambda: voneresnet(model_name='resnet50_ns'),
+        }
+
+        # instantiate models with LazyLoad wrapper
+        for identifier, function in _key_functions.items():
+            self[identifier] = LazyLoad(function)
+
+
 base_model_pool = BaseModelPool()
+vonenet_model_pool = VOneNetModelPool()

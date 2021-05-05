@@ -113,11 +113,12 @@ class TestPreselectedLayer:
 @pytest.mark.memory_intense
 class TestBrainTranslated:
     @pytest.mark.parametrize(['model_identifier', 'expected_score', 'attach_hook'], [
-        ('alexnet', .59033, True),
-        ('resnet18-supervised', .596013, False),
-        ('resnet18-local_aggregation', .60152, False),
-        ('resnet18-autoencoder', .373528, False),
-        ('CORnet-S', .600, False),
+        ('alexnet', approx(.59033, abs=.005), True),
+        ('resnet18-supervised', approx(.596013, abs=.005), False),
+        ('resnet18-local_aggregation', approx(.60152, abs=.005), False),
+        ('resnet18-autoencoder', approx(.373528, abs=.005), False),
+        ('CORnet-S', approx(.600, abs=.02), False),
+        ('VOneCORnet-S', approx(.610, abs=.02), False),
     ])
     def test_MajajHong2015ITpls(self, model_identifier, expected_score, attach_hook):
         model = brain_translated_pool[model_identifier]
@@ -127,30 +128,34 @@ class TestBrainTranslated:
             identifier = activations_model.identifier + "-pca_1000"
             activations_model.identifier = identifier
         score = score_model(model_identifier, 'dicarlo.MajajHong2015.IT-pls', model=model)
-        assert score.raw.sel(aggregation='center') == approx(expected_score, abs=0.005)
+        assert score.raw.sel(aggregation='center') == expected_score
 
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
-        ('CORnet-S', .240888),
-        ('CORnet-R2', .230859),
-        ('alexnet', np.nan),
+        ('CORnet-S', approx(.240888, abs=.002)),
+        ('CORnet-R2', approx(.230859, abs=.002)),
+        ('alexnet', None),
+        ('VOneCORnet-S', approx(.23107, abs=.01)),
     ])
     def test_candidate_Kar2019OST(self, model_identifier, expected_score):
         model = brain_translated_pool[model_identifier]
         score = score_model(model_identifier=model_identifier, model=model, benchmark_identifier='dicarlo.Kar2019-ost')
-        if not np.isnan(expected_score):
-            assert score.raw.sel(aggregation='center') == approx(expected_score, abs=.002)
+        if expected_score is not None:
+            assert score.raw.sel(aggregation='center') == expected_score
         else:
             assert np.isnan(score.raw.sel(aggregation='center'))
 
     @pytest.mark.parametrize(['model_identifier', 'expected_score'], [
-        ('CORnet-S', .382),
-        ('alexnet', .253),
+        ('CORnet-S',  approx(.382, abs=.005)),
+        ('alexnet', approx(.253, abs=.005)),
+        ('VOneCORnet-S', approx(.356, abs=.02)),
+        ('voneresnet-50', approx(.371, abs=.02)),
+        ('voneresnet-50-robust', approx(.386, abs=.02)),
     ])
     def test_Rajalingham2018i2n(self, model_identifier, expected_score):
         model = brain_translated_pool[model_identifier]
         score = score_model(model_identifier=model_identifier, model=model,
                             benchmark_identifier='dicarlo.Rajalingham2018-i2n')
-        assert score.raw.sel(aggregation='center') == approx(expected_score, abs=.005)
+        assert score.raw.sel(aggregation='center') == expected_score
 
     @pytest.mark.parametrize('model_identifier', [
         'CORnet-S',
