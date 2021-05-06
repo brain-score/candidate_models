@@ -1,6 +1,6 @@
 from models.bibtex_entries import entries
 
-from candidate_models.model_commitments import cornet_brain_pool
+from candidate_models.model_commitments import brain_translated_pool
 from model_tools.check_submission import check_models
 
 """
@@ -20,7 +20,7 @@ def get_model_list():
     If the submission contains only one model, return a one item list.
     :return: a list of model string names
     """
-    return list(cornet_brain_pool.keys())
+    return list(brain_translated_pool.keys())
 
 
 def get_model(name):
@@ -31,7 +31,7 @@ def get_model(name):
     name of the model to fetch
     :return: the model instance, which implements the BrainModel interface
     """
-    return cornet_brain_pool[name]
+    return brain_translated_pool[name]
 
 
 if __name__ == '__main__':
