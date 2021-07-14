@@ -5,7 +5,7 @@ from torch import nn
 from tqdm import tqdm
 from typing import Dict, Tuple
 
-from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
+from brainio.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
 from brainscore.submission.utils import UniqueKeyDict
 from brainscore.utils import LazyLoad
 from candidate_models.base_models import cornet

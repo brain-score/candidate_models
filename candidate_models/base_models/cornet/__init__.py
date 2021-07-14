@@ -8,7 +8,7 @@ import re
 import torch
 from torch.nn import Module
 
-from brainio_base.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
+from brainio.assemblies import merge_data_arrays, NeuroidAssembly, walk_coords
 from candidate_models import s3
 from candidate_models.base_models.cornet.cornet_r2 import fix_state_dict_naming as fix_r2_state_dict_naming
 from model_tools.activations.core import ActivationsExtractorHelper

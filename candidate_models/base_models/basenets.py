@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 import brainscore
-from brainio_base.assemblies import NeuroidAssembly, walk_coords, array_is_element
+from brainio.assemblies import NeuroidAssembly, walk_coords, array_is_element
 
 
 def package(features_path='/braintree/data2/active/users/qbilius/computed/hvm/ait'):
