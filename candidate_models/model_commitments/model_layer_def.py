@@ -72,6 +72,9 @@ layers = {
             'classifier.2', 'classifier.5'],  # fc-[relu]{6,7,8}
     'vgg-16': [f'block{i + 1}_pool' for i in range(5)] + ['fc1', 'fc2'],
     'vgg-19': [f'block{i + 1}_pool' for i in range(5)] + ['fc1', 'fc2'],
+    'vgg-19-pytorch': ['features.1', 'features.4', 'features.6', 'features.9', 'features.11', 'features.13',
+                       'features.15',  'features.18', 'features.20', 'features.22', 'features.24', 'features.27',
+                       'features.29', 'features.31', 'features.33', 'avgpool', 'classifier.1', 'classifier.4'],
     'squeezenet1_0':
         ['features.' + layer for layer in
          # max pool + fire outputs (ignoring pools)
