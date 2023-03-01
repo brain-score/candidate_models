@@ -26,7 +26,7 @@ requirements = [
     "Fixing-the-train-test-resolution-discrepancy-scripts @ git+https://github.com/mschrimpf/FixRes.git",
     "dcgan @ git+https://github.com/franzigeiger/dcgan.git",
     "tnn @ git+https://github.com/neuroailab/tnn.git",
-    "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git@bs_latest",
+    "unsup_vvs @ git+https://github.com/neuroailab/unsup_vvs.git",
 ]
 
 setup(
